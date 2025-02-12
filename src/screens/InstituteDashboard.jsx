@@ -60,7 +60,7 @@ const InstituteDashboard = () => {
     } catch (error) {
       console.error('Error fetching requests:', error);
       setError('Failed to fetch exam requests');
-      setExamRequests([]); // Set empty array on error
+      setExamRequests([]);
     } finally {
       setLoading(false);
     }
