@@ -89,7 +89,16 @@ const AdminDashboard = () => {
   const handleStatusUpdate = async (id, status, feedback = '') => {
     try {
       setActionLoading(true);
-      setProcessingStatus('Processing request...');
+      setProcessingStatus('Initiating process...');
+
+      if (status === 'approved') {
+        setProcessingStatus('Encrypting exam data...');
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Show encryption status
+        
+        setProcessingStatus('Uploading to IPFS storage...');
+      } else {
+        setProcessingStatus('Processing rejection...');
+      }
 
       const response = await axios.put(
         `${config.API_BASE_URL}/api/admin/requests/${id}`,
@@ -98,10 +107,13 @@ const AdminDashboard = () => {
       );
 
       if (response.data) {
+        setProcessingStatus('Finalizing...');
+        
         // Refresh the requests list
         const updatedResponse = await axios.get(`${config.API_BASE_URL}/api/admin/requests`, {
           withCredentials: true
         });
+        
         setRequests(updatedResponse.data.requests);
         setStats(updatedResponse.data.stats);
         setSuccess(`Request ${status} successfully`);
@@ -114,7 +126,7 @@ const AdminDashboard = () => {
       }
     } catch (error) {
       console.error('Error updating status:', error);
-      setError(error.response?.data?.message || 'Failed to update request status');
+      setError(error.response?.data?.message || `Failed to ${status} request`);
     } finally {
       setActionLoading(false);
       setProcessingStatus('');
@@ -307,45 +319,20 @@ const AdminDashboard = () => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               className={`${
-                isDarkMode 
-                  ? 'bg-[#1a1f2e] text-white' 
-                  : 'bg-white text-gray-900'
-              } rounded-lg max-w-md w-full shadow-xl`}
+                isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
+              } rounded-xl shadow-lg max-w-lg w-full`}
             >
-              <div className={`flex justify-between items-center p-6 border-b ${
+              <div className={`p-6 border-b ${
                 isDarkMode ? 'border-gray-700' : 'border-gray-200'
               }`}>
-                <h3 className="text-lg font-medium">
-                  {processingType === 'approve' ? 'Approve' : 'Reject'} Request
+                <h3 className={`text-lg font-semibold ${
+                  isDarkMode ? 'text-white' : 'text-gray-900'
+                }`}>
+                  {processingType === 'approve' ? 'Approve Request' : 'Reject Request'}
                 </h3>
-                {!actionLoading && (
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className={`${
-                      isDarkMode 
-                        ? 'text-gray-400 hover:text-gray-300' 
-                        : 'text-gray-400 hover:text-gray-500'
-                    }`}
-                  >
-                    <span className="sr-only">Close</span>
-                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                )}
               </div>
-              
+
               <div className="p-6">
-                {error && (
-                  <div className={`mb-4 p-4 rounded-lg ${
-                    isDarkMode 
-                      ? 'bg-red-900/20 border-red-800 text-red-300' 
-                      : 'bg-red-50 border-red-200 text-red-700'
-                  } border`}>
-                    {error}
-                  </div>
-                )}
-                
                 <div className="mb-4">
                   <label className={`block text-sm font-medium mb-1 ${
                     isDarkMode ? 'text-gray-300' : 'text-gray-700'
@@ -367,20 +354,22 @@ const AdminDashboard = () => {
                 </div>
 
                 {actionLoading && processingStatus && (
-                  <div className={`mb-4 p-4 rounded-lg flex items-center ${
+                  <div className={`mb-4 p-4 rounded-lg ${
                     isDarkMode 
                       ? 'bg-blue-900/20 text-blue-300' 
                       : 'bg-blue-50 text-blue-700'
                   }`}>
-                    <div className={`animate-spin rounded-full h-4 w-4 border-b-2 mr-2 ${
-                      isDarkMode ? 'border-blue-300' : 'border-blue-700'
-                    }`}></div>
-                    {processingStatus}
+                    <div className="flex items-center">
+                      <div className={`animate-spin rounded-full h-4 w-4 border-b-2 mr-2 ${
+                        isDarkMode ? 'border-blue-300' : 'border-blue-700'
+                      }`}></div>
+                      {processingStatus}
+                    </div>
                   </div>
                 )}
               </div>
 
-              <div className={`px-6 py-4 flex justify-end space-x-3 rounded-b-lg ${
+              <div className={`px-6 py-4 flex justify-end space-x-3 ${
                 isDarkMode ? 'bg-[#2a2f3e]' : 'bg-gray-50'
               }`}>
                 <button
