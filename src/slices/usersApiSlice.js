@@ -3,11 +3,11 @@ import config from '../config/config.js';
 
 const USERS_URL = '/api/users';
 
-export const userApiSlice = apiSlice.injectEndpoints({
+export const usersApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     login: builder.mutation({
       query: (data) => ({
-        url: `${USERS_URL}/auth`,
+        url: '/api/users/auth',
         method: 'POST',
         body: data,
         credentials: 'include'
@@ -15,7 +15,7 @@ export const userApiSlice = apiSlice.injectEndpoints({
     }),
     logout: builder.mutation({
       query: () => ({
-        url: `${USERS_URL}/logout`,
+        url: '/api/users/logout',
         method: 'POST',
         credentials: 'include'
       }),
@@ -45,7 +45,7 @@ export const userApiSlice = apiSlice.injectEndpoints({
     }),
     checkAuth: builder.query({
       query: () => ({
-        url: `${USERS_URL}/check-auth`,
+        url: '/api/users/check-auth',
         method: 'GET',
         credentials: 'include'
       }),
@@ -60,4 +60,4 @@ export const {
   useUpdateUserMutation,
   useGoogleAuthMutation,
   useCheckAuthQuery,
-} = userApiSlice;
+} = usersApiSlice;

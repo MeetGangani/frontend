@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { useCheckAuthQuery } from './slices/usersApiSlice';
-import { setCredentials, setLoading } from './slices/authSlice';
+import { setCredentials, setLoading, logout } from './slices/authSlice';
 import Header from './components/Header';
 import HomeScreen from './screens/HomeScreen';
 import LoginScreen from './screens/LoginScreen';
@@ -40,19 +40,21 @@ const App = () => {
   const { isDarkMode } = useTheme();
   const location = useLocation();
   const dispatch = useDispatch();
-  const { data: authData, isLoading } = useCheckAuthQuery();
+  const { data: authData, isLoading, isError } = useCheckAuthQuery();
   const { userInfo } = useSelector((state) => state.auth);
 
   useEffect(() => {
     if (authData) {
       dispatch(setCredentials(authData));
+    } else if (isError) {
+      dispatch(logout());
     }
-    dispatch(setLoading(isLoading));
-  }, [authData, dispatch, isLoading]);
+  }, [authData, isError, dispatch]);
 
-  // Show loading spinner while checking auth
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div className="flex items-center justify-center h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-violet-500"></div>
+    </div>;
   }
 
   const getRedirectPath = (userType) => {
