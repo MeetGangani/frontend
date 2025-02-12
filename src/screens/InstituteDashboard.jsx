@@ -80,8 +80,8 @@ const InstituteDashboard = () => {
           throw new Error(`Question ${index + 1}, Option ${optIndex + 1} is missing or invalid`);
         }
       });
-      if (typeof q.correctAnswer !== 'number' || q.correctAnswer < 0 || q.correctAnswer > 3) {
-        throw new Error(`Question ${index + 1} has invalid correct answer index (must be 0-3)`);
+      if (typeof q.correctAnswer !== 'number' || q.correctAnswer < 1 || q.correctAnswer > 4) {
+        throw new Error(`Question ${index + 1} has invalid correct answer index (must be 1-4)`);
       }
     });
   };
@@ -92,42 +92,48 @@ const InstituteDashboard = () => {
     setError(null);
     setSuccess(null);
 
+    if (!file || !examName.trim() || !description.trim()) {
+      setError('Please fill all fields');
+      setLoading(false);
+      return;
+    }
+
     try {
-      // First validate the JSON content
       const reader = new FileReader();
       reader.onload = async (e) => {
         try {
           const jsonContent = JSON.parse(e.target.result);
           validateJsonContent(jsonContent);
 
-          // Create a new Blob from the JSON content
-          const jsonBlob = new Blob([JSON.stringify(jsonContent)], {
-            type: 'application/json'
-          });
-
+          // Send the original file instead of creating a new blob
           const formData = new FormData();
-          formData.append('file', jsonBlob, 'exam.json'); // Give the file a name
+          formData.append('file', file);  // Use the original file
           formData.append('examName', examName);
           formData.append('description', description);
+          formData.append('totalQuestions', jsonContent.questions.length);
 
-          const response = await axios.post(`${config.API_BASE_URL}/api/upload`, formData, {
-            withCredentials: true,
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          });
+          try {
+            const response = await axios.post(`${config.API_BASE_URL}/api/upload`, formData, {
+              withCredentials: true,
+              headers: {
+                'Content-Type': 'multipart/form-data',
+              },
+            });
 
-          if (response.data) {
-            setSuccess('Questions uploaded successfully!');
-            fetchUploads();
-            resetForm();
+            if (response.data) {
+              setSuccess('Questions uploaded successfully!');
+              fetchUploads();
+              resetForm();
+            }
+          } catch (uploadError) {
+            console.error('Upload error details:', uploadError.response?.data);
+            setError(uploadError.response?.data?.message || 'Error uploading file');
           }
-        } catch (error) {
-          console.error('Upload error:', error);
-          setError(error.response?.data?.message || error.message || 'Failed to upload file');
-        } finally {
-          setLoading(false);
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError);
+          setError('Invalid JSON format: ' + parseError.message);
         }
+        setLoading(false);
       };
 
       reader.onerror = () => {
@@ -136,10 +142,9 @@ const InstituteDashboard = () => {
       };
 
       reader.readAsText(file);
-
     } catch (error) {
       console.error('Submit error:', error);
-      setError(error.response?.data?.message || 'Failed to upload file');
+      setError(error.message || 'Failed to process file');
       setLoading(false);
     }
   };
@@ -281,7 +286,7 @@ const InstituteDashboard = () => {
                   isDarkMode ? 'text-gray-400' : 'text-gray-500'
                 }`}>
                   Upload a JSON file containing exam questions. Each question must have 4 options 
-                  and one correct answer (numbered 1-4).
+                  and one correct answer (numbered 1-4). The correctAnswer should be the index (1-4) of the correct option.
                 </p>
               </div>
 
