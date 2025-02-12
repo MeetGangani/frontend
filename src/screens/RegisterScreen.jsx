@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRegisterMutation } from '../slices/usersApiSlice';
 import { setCredentials } from '../slices/authSlice';
@@ -30,6 +30,7 @@ const RegisterScreen = () => {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [register, { isLoading }] = useRegisterMutation();
 
@@ -40,6 +41,36 @@ const RegisterScreen = () => {
       navigate('/');
     }
   }, [navigate, userInfo]);
+
+  useEffect(() => {
+    // Check for successful Google OAuth login
+    const params = new URLSearchParams(location.search);
+    const loginSuccess = params.get('loginSuccess');
+    const error = params.get('error');
+
+    if (loginSuccess === 'true') {
+      // Redirect to appropriate dashboard based on user type
+      if (userInfo) {
+        const dashboardPath = getDashboardPath(userInfo.userType);
+        navigate(dashboardPath);
+      }
+    } else if (error) {
+      toast.error(decodeURIComponent(error));
+    }
+  }, [location, userInfo, navigate]);
+
+  const getDashboardPath = (userType) => {
+    switch (userType) {
+      case 'admin':
+        return '/admin/dashboard';
+      case 'institute':
+        return '/institute/dashboard';
+      case 'student':
+        return '/student/dashboard';
+      default:
+        return '/';
+    }
+  };
 
   const checkPasswordStrength = (password) => {
     const requirements = {
@@ -93,7 +124,14 @@ const RegisterScreen = () => {
   };
 
   const handleGoogleSignIn = () => {
-    window.location.href = `${config.API_BASE_URL}/api/users/auth/google`;
+    const authUrl = `${config.API_BASE_URL}/api/users/auth/google`;
+    // Ensure HTTPS in production and correct redirect
+    if (process.env.NODE_ENV === 'production') {
+      const redirectUrl = `${config.FRONTEND_URL}/register`;
+      window.location.href = `${authUrl}?redirect_uri=${encodeURIComponent(redirectUrl)}`;
+    } else {
+      window.location.href = authUrl;
+    }
   };
 
   return (
