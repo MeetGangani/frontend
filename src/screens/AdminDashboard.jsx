@@ -74,21 +74,23 @@ const AdminDashboard = () => {
 
   const handleApprove = (request) => {
     setSelectedRequest(request);
-    setAdminComment('Approved by admin');
-    setShowModal(true);
+    setAdminComment('');
     setProcessingType('approve');
+    setShowModal(true);
   };
 
   const handleReject = (request) => {
     setSelectedRequest(request);
     setAdminComment('');
-    setShowModal(true);
     setProcessingType('reject');
+    setShowModal(true);
   };
 
   const handleStatusUpdate = async (id, status, feedback = '') => {
     try {
-      setLoading(true);
+      setActionLoading(true);
+      setProcessingStatus('Processing request...');
+
       const response = await axios.put(
         `${config.API_BASE_URL}/api/admin/requests/${id}`,
         { status, feedback },
@@ -103,12 +105,19 @@ const AdminDashboard = () => {
         setRequests(updatedResponse.data.requests);
         setStats(updatedResponse.data.stats);
         setSuccess(`Request ${status} successfully`);
+        
+        // Reset modal state
+        setShowModal(false);
+        setSelectedRequest(null);
+        setAdminComment('');
+        setProcessingType(null);
       }
     } catch (error) {
       console.error('Error updating status:', error);
-      setError('Failed to update request status');
+      setError(error.response?.data?.message || 'Failed to update request status');
     } finally {
-      setLoading(false);
+      setActionLoading(false);
+      setProcessingStatus('');
     }
   };
 
@@ -249,32 +258,36 @@ const AdminDashboard = () => {
                           {request.institute?.name}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {getStatusBadge(request.status)}
-                        </td>
-                        <td className={`px-6 py-4 whitespace-nowrap ${
-                          isDarkMode ? 'text-gray-300' : 'text-gray-900'
-                        }`}>
-                          {new Date(request.createdAt).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
                           {request.status === 'pending' && (
-                            <div className="space-x-2">
+                            <div className="flex space-x-2">
                               <button
                                 onClick={() => handleApprove(request)}
-                                disabled={actionLoading}
-                                className="px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50"
+                                className="px-3 py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700"
                               >
                                 Approve
                               </button>
                               <button
                                 onClick={() => handleReject(request)}
-                                disabled={actionLoading}
-                                className="px-3 py-1 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50"
+                                className="px-3 py-1 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700"
                               >
                                 Reject
                               </button>
                             </div>
                           )}
+                          {request.status !== 'pending' && (
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                              request.status === 'approved' 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                            </span>
+                          )}
+                        </td>
+                        <td className={`px-6 py-4 whitespace-nowrap ${
+                          isDarkMode ? 'text-gray-300' : 'text-gray-900'
+                        }`}>
+                          {new Date(request.createdAt).toLocaleDateString()}
                         </td>
                       </tr>
                     ))}
@@ -382,8 +395,16 @@ const AdminDashboard = () => {
                   Cancel
                 </button>
                 <button
-                  onClick={() => handleStatusUpdate(selectedRequest._id, processingType === 'approve' ? 'approved' : 'rejected', adminComment)}
-                  disabled={actionLoading}
+                  onClick={() => {
+                    if (selectedRequest && processingType) {
+                      handleStatusUpdate(
+                        selectedRequest._id,
+                        processingType === 'approve' ? 'approved' : 'rejected',
+                        adminComment
+                      );
+                    }
+                  }}
+                  disabled={actionLoading || !selectedRequest || !processingType}
                   className={`px-4 py-2 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 ${
                     processingType === 'approve'
                       ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500'
