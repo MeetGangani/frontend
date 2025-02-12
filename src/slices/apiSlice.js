@@ -16,12 +16,10 @@ const baseQuery = fetchBaseQuery({
 const baseQueryWithAuth = async (args, api, extraOptions) => {
   let result = await baseQuery(args, api, extraOptions);
 
-  // Handle 401 Unauthorized responses
   if (result?.error?.status === 401) {
-    // Dispatch logout action
     api.dispatch(logout());
-    // Redirect to login page
-    window.location.href = '/login';
+    // Don't redirect here, let the component handle it
+    return result;
   }
 
   // Handle 403 Forbidden responses

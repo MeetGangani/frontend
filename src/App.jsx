@@ -50,6 +50,11 @@ const App = () => {
     dispatch(setLoading(isLoading));
   }, [authData, dispatch, isLoading]);
 
+  // Show loading spinner while checking auth
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
   const getRedirectPath = (userType) => {
     switch (userType) {
       case 'admin':

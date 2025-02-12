@@ -20,14 +20,27 @@ const LoginScreen = () => {
   const navigate = useNavigate();
 
   const [login, { isLoading }] = useLoginMutation();
-
   const { userInfo } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    if (userInfo) {
-      navigate('/');
+    if (userInfo && !isLoading) {
+      const redirectPath = getRedirectPath(userInfo.userType);
+      navigate(redirectPath);
     }
-  }, [navigate, userInfo]);
+  }, [navigate, userInfo, isLoading]);
+
+  const getRedirectPath = (userType) => {
+    switch (userType) {
+      case 'admin':
+        return '/admin/dashboard';
+      case 'institute':
+        return '/institute/dashboard';
+      case 'student':
+        return '/student/dashboard';
+      default:
+        return '/';
+    }
+  };
 
   const submitHandler = async (e) => {
     e.preventDefault();
