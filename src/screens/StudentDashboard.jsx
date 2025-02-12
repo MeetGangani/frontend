@@ -211,12 +211,13 @@ const StudentDashboard = () => {
           {availableExams.map((exam) => (
             <div key={exam._id} className="bg-white rounded-lg shadow-md p-6">
               <h3 className="text-xl font-semibold mb-2">{exam.examName}</h3>
+              <p className="text-gray-600 mb-2">Institute: {exam.instituteName}</p>
               <p className="text-gray-600 mb-4">
                 Total Questions: {exam.totalQuestions}<br />
                 Time Limit: {exam.timeLimit} minutes
               </p>
               <button
-                onClick={() => handleStartExam(exam._id)}
+                onClick={() => handleStartExam(exam.ipfsHash)}
                 disabled={loading}
                 className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50"
               >
