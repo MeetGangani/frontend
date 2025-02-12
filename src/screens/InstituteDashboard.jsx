@@ -68,12 +68,14 @@ const InstituteDashboard = () => {
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      if (selectedFile.size > 10 * 1024 * 1024) { // 10MB limit
-        toast.error('File size should be less than 10MB');
-        return;
-      }
+    if (selectedFile && selectedFile.type === 'application/json') {
       setFile(selectedFile);
+      setError(null);
+    } else {
+      setFile(null);
+      setError('Please select a valid JSON file');
+      // Reset the file input
+      e.target.value = '';
     }
   };
 
@@ -263,19 +265,30 @@ const InstituteDashboard = () => {
             }`}>
               Upload Exam Paper
             </h2>
-            <form onSubmit={handleUpload} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
+                <label className={`block text-sm font-medium mb-1 ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Upload JSON File
+                </label>
                 <input
                   type="file"
                   onChange={handleFileChange}
-                  className={`w-full p-2 border rounded ${
+                  accept="application/json"
+                  required
+                  className={`w-full px-4 py-3 rounded-lg ${
                     isDarkMode 
-                      ? 'bg-gray-700 border-gray-600' 
-                      : 'bg-gray-50 border-gray-300'
-                  }`}
-                  accept=".pdf,.doc,.docx"
-                  disabled={uploading}
+                      ? 'bg-[#0A0F1C] border-gray-700 text-white' 
+                      : 'bg-gray-50 border-gray-200 text-gray-900'
+                  } border focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
                 />
+                <p className={`mt-2 text-sm ${
+                  isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                }`}>
+                  Upload a JSON file containing exam questions. Each question must have 4 options 
+                  and one correct answer (numbered 1-4).
+                </p>
               </div>
               <button
                 type="submit"
