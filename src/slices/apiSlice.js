@@ -7,10 +7,7 @@ const baseQuery = fetchBaseQuery({
   credentials: 'include',
   prepareHeaders: (headers, { getState }) => {
     headers.set('Accept', 'application/json');
-    // Force HTTPS in production
-    if (process.env.NODE_ENV === 'production') {
-      headers.set('X-Forwarded-Proto', 'https');
-    }
+    // Don't set X-Forwarded-Proto header, let the server handle HTTPS
     return headers;
   }
 });

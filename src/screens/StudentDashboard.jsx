@@ -45,10 +45,7 @@ const StudentDashboard = () => {
   const fetchExams = async () => {
     try {
       const response = await axios.get(`${config.API_BASE_URL}/api/exams/available`, {
-        withCredentials: true,
-        headers: {
-          'X-Forwarded-Proto': process.env.NODE_ENV === 'production' ? 'https' : 'http'
-        }
+        withCredentials: true
       });
       setAvailableExams(response.data);
       setError(null);
