@@ -17,7 +17,6 @@ const StudentDashboard = () => {
   const [examSubmitting, setExamSubmitting] = useState(false);
   const [ipfsHash, setIpfsHash] = useState('');
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [encryptionKey, setEncryptionKey] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -76,9 +75,7 @@ const StudentDashboard = () => {
       <h2 className={`text-2xl font-bold mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
         Start New Exam
       </h2>
-      <div className={`${
-        isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
-      } rounded-lg p-8 shadow-lg`}>
+      <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-lg p-8 shadow-lg`}>
         <div className="space-y-4">
           <div>
             <label className={`block text-sm font-medium mb-2 ${
@@ -101,22 +98,9 @@ const StudentDashboard = () => {
                       : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400'
                   } border focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
                 />
-                <input
-                  type="text"
-                  placeholder="Enter the encryption key"
-                  value={encryptionKey}
-                  onChange={(e) => setEncryptionKey(e.target.value)}
-                  disabled={loading}
-                  required
-                  className={`flex-1 px-4 py-3 rounded-lg ${
-                    isDarkMode 
-                      ? 'bg-[#0A0F1C] border-gray-700 text-white placeholder-gray-500' 
-                      : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400'
-                  } border focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
-                />
                 <button
                   type="submit"
-                  disabled={loading || !ipfsHash.trim() || !encryptionKey.trim()}
+                  disabled={loading || !ipfsHash.trim()}
                   className={`px-6 py-3 rounded-lg font-medium transition-colors duration-200 
                     ${loading ? 'cursor-not-allowed opacity-50' : 'hover:bg-violet-500'} 
                     bg-violet-600 text-white`}
@@ -134,11 +118,6 @@ const StudentDashboard = () => {
               {error && (
                 <p className="text-red-500 text-sm mt-2">{error}</p>
               )}
-              <p className={`mt-2 text-sm ${
-                isDarkMode ? 'text-gray-500' : 'text-gray-600'
-              }`}>
-                Contact your institute if you haven't received an IPFS hash.
-              </p>
             </form>
           </div>
         </div>
@@ -152,17 +131,14 @@ const StudentDashboard = () => {
       setLoading(true);
       setError(null);
 
-      if (!ipfsHash || !encryptionKey) {
-        setError('Please enter both IPFS hash and encryption key');
+      if (!ipfsHash) {
+        setError('Please enter the IPFS hash');
         return;
       }
 
       const response = await axios.post(
         `${config.API_BASE_URL}/api/exams/start`,
-        {
-          ipfsHash: ipfsHash.trim(),
-          encryptionKey: encryptionKey.trim()
-        },
+        { ipfsHash: ipfsHash.trim() },
         {
           withCredentials: true,
           headers: {
@@ -174,17 +150,13 @@ const StudentDashboard = () => {
 
       if (response.data) {
         setCurrentExam(response.data);
-        setTimeLeft(response.data.timeLimit * 60); // Convert minutes to seconds
+        setTimeLeft(response.data.timeLimit * 60);
         setAnswers({});
-        setActiveTab('exam');
         navigate('/exam');
       }
     } catch (error) {
       console.error('Start exam error:', error);
-      setError(
-        error.response?.data?.message || 
-        'Failed to start exam. Please verify your IPFS hash and encryption key.'
-      );
+      setError(error.response?.data?.message || 'Failed to start exam');
     } finally {
       setLoading(false);
     }
