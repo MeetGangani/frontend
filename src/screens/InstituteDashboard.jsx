@@ -41,10 +41,13 @@ const InstituteDashboard = () => {
 
   const fetchUploads = async () => {
     try {
-      const response = await axios.get('/api/upload/my-uploads');
-      setUploads(response.data);
+      const response = await axios.get(`${config.API_BASE_URL}/api/upload/my-uploads`, {
+        withCredentials: true
+      });
+      setUploads(response.data || []);
     } catch (error) {
       console.error('Error fetching uploads:', error);
+      toast.error('Failed to fetch uploads');
     }
   };
 
@@ -53,7 +56,7 @@ const InstituteDashboard = () => {
       const response = await axios.get(`${config.API_BASE_URL}/api/admin/requests`, {
         withCredentials: true
       });
-      setExamRequests(response.data || []); // Ensure it's always an array
+      setExamRequests(response.data || []);
       setError(null);
     } catch (error) {
       console.error('Error fetching requests:', error);
@@ -99,46 +102,17 @@ const InstituteDashboard = () => {
     setError(null);
     setSuccess(null);
 
-    try {
-      // First validate the JSON content
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          const jsonContent = JSON.parse(e.target.result);
-          validateJsonContent(jsonContent);
-
-          const formData = new FormData();
-          formData.append('file', file);
-          formData.append('examName', examName);
-          formData.append('description', description);
-
-          await uploadFile(formData);
-
-          setSuccess('Questions uploaded successfully!');
-          fetchUploads();
-          resetForm(); // Reset form after successful upload
-          
-        } catch (error) {
-          setError(error.message);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      reader.onerror = () => {
-        setError('Error reading file');
-        setLoading(false);
-      };
-
-      reader.readAsText(file);
-
-    } catch (error) {
-      setError(error.response?.data?.message || 'Failed to upload file');
+    if (!file || !examName.trim()) {
+      setError('Please select a file and enter exam name');
       setLoading(false);
+      return;
     }
-  };
 
-  const uploadFile = async (formData) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('examName', examName);
+    formData.append('description', description);
+
     try {
       const response = await axios.post(
         `${config.API_BASE_URL}/api/upload`,
@@ -150,16 +124,34 @@ const InstituteDashboard = () => {
           }
         }
       );
-      // ... handle response
+
+      if (response.data) {
+        setSuccess('File uploaded successfully!');
+        fetchUploads();
+        // Reset form
+        setFile(null);
+        setExamName('');
+        setDescription('');
+        // Reset file input
+        const fileInput = document.querySelector('input[type="file"]');
+        if (fileInput) {
+          fileInput.value = '';
+        }
+      }
     } catch (error) {
-      // ... handle error
+      console.error('Upload error:', error);
+      setError(error.response?.data?.message || 'Failed to upload file');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleViewResults = async (examId) => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/exams/results/${examId}`);
+      const response = await axios.get(`${config.API_BASE_URL}/api/exams/results/${examId}`, {
+        withCredentials: true
+      });
       setExamResults(response.data);
       setSelectedExam(uploads.find(u => u._id === examId));
       setShowResultsModal(true);
@@ -174,11 +166,15 @@ const InstituteDashboard = () => {
   const handleReleaseResults = async (examId) => {
     try {
       setLoading(true);
-      await axios.post(`/api/exams/release/${examId}`);
+      await axios.post(`${config.API_BASE_URL}/api/exams/release/${examId}`, {}, {
+        withCredentials: true
+      });
       setSuccess('Results released successfully');
       await fetchUploads();
       if (selectedExam?._id === examId) {
-        const response = await axios.get(`/api/exams/results/${examId}`);
+        const response = await axios.get(`${config.API_BASE_URL}/api/exams/results/${examId}`, {
+          withCredentials: true
+        });
         setExamResults(response.data);
       }
     } catch (error) {
