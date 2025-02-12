@@ -30,36 +30,27 @@ const AdminDashboard = () => {
   const [register, { isLoading }] = useRegisterMutation();
 
   useEffect(() => {
-    Promise.all([fetchRequests(), fetchStats()])
-      .finally(() => setLoading(false));
+    const fetchRequests = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(`${config.API_BASE_URL}/api/admin/requests`, {
+          withCredentials: true
+        });
+        
+        if (response.data) {
+          setRequests(response.data.requests);
+          setStats(response.data.stats);
+        }
+      } catch (error) {
+        console.error('Error fetching requests:', error);
+        setError('Failed to fetch requests');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRequests();
   }, []);
-
-  const fetchRequests = async () => {
-    try {
-      const response = await axios.get(
-        `${config.API_BASE_URL}/api/admin/requests`,
-        { withCredentials: true }
-      );
-      setRequests(response.data);
-      setError(null);
-    } catch (error) {
-      console.error('Error fetching requests:', error);
-      setError('Failed to fetch requests');
-      setRequests([]);
-    }
-  };
-
-  const fetchStats = async () => {
-    try {
-      const response = await axios.get('/api/admin/dashboard');
-      setStats(response.data);
-      setError(null);
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-      setError('Failed to fetch statistics');
-      setStats(null);
-    }
-  };
 
   const submitHandler = async (e) => {
     e.preventDefault();
@@ -95,51 +86,29 @@ const AdminDashboard = () => {
     setProcessingType('reject');
   };
 
-  const handleStatusUpdate = async () => {
-    if (!selectedRequest) return;
-
-    setActionLoading(true);
-    const status = processingType === 'approve' ? 'approved' : 'rejected';
-    setProcessingStatus('Initiating process...');
-
+  const handleStatusUpdate = async (id, status, feedback = '') => {
     try {
-      if (processingType === 'approve') {
-        setProcessingStatus('Encrypting and uploading to IPFS...');
-      } else {
-        setProcessingStatus('Processing rejection...');
+      setLoading(true);
+      const response = await axios.put(
+        `${config.API_BASE_URL}/api/admin/requests/${id}`,
+        { status, feedback },
+        { withCredentials: true }
+      );
+
+      if (response.data) {
+        // Refresh the requests list
+        const updatedResponse = await axios.get(`${config.API_BASE_URL}/api/admin/requests`, {
+          withCredentials: true
+        });
+        setRequests(updatedResponse.data.requests);
+        setStats(updatedResponse.data.stats);
+        setSuccess(`Request ${status} successfully`);
       }
-      
-      const response = await axios.put(`/api/admin/requests/${selectedRequest._id}`, {
-        status,
-        adminComment
-      });
-
-      setProcessingStatus('Finalizing...');
-      
-      // Update the local state
-      setRequests(requests.map(req => 
-        req._id === selectedRequest._id 
-          ? { ...req, status: response.data.status }
-          : req
-      ));
-
-      // Refresh stats
-      await fetchStats();
-      
-      setShowModal(false);
-      setSelectedRequest(null);
-      setAdminComment('');
-      setError(null);
-      setProcessingType(null);
-
-      toast.success(`Request ${status} successfully`);
-
     } catch (error) {
       console.error('Error updating status:', error);
-      setError(`Failed to ${status} request: ${error.response?.data?.message || error.message}`);
+      setError('Failed to update request status');
     } finally {
-      setActionLoading(false);
-      setProcessingStatus('');
+      setLoading(false);
     }
   };
 
@@ -413,7 +382,7 @@ const AdminDashboard = () => {
                   Cancel
                 </button>
                 <button
-                  onClick={handleStatusUpdate}
+                  onClick={() => handleStatusUpdate(selectedRequest._id, processingType === 'approve' ? 'approved' : 'rejected', adminComment)}
                   disabled={actionLoading}
                   className={`px-4 py-2 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 ${
                     processingType === 'approve'
