@@ -132,7 +132,7 @@ const StudentDashboard = () => {
       setError(null);
 
       if (!ipfsHash) {
-        setError('Please enter the IPFS hash');
+        setError('Please enter the IPFS hash provided by your institute');
         return;
       }
 
@@ -156,7 +156,10 @@ const StudentDashboard = () => {
       }
     } catch (error) {
       console.error('Start exam error:', error);
-      setError(error.response?.data?.message || 'Failed to start exam');
+      setError(
+        error.response?.data?.message || 
+        'Failed to start exam. Please verify your IPFS hash with your institute.'
+      );
     } finally {
       setLoading(false);
     }
