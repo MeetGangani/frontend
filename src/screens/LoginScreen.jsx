@@ -41,13 +41,10 @@ const LoginScreen = () => {
   };
 
   const handleGoogleSignIn = () => {
-    const authUrl = `${config.API_BASE_URL}/api/users/auth/google`;
-    // Ensure HTTPS in production
-    if (process.env.NODE_ENV === 'production' && !authUrl.startsWith('https')) {
-      window.location.href = authUrl.replace('http', 'https');
-    } else {
-      window.location.href = authUrl;
-    }
+    const authUrl = process.env.NODE_ENV === 'production'
+      ? 'https://backdeploy-9bze.onrender.com/api/users/auth/google'
+      : 'http://localhost:5000/api/users/auth/google';
+    window.location.href = authUrl;
   };
 
   return (
