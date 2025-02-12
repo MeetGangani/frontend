@@ -48,42 +48,74 @@ const InstituteDashboard = () => {
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
-    if (selectedFile && selectedFile.type === 'application/json') {
-      setFile(selectedFile);
-      setError(null);
-    } else {
-      setFile(null);
-      setError('Please select a valid JSON file');
-      // Reset the file input
-      e.target.value = '';
+    const maxSize = 1024 * 1024; // 1MB limit
+
+    if (selectedFile) {
+      if (selectedFile.size > maxSize) {
+        setFile(null);
+        setError('File size too large. Maximum size is 1MB');
+        e.target.value = '';
+        return;
+      }
+
+      if (selectedFile.type === 'application/json') {
+        setFile(selectedFile);
+        setError(null);
+      } else {
+        setFile(null);
+        setError('Please select a valid JSON file');
+        e.target.value = '';
+      }
     }
   };
 
   const validateJsonContent = (content) => {
-    if (!content.questions || !Array.isArray(content.questions)) {
-      throw new Error('Invalid JSON format: missing questions array');
-    }
-
-    if (content.questions.length === 0) {
-      throw new Error('Questions array cannot be empty');
-    }
-
-    content.questions.forEach((q, index) => {
-      if (!q.question || typeof q.question !== 'string') {
-        throw new Error(`Question ${index + 1} is missing question text or invalid format`);
+    try {
+      if (!content || typeof content !== 'object') {
+        throw new Error('Invalid JSON format: must be an object');
       }
-      if (!Array.isArray(q.options) || q.options.length !== 4) {
-        throw new Error(`Question ${index + 1} must have exactly 4 options`);
+
+      if (!content.questions || !Array.isArray(content.questions)) {
+        throw new Error('Invalid JSON format: missing questions array');
       }
-      q.options.forEach((option, optIndex) => {
-        if (!option || typeof option !== 'string') {
-          throw new Error(`Question ${index + 1}, Option ${optIndex + 1} is missing or invalid`);
+
+      if (content.questions.length === 0) {
+        throw new Error('Questions array cannot be empty');
+      }
+
+      if (content.questions.length > 100) { // Add reasonable limit
+        throw new Error('Too many questions. Maximum allowed is 100');
+      }
+
+      content.questions.forEach((q, index) => {
+        // Check question
+        if (!q.question || typeof q.question !== 'string' || q.question.trim().length === 0) {
+          throw new Error(`Question ${index + 1} is missing or empty`);
+        }
+
+        // Check options
+        if (!Array.isArray(q.options)) {
+          throw new Error(`Question ${index + 1} options must be an array`);
+        }
+
+        if (q.options.length !== 4) {
+          throw new Error(`Question ${index + 1} must have exactly 4 options`);
+        }
+
+        q.options.forEach((option, optIndex) => {
+          if (!option || typeof option !== 'string' || option.trim().length === 0) {
+            throw new Error(`Question ${index + 1}, Option ${optIndex + 1} is empty or invalid`);
+          }
+        });
+
+        // Check correctAnswer
+        if (!Number.isInteger(q.correctAnswer) || q.correctAnswer < 1 || q.correctAnswer > 4) {
+          throw new Error(`Question ${index + 1} has invalid correct answer index (must be 1-4)`);
         }
       });
-      if (typeof q.correctAnswer !== 'number' || q.correctAnswer < 1 || q.correctAnswer > 4) {
-        throw new Error(`Question ${index + 1} has invalid correct answer index (must be 1-4)`);
-      }
-    });
+    } catch (error) {
+      throw new Error(`Validation Error: ${error.message}`);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -105,11 +137,18 @@ const InstituteDashboard = () => {
           const jsonContent = JSON.parse(e.target.result);
           validateJsonContent(jsonContent);
 
-          // Send the original file instead of creating a new blob
+          // Create form data with the JSON content
           const formData = new FormData();
-          formData.append('file', file);  // Use the original file
+          // Convert JSON content to string and create a new file
+          const jsonString = JSON.stringify(jsonContent);
+          const jsonFile = new File([jsonString], 'exam.json', {
+            type: 'application/json',
+          });
+          
+          formData.append('file', jsonFile);
           formData.append('examName', examName);
           formData.append('description', description);
+          formData.append('questions', jsonString); // Send questions separately
           formData.append('totalQuestions', jsonContent.questions.length);
 
           try {
@@ -118,6 +157,11 @@ const InstituteDashboard = () => {
               headers: {
                 'Content-Type': 'multipart/form-data',
               },
+              // Add timeout and better error handling
+              timeout: 10000,
+              validateStatus: function (status) {
+                return status >= 200 && status < 500; // Don't reject if status is less than 500
+              }
             });
 
             if (response.data) {
@@ -126,8 +170,12 @@ const InstituteDashboard = () => {
               resetForm();
             }
           } catch (uploadError) {
-            console.error('Upload error details:', uploadError.response?.data);
-            setError(uploadError.response?.data?.message || 'Error uploading file');
+            console.error('Upload error details:', {
+              message: uploadError.message,
+              response: uploadError.response?.data,
+              status: uploadError.response?.status
+            });
+            setError(uploadError.response?.data?.message || 'Error uploading file. Please try again.');
           }
         } catch (parseError) {
           console.error('JSON parse error:', parseError);
