@@ -64,15 +64,24 @@ const InstituteDashboard = () => {
       throw new Error('Invalid JSON format: missing questions array');
     }
 
+    if (content.questions.length === 0) {
+      throw new Error('Questions array cannot be empty');
+    }
+
     content.questions.forEach((q, index) => {
-      if (!q.question) {
-        throw new Error(`Question ${index + 1} is missing question text`);
+      if (!q.question || typeof q.question !== 'string') {
+        throw new Error(`Question ${index + 1} is missing question text or invalid format`);
       }
       if (!Array.isArray(q.options) || q.options.length !== 4) {
         throw new Error(`Question ${index + 1} must have exactly 4 options`);
       }
+      q.options.forEach((option, optIndex) => {
+        if (!option || typeof option !== 'string') {
+          throw new Error(`Question ${index + 1}, Option ${optIndex + 1} is missing or invalid`);
+        }
+      });
       if (typeof q.correctAnswer !== 'number' || q.correctAnswer < 0 || q.correctAnswer > 3) {
-        throw new Error(`Question ${index + 1} has invalid correct answer index`);
+        throw new Error(`Question ${index + 1} has invalid correct answer index (must be 0-3)`);
       }
     });
   };
@@ -91,24 +100,31 @@ const InstituteDashboard = () => {
           const jsonContent = JSON.parse(e.target.result);
           validateJsonContent(jsonContent);
 
+          // Create a new Blob from the JSON content
+          const jsonBlob = new Blob([JSON.stringify(jsonContent)], {
+            type: 'application/json'
+          });
+
           const formData = new FormData();
-          formData.append('file', file);
+          formData.append('file', jsonBlob, 'exam.json'); // Give the file a name
           formData.append('examName', examName);
           formData.append('description', description);
 
-          await axios.post(`${config.API_BASE_URL}/api/upload`, formData, {
+          const response = await axios.post(`${config.API_BASE_URL}/api/upload`, formData, {
             withCredentials: true,
             headers: {
               'Content-Type': 'multipart/form-data',
             },
           });
 
-          setSuccess('Questions uploaded successfully!');
-          fetchUploads();
-          resetForm(); // Reset form after successful upload
-          
+          if (response.data) {
+            setSuccess('Questions uploaded successfully!');
+            fetchUploads();
+            resetForm();
+          }
         } catch (error) {
-          setError(error.message);
+          console.error('Upload error:', error);
+          setError(error.response?.data?.message || error.message || 'Failed to upload file');
         } finally {
           setLoading(false);
         }
@@ -122,6 +138,7 @@ const InstituteDashboard = () => {
       reader.readAsText(file);
 
     } catch (error) {
+      console.error('Submit error:', error);
       setError(error.response?.data?.message || 'Failed to upload file');
       setLoading(false);
     }
