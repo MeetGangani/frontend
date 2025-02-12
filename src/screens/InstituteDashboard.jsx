@@ -44,10 +44,9 @@ const InstituteDashboard = () => {
       const response = await axios.get(`${config.API_BASE_URL}/api/upload/my-uploads`, {
         withCredentials: true
       });
-      setUploads(response.data || []);
+      setUploads(response.data);
     } catch (error) {
       console.error('Error fetching uploads:', error);
-      toast.error('Failed to fetch uploads');
     }
   };
 
@@ -102,46 +101,46 @@ const InstituteDashboard = () => {
     setError(null);
     setSuccess(null);
 
-    if (!file || !examName.trim()) {
-      setError('Please select a file and enter exam name');
-      setLoading(false);
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('examName', examName);
-    formData.append('description', description);
-
     try {
-      const response = await axios.post(
-        `${config.API_BASE_URL}/api/upload`,
-        formData,
-        {
-          withCredentials: true,
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        }
-      );
+      // First validate the JSON content
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const jsonContent = JSON.parse(e.target.result);
+          validateJsonContent(jsonContent);
 
-      if (response.data) {
-        setSuccess('File uploaded successfully!');
-        fetchUploads();
-        // Reset form
-        setFile(null);
-        setExamName('');
-        setDescription('');
-        // Reset file input
-        const fileInput = document.querySelector('input[type="file"]');
-        if (fileInput) {
-          fileInput.value = '';
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('examName', examName);
+          formData.append('description', description);
+
+          await axios.post(`${config.API_BASE_URL}/api/upload`, formData, {
+            withCredentials: true,
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
+
+          setSuccess('Questions uploaded successfully!');
+          fetchUploads();
+          resetForm(); // Reset form after successful upload
+          
+        } catch (error) {
+          setError(error.message);
+        } finally {
+          setLoading(false);
         }
-      }
+      };
+
+      reader.onerror = () => {
+        setError('Error reading file');
+        setLoading(false);
+      };
+
+      reader.readAsText(file);
+
     } catch (error) {
-      console.error('Upload error:', error);
       setError(error.response?.data?.message || 'Failed to upload file');
-    } finally {
       setLoading(false);
     }
   };
