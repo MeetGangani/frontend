@@ -16,7 +16,6 @@ const StudentDashboard = () => {
   const [examSubmitting, setExamSubmitting] = useState(false);
   const [ipfsHash, setIpfsHash] = useState('');
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [encryptionKey, setEncryptionKey] = useState('');
 
   useEffect(() => {
     fetchExams();
@@ -131,25 +130,37 @@ const StudentDashboard = () => {
     </div>
   );
 
-  const handleStartExam = async () => {
+  const startExam = async (e) => {
+    e.preventDefault();
+    if (!ipfsHash.trim()) {
+      setError('Please enter an IPFS hash');
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
-
-      const response = await axios.post(
-        `${config.API_BASE_URL}/api/exams/start`,
-        {
-          ipfsHash: ipfsHash.trim(),
-          encryptionKey: encryptionKey.trim()
-        },
-        { withCredentials: true }
+      
+      const response = await axios.post(`${config.API_BASE_URL}/api/exams/start`, 
+        { ipfsHash: ipfsHash.trim() },
+        { 
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
       );
 
-      if (response.data) {
-        // Store exam data and navigate to exam page
-        setExamData(response.data);
-        navigate('/exam');
+      if (!response.data || !response.data.questions) {
+        throw new Error('Invalid exam data received');
       }
+
+      setCurrentExam(response.data);
+      setTimeLeft(response.data.timeLimit * 60); // Convert minutes to seconds
+      setAnswers({});
+      setActiveTab('exam');
+      setIpfsHash(''); // Clear the input
+
     } catch (error) {
       console.error('Start exam error:', error);
       setError(error.response?.data?.message || 'Failed to start exam');
