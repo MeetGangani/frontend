@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { toast } from 'react-toastify';
 import { useTheme } from '../context/ThemeContext';
 import { motion } from 'framer-motion';
 import config from '../config/config.js';
@@ -10,16 +11,19 @@ const InstituteDashboard = () => {
   const [examName, setExamName] = useState('');
   const [description, setDescription] = useState('');
   const [uploads, setUploads] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [showResultsModal, setShowResultsModal] = useState(false);
   const [selectedExam, setSelectedExam] = useState(null);
   const [examResults, setExamResults] = useState([]);
   const [activeTab, setActiveTab] = useState('upload');
+  const [uploading, setUploading] = useState(false);
+  const [examRequests, setExamRequests] = useState([]);
 
   useEffect(() => {
     fetchUploads();
+    fetchExamRequests();
   }, []);
 
   const resetForm = () => {
@@ -44,16 +48,30 @@ const InstituteDashboard = () => {
     }
   };
 
+  const fetchExamRequests = async () => {
+    try {
+      const response = await axios.get(`${config.API_BASE_URL}/api/admin/requests`, {
+        withCredentials: true
+      });
+      setExamRequests(response.data || []); // Ensure it's always an array
+      setError(null);
+    } catch (error) {
+      console.error('Error fetching requests:', error);
+      setError('Failed to fetch exam requests');
+      setExamRequests([]); // Set empty array on error
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
-    if (selectedFile && selectedFile.type === 'application/json') {
+    if (selectedFile) {
+      if (selectedFile.size > 10 * 1024 * 1024) { // 10MB limit
+        toast.error('File size should be less than 10MB');
+        return;
+      }
       setFile(selectedFile);
-      setError(null);
-    } else {
-      setFile(null);
-      setError('Please select a valid JSON file');
-      // Reset the file input
-      e.target.value = '';
     }
   };
 
@@ -171,6 +189,49 @@ const InstituteDashboard = () => {
     }
   };
 
+  const handleUpload = async (e) => {
+    e.preventDefault();
+    if (!file) {
+      toast.error('Please select a file');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    setUploading(true);
+    try {
+      const response = await axios.post(
+        `${config.API_BASE_URL}/api/upload`,
+        formData,
+        {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      if (response.data) {
+        toast.success('File uploaded successfully');
+        setFile(null);
+        // Reset file input
+        e.target.reset();
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error(error.response?.data?.message || 'Error uploading file');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-violet-500"></div>
+    </div>;
+  }
+
   return (
     <div className={`min-h-screen ${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -205,110 +266,33 @@ const InstituteDashboard = () => {
             <h2 className={`text-2xl font-bold mb-6 ${
               isDarkMode ? 'text-white' : 'text-gray-900'
             }`}>
-              Upload Exam Questions
+              Upload Exam Paper
             </h2>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleUpload} className="space-y-4">
               <div>
-                <label className={`block text-sm font-medium mb-1 ${
-                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                }`}>
-                  Exam Name
-                </label>
-                <input
-                  type="text"
-                  value={examName}
-                  onChange={(e) => setExamName(e.target.value)}
-                  placeholder="Enter exam name"
-                  required
-                  className={`w-full px-4 py-3 rounded-lg ${
-                    isDarkMode 
-                      ? 'bg-[#0A0F1C] border-gray-700 text-white placeholder-gray-500' 
-                      : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400'
-                  } border focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
-                />
-              </div>
-
-              <div>
-                <label className={`block text-sm font-medium mb-1 ${
-                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                }`}>
-                  Description
-                </label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Enter exam description"
-                  required
-                  rows={4}
-                  className={`w-full px-4 py-3 rounded-lg ${
-                    isDarkMode 
-                      ? 'bg-[#0A0F1C] border-gray-700 text-white placeholder-gray-500' 
-                      : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400'
-                  } border focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
-                />
-              </div>
-
-              <div>
-                <label className={`block text-sm font-medium mb-1 ${
-                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                }`}>
-                  Upload JSON File
-                </label>
                 <input
                   type="file"
                   onChange={handleFileChange}
-                  accept="application/json"
-                  required
-                  className={`w-full px-4 py-3 rounded-lg ${
+                  className={`w-full p-2 border rounded ${
                     isDarkMode 
-                      ? 'bg-[#0A0F1C] border-gray-700 text-white' 
-                      : 'bg-gray-50 border-gray-200 text-gray-900'
-                  } border focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
+                      ? 'bg-gray-700 border-gray-600' 
+                      : 'bg-gray-50 border-gray-300'
+                  }`}
+                  accept=".pdf,.doc,.docx"
+                  disabled={uploading}
                 />
-                <p className={`mt-2 text-sm ${
-                  isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                }`}>
-                  Upload a JSON file containing exam questions. Each question must have 4 options 
-                  and one correct answer (numbered 1-4).
-                </p>
               </div>
-
-              {error && (
-                <div className={`p-4 rounded-lg ${
-                  isDarkMode 
-                    ? 'bg-red-900/20 border-red-800 text-red-300' 
-                    : 'bg-red-50 border-red-200 text-red-700'
-                } border`}>
-                  {error}
-                </div>
-              )}
-              
-              {success && (
-                <div className={`p-4 rounded-lg ${
-                  isDarkMode 
-                    ? 'bg-green-900/20 border-green-800 text-green-300' 
-                    : 'bg-green-50 border-green-200 text-green-700'
-                } border`}>
-                  {success}
-                </div>
-              )}
-
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+              <button
                 type="submit"
-                disabled={loading || !file || !examName || !description}
-                className="w-full px-4 py-3 text-white bg-gradient-to-r from-violet-600 to-indigo-600 rounded-lg hover:from-violet-500 hover:to-indigo-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-150"
+                disabled={!file || uploading}
+                className={`px-4 py-2 rounded font-medium ${
+                  uploading || !file
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-violet-600 hover:bg-violet-700'
+                } text-white transition-colors duration-200`}
               >
-                {loading ? (
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
-                    Uploading...
-                  </div>
-                ) : (
-                  'Upload Questions'
-                )}
-              </motion.button>
+                {uploading ? 'Uploading...' : 'Upload'}
+              </button>
             </form>
           </motion.div>
         )}
