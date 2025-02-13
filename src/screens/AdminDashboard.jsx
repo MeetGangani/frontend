@@ -33,26 +33,38 @@ const AdminDashboard = () => {
 
   const [register, { isLoading }] = useRegisterMutation();
 
+  // Add backend URL
+  const BACKEND_URL = 'https://backdeploy-9bze.onrender.com';
+
   const fetchData = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      // Fetch requests
-      const requestsResponse = await axios.get('/api/admin/requests', {
-        withCredentials: true
+      // Update API endpoints to include BACKEND_URL
+      const requestsResponse = await axios.get(`${BACKEND_URL}/api/admin/requests`, {
+        withCredentials: true,
+        headers: {
+          'Accept': 'application/json'
+        }
       });
-      console.log('Fetched requests:', requestsResponse.data); // Debug log
+      
+      console.log('Raw response:', requestsResponse); // Debug log
+      console.log('Fetched requests:', requestsResponse.data);
       setRequests(Array.isArray(requestsResponse.data) ? requestsResponse.data : []);
 
-      // Fetch stats
-      const statsResponse = await axios.get('/api/admin/dashboard', {
-        withCredentials: true
+      // Fetch stats with updated URL
+      const statsResponse = await axios.get(`${BACKEND_URL}/api/admin/dashboard`, {
+        withCredentials: true,
+        headers: {
+          'Accept': 'application/json'
+        }
       });
+      console.log('Stats response:', statsResponse.data);
       setStats(statsResponse.data);
     } catch (error) {
       console.error('Error fetching data:', error);
-      setError('Failed to fetch data');
+      setError(error.response?.data?.message || 'Failed to fetch data');
       setRequests([]);
     } finally {
       setLoading(false);
@@ -83,18 +95,34 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleApprove = (request) => {
-    setSelectedRequest(request);
-    setAdminComment('Approved by admin');
-    setShowModal(true);
-    setProcessingType('approve');
+  const handleApprove = async (requestId) => {
+    try {
+      await axios.put(`${BACKEND_URL}/api/admin/requests/${requestId}`, {
+        status: 'approved'
+      }, {
+        withCredentials: true
+      });
+      toast.success('Request approved successfully');
+      fetchData(); // Refresh the data
+    } catch (error) {
+      console.error('Approval error:', error);
+      toast.error(error.response?.data?.message || 'Failed to approve request');
+    }
   };
 
-  const handleReject = (request) => {
-    setSelectedRequest(request);
-    setAdminComment('');
-    setShowModal(true);
-    setProcessingType('reject');
+  const handleReject = async (requestId) => {
+    try {
+      await axios.put(`${BACKEND_URL}/api/admin/requests/${requestId}`, {
+        status: 'rejected'
+      }, {
+        withCredentials: true
+      });
+      toast.success('Request rejected successfully');
+      fetchData(); // Refresh the data
+    } catch (error) {
+      console.error('Rejection error:', error);
+      toast.error(error.response?.data?.message || 'Failed to reject request');
+    }
   };
 
   const handleStatusUpdate = async () => {
