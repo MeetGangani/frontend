@@ -39,7 +39,7 @@ const AdminDashboard = () => {
       
       // Fetch requests
       const requestsResponse = await axios.get('/api/admin/requests');
-      setRequests(requestsResponse.data);
+      setRequests(Array.isArray(requestsResponse.data) ? requestsResponse.data : []);
 
       // Fetch stats
       const statsResponse = await axios.get('/api/admin/dashboard');
@@ -50,6 +50,7 @@ const AdminDashboard = () => {
       console.error('Error fetching data:', error);
       setError('Failed to fetch data');
       toast.error('Failed to fetch data');
+      setRequests([]);
     } finally {
       setLoading(false);
     }
