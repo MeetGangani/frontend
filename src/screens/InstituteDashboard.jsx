@@ -3,197 +3,86 @@ import axios from 'axios';
 import { useTheme } from '../context/ThemeContext';
 import { motion } from 'framer-motion';
 import config from '../config/config.js';
+import { toast } from 'react-toastify';
 
 const InstituteDashboard = () => {
   const { isDarkMode } = useTheme();
   const [file, setFile] = useState(null);
   const [examName, setExamName] = useState('');
   const [description, setDescription] = useState('');
-  const [uploads, setUploads] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
+  const [timeLimit, setTimeLimit] = useState(60);
+  const [uploading, setUploading] = useState(false);
+  const [myUploads, setMyUploads] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showResultsModal, setShowResultsModal] = useState(false);
   const [selectedExam, setSelectedExam] = useState(null);
   const [examResults, setExamResults] = useState([]);
   const [activeTab, setActiveTab] = useState('upload');
 
   useEffect(() => {
-    fetchUploads();
+    fetchMyUploads();
   }, []);
 
-  const resetForm = () => {
-    setFile(null);
-    setExamName('');
-    setDescription('');
-    setError(null);
-    setSuccess(null);
-    // Reset the file input by clearing its value
-    const fileInput = document.querySelector('input[type="file"]');
-    if (fileInput) {
-      fileInput.value = '';
-    }
-  };
-
-  const fetchUploads = async () => {
+  const fetchMyUploads = async () => {
     try {
-      const response = await axios.get(`${config.API_BASE_URL}/api/upload/my-uploads`, {
-        withCredentials: true
-      });
-      setUploads(response.data);
+      const { data } = await axios.get('/api/upload/my-uploads');
+      setMyUploads(data);
+      setLoading(false);
     } catch (error) {
-      console.error('Error fetching uploads:', error);
+      toast.error(error.response?.data?.message || 'Failed to fetch uploads');
+      setLoading(false);
     }
   };
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
-    const maxSize = 1024 * 1024; // 1MB limit
-
-    if (selectedFile) {
-      if (selectedFile.size > maxSize) {
-        setFile(null);
-        setError('File size too large. Maximum size is 1MB');
-        e.target.value = '';
-        return;
-      }
-
-      if (selectedFile.type === 'application/json') {
-        setFile(selectedFile);
-        setError(null);
-      } else {
-        setFile(null);
-        setError('Please select a valid JSON file');
-        e.target.value = '';
-      }
-    }
-  };
-
-  const validateJsonContent = (content) => {
-    try {
-      if (!content || typeof content !== 'object') {
-        throw new Error('Invalid JSON format: must be an object');
-      }
-
-      if (!content.questions || !Array.isArray(content.questions)) {
-        throw new Error('Invalid JSON format: missing questions array');
-      }
-
-      if (content.questions.length === 0) {
-        throw new Error('Questions array cannot be empty');
-      }
-
-      if (content.questions.length > 100) { // Add reasonable limit
-        throw new Error('Too many questions. Maximum allowed is 100');
-      }
-
-      content.questions.forEach((q, index) => {
-        // Check question
-        if (!q.question || typeof q.question !== 'string' || q.question.trim().length === 0) {
-          throw new Error(`Question ${index + 1} is missing or empty`);
-        }
-
-        // Check options
-        if (!Array.isArray(q.options)) {
-          throw new Error(`Question ${index + 1} options must be an array`);
-        }
-
-        if (q.options.length !== 4) {
-          throw new Error(`Question ${index + 1} must have exactly 4 options`);
-        }
-
-        q.options.forEach((option, optIndex) => {
-          if (!option || typeof option !== 'string' || option.trim().length === 0) {
-            throw new Error(`Question ${index + 1}, Option ${optIndex + 1} is empty or invalid`);
-          }
-        });
-
-        // Check correctAnswer
-        if (!Number.isInteger(q.correctAnswer) || q.correctAnswer < 1 || q.correctAnswer > 4) {
-          throw new Error(`Question ${index + 1} has invalid correct answer index (must be 1-4)`);
-        }
-      });
-    } catch (error) {
-      throw new Error(`Validation Error: ${error.message}`);
+    if (selectedFile && selectedFile.type === 'application/json') {
+      setFile(selectedFile);
+    } else {
+      toast.error('Please upload a JSON file');
+      e.target.value = null;
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
-
-    if (!file || !examName.trim() || !description.trim()) {
-      setError('Please fill all fields');
-      setLoading(false);
+    if (!file || !examName || !description) {
+      toast.error('Please fill all required fields');
       return;
     }
 
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('examName', examName);
+    formData.append('description', description);
+    formData.append('timeLimit', timeLimit);
+
+    setUploading(true);
     try {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          const jsonContent = JSON.parse(e.target.result);
-          validateJsonContent(jsonContent);
-
-          // Create form data with the JSON content
-          const formData = new FormData();
-          // Convert JSON content to string and create a new file
-          const jsonString = JSON.stringify(jsonContent);
-          const jsonFile = new File([jsonString], 'exam.json', {
-            type: 'application/json',
-          });
-          
-          formData.append('file', jsonFile);
-          formData.append('examName', examName);
-          formData.append('description', description);
-          formData.append('questions', jsonString); // Send questions separately
-          formData.append('totalQuestions', jsonContent.questions.length);
-
-          try {
-            const response = await axios.post(`${config.API_BASE_URL}/api/upload`, formData, {
-              withCredentials: true,
-              headers: {
-                'Content-Type': 'multipart/form-data',
-              },
-              // Add timeout and better error handling
-              timeout: 10000,
-              validateStatus: function (status) {
-                return status >= 200 && status < 500; // Don't reject if status is less than 500
-              }
-            });
-
-            if (response.data) {
-              setSuccess('Questions uploaded successfully!');
-              fetchUploads();
-              resetForm();
-            }
-          } catch (uploadError) {
-            console.error('Upload error details:', {
-              message: uploadError.message,
-              response: uploadError.response?.data,
-              status: uploadError.response?.status
-            });
-            setError(uploadError.response?.data?.message || 'Error uploading file. Please try again.');
-          }
-        } catch (parseError) {
-          console.error('JSON parse error:', parseError);
-          setError('Invalid JSON format: ' + parseError.message);
+      const { data } = await axios.post('/api/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
         }
-        setLoading(false);
-      };
+      });
 
-      reader.onerror = () => {
-        setError('Error reading file');
-        setLoading(false);
-      };
-
-      reader.readAsText(file);
+      toast.success('Exam uploaded successfully');
+      setFile(null);
+      setExamName('');
+      setDescription('');
+      setTimeLimit(60);
+      fetchMyUploads(); // Refresh the list
     } catch (error) {
-      console.error('Submit error:', error);
-      setError(error.message || 'Failed to process file');
-      setLoading(false);
+      toast.error(error.response?.data?.message || 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'approved': return 'text-green-600';
+      case 'rejected': return 'text-red-600';
+      default: return 'text-yellow-600';
     }
   };
 
@@ -204,11 +93,11 @@ const InstituteDashboard = () => {
         withCredentials: true
       });
       setExamResults(response.data);
-      setSelectedExam(uploads.find(u => u._id === examId));
+      setSelectedExam(myUploads.find(u => u._id === examId));
       setShowResultsModal(true);
     } catch (error) {
       console.error('Error fetching results:', error);
-      setError('Failed to fetch exam results');
+      toast.error('Failed to fetch exam results');
     } finally {
       setLoading(false);
     }
@@ -220,8 +109,8 @@ const InstituteDashboard = () => {
       await axios.post(`${config.API_BASE_URL}/api/exams/release/${examId}`, {}, {
         withCredentials: true
       });
-      setSuccess('Results released successfully');
-      await fetchUploads();
+      toast.success('Results released successfully');
+      await fetchMyUploads();
       if (selectedExam?._id === examId) {
         const response = await axios.get(`${config.API_BASE_URL}/api/exams/results/${examId}`, {
           withCredentials: true
@@ -230,7 +119,7 @@ const InstituteDashboard = () => {
       }
     } catch (error) {
       console.error('Error releasing results:', error);
-      setError('Failed to release results: ' + (error.response?.data?.message || error.message));
+      toast.error('Failed to release results: ' + (error.response?.data?.message || error.message));
     } finally {
       setLoading(false);
     }
@@ -317,6 +206,26 @@ const InstituteDashboard = () => {
                 <label className={`block text-sm font-medium mb-1 ${
                   isDarkMode ? 'text-gray-300' : 'text-gray-700'
                 }`}>
+                  Time Limit (minutes)
+                </label>
+                <input
+                  type="number"
+                  value={timeLimit}
+                  onChange={(e) => setTimeLimit(e.target.value)}
+                  className={`w-full px-4 py-3 rounded-lg ${
+                    isDarkMode 
+                      ? 'bg-[#0A0F1C] border-gray-700 text-white placeholder-gray-500' 
+                      : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400'
+                  } border focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
+                  min="15"
+                  max="180"
+                />
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-1 ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>
                   Upload JSON File
                 </label>
                 <input
@@ -338,40 +247,20 @@ const InstituteDashboard = () => {
                 </p>
               </div>
 
-              {error && (
-                <div className={`p-4 rounded-lg ${
-                  isDarkMode 
-                    ? 'bg-red-900/20 border-red-800 text-red-300' 
-                    : 'bg-red-50 border-red-200 text-red-700'
-                } border`}>
-                  {error}
-                </div>
-              )}
-              
-              {success && (
-                <div className={`p-4 rounded-lg ${
-                  isDarkMode 
-                    ? 'bg-green-900/20 border-green-800 text-green-300' 
-                    : 'bg-green-50 border-green-200 text-green-700'
-                } border`}>
-                  {success}
-                </div>
-              )}
-
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 type="submit"
-                disabled={loading || !file || !examName || !description}
+                disabled={uploading || !file || !examName || !description}
                 className="w-full px-4 py-3 text-white bg-gradient-to-r from-violet-600 to-indigo-600 rounded-lg hover:from-violet-500 hover:to-indigo-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-150"
               >
-                {loading ? (
+                {uploading ? (
                   <div className="flex items-center justify-center">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
                     Uploading...
                   </div>
                 ) : (
-                  'Upload Questions'
+                  'Upload Exam'
                 )}
               </motion.button>
             </form>
@@ -411,43 +300,43 @@ const InstituteDashboard = () => {
                     ? 'divide-gray-700 bg-[#1a1f2e]' 
                     : 'divide-gray-200 bg-white'
                 }`}>
-                  {uploads.map((upload) => (
-                    <tr key={upload._id}>
+                  {myUploads.map((exam) => (
+                    <tr key={exam._id}>
                       <td className={`px-6 py-4 whitespace-nowrap ${
                         isDarkMode ? 'text-gray-300' : 'text-gray-900'
                       }`}>
-                        {upload.examName}
+                        {exam.examName}
                       </td>
                       <td className={`px-6 py-4 whitespace-nowrap ${
                         isDarkMode ? 'text-gray-300' : 'text-gray-900'
                       }`}>
-                        {upload.description}
+                        {exam.description}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          upload.status === 'approved' 
+                          exam.status === 'approved' 
                             ? isDarkMode ? 'bg-green-900/20 text-green-300' : 'bg-green-100 text-green-800'
-                            : upload.status === 'rejected'
+                            : exam.status === 'rejected'
                             ? isDarkMode ? 'bg-red-900/20 text-red-300' : 'bg-red-100 text-red-800'
                             : isDarkMode ? 'bg-yellow-900/20 text-yellow-300' : 'bg-yellow-100 text-yellow-800'
                         }`}>
-                          {upload.status}
+                          {exam.status}
                         </span>
                       </td>
                       <td className={`px-6 py-4 whitespace-nowrap ${
                         isDarkMode ? 'text-gray-300' : 'text-gray-900'
                       }`}>
-                        {new Date(upload.createdAt).toLocaleDateString()}
+                        {new Date(exam.createdAt).toLocaleDateString()}
                       </td>
                       <td className={`px-6 py-4 whitespace-nowrap ${
                         isDarkMode ? 'text-gray-300' : 'text-gray-900'
                       }`}>
-                        {upload.totalQuestions}
+                        {exam.totalQuestions}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {upload.status === 'approved' && (
+                        {exam.status === 'approved' && (
                           <button
-                            onClick={() => handleViewResults(upload._id)}
+                            onClick={() => handleViewResults(exam._id)}
                             className="px-3 py-1 bg-violet-600 text-white text-sm rounded-lg hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2"
                           >
                             View Results
@@ -455,15 +344,15 @@ const InstituteDashboard = () => {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {upload.status === 'approved' && !upload.resultsReleased && (
+                        {exam.status === 'approved' && !exam.resultsReleased && (
                           <button
-                            onClick={() => handleReleaseResults(upload._id)}
+                            onClick={() => handleReleaseResults(exam._id)}
                             className="px-3 py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
                           >
                             Release Results
                           </button>
                         )}
-                        {upload.resultsReleased && (
+                        {exam.resultsReleased && (
                           <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                             isDarkMode 
                               ? 'bg-green-900/20 text-green-300' 
