@@ -37,12 +37,18 @@ const InstituteDashboard = () => {
 
   const fetchUploads = async () => {
     try {
+      setLoading(true);
       const response = await axiosInstance.get('/api/upload/my-uploads');
-      setUploads(response.data);
+      if (response.data) {
+        setUploads(response.data);
+      }
     } catch (error) {
       console.error('Error fetching uploads:', error);
-      toast.error('Failed to fetch uploads: ' + (error.response?.data?.message || 'Network error'));
+      const errorMessage = error.response?.data?.message || 'Network error';
+      toast.error('Failed to fetch uploads: ' + errorMessage);
       setError('Failed to fetch uploads');
+    } finally {
+      setLoading(false);
     }
   };
 
