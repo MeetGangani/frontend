@@ -150,9 +150,17 @@ const StudentDashboard = () => {
 
       if (response.data) {
         setCurrentExam(response.data);
-        setTimeLeft(response.data.timeLimit * 60);
+        setTimeLeft(response.data.timeLimit * 60); // Convert minutes to seconds
         setAnswers({});
-        navigate('/exam');
+        setCurrentQuestionIndex(0);
+        setActiveTab('exam');
+        
+        // Store exam state in localStorage in case of page refresh
+        localStorage.setItem('currentExam', JSON.stringify({
+          ...response.data,
+          startTime: new Date().toISOString(),
+          timeLeft: response.data.timeLimit * 60
+        }));
       }
     } catch (error) {
       console.error('Start exam error:', error);
