@@ -232,13 +232,22 @@ const StudentDashboard = () => {
     }
   };
 
+  const handleExamCompletion = () => {
+    setCurrentExam(null);
+    setIsExamMode(false);
+    setAnswers({});
+    setTimeLeft(null);
+    setActiveTab('results'); // Automatically switch to results tab
+    fetchResults(); // Refresh results
+  };
+
   const handleSubmitExam = async () => {
     try {
       setExamSubmitting(true);
       setError(null);
 
       const response = await axios.post(
-        `${config.API_BASE_URL}/api/exams/submit`, // Make sure this matches your backend route
+        `${config.API_BASE_URL}/api/exams/submit`,
         {
           examId: currentExam._id,
           answers: answers
@@ -252,8 +261,7 @@ const StudentDashboard = () => {
       );
 
       if (response.data) {
-        setActiveTab('results');
-        await fetchResults(); // Refresh results after submission
+        handleExamCompletion(); // Call the new function after successful submission
       }
     } catch (error) {
       console.error('Submit exam error:', error);
@@ -271,147 +279,131 @@ const StudentDashboard = () => {
   };
 
   const renderExam = () => {
-    if (!currentExam || !currentExam.questions) return null;
-
-    const currentQuestion = currentExam.questions[currentQuestionIndex];
-    const totalQuestions = currentExam.questions.length;
-    const answeredQuestions = Object.keys(answers).length;
+    if (!currentExam) {
+      return (
+        <div className="text-center p-4">
+          <p className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
+            No active exam. Please start an exam first.
+          </p>
+        </div>
+      );
+    }
 
     return (
-      <div>
-        <h2 className={`text-2xl font-bold mb-4 ${
-          isDarkMode ? 'text-white' : 'text-gray-900'
-        }`}>
-          {currentExam.examName}
-        </h2>
-        
-        {/* Timer */}
-        <div className={`p-4 rounded-lg mb-4 ${
-          timeLeft < 300 ? 'bg-yellow-50 text-yellow-700' : 'bg-blue-50 text-blue-700'
-        }`}>
-          Time Left: {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
-        </div>
-        
-        {/* Progress Bar */}
-        <div className="mb-6">
-          <div className="flex justify-between mb-2">
-            <span className={isDarkMode ? 'text-white' : 'text-gray-900'}>
-              Question {currentQuestionIndex + 1} of {totalQuestions}
-            </span>
-            <span className={isDarkMode ? 'text-white' : 'text-gray-900'}>
-              {answeredQuestions} of {totalQuestions} answered
-            </span>
+      <div className="relative">
+        {/* Exam Content */}
+        <div className="space-y-6 pb-16"> {/* Add padding bottom to avoid warning overlap */}
+          {/* Timer */}
+          <div className="sticky top-0 z-10 bg-inherit py-2">
+            <div className={`text-lg font-semibold ${
+              timeLeft <= 300 ? 'text-red-500' : isDarkMode ? 'text-gray-200' : 'text-gray-800'
+            }`}>
+              Time Remaining: {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+            </div>
           </div>
-          <div className={`w-full rounded-full h-2.5 ${
-            isDarkMode ? 'bg-gray-700' : 'bg-gray-200'
-          }`}>
-            <div 
-              className="bg-violet-600 h-2.5 rounded-full transition-all duration-300"
-              style={{ width: `${((currentQuestionIndex + 1) / totalQuestions) * 100}%` }}
-            />
-          </div>
-        </div>
 
-        {/* Question Card */}
-        <div className={`rounded-lg shadow-lg mb-6 p-6 ${
-          isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
-        }`}>
-          <h3 className={`font-bold mb-4 ${
-            isDarkMode ? 'text-white' : 'text-gray-900'
-          }`}>
-            {currentQuestion.text}
-          </h3>
+          {/* Question */}
+          <div className="space-y-4">
+            <h3 className={`text-xl font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              Question {currentQuestionIndex + 1} of {currentExam.questions.length}
+            </h3>
+            <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+              {currentExam.questions[currentQuestionIndex].text}
+            </p>
+          </div>
+
+          {/* Options */}
           <div className="space-y-3">
-            {Array.isArray(currentQuestion.options) && currentQuestion.options.map((option, optionIndex) => (
-              <label
-                key={optionIndex}
-                className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                  isDarkMode 
-                    ? 'hover:bg-gray-700 text-gray-300' 
-                    : 'hover:bg-gray-50 text-gray-700'
+            {currentExam.questions[currentQuestionIndex].options.map((option, index) => (
+              <button
+                key={index}
+                onClick={() => handleAnswerSelect(currentQuestionIndex, index)}
+                className={`w-full p-4 text-left rounded-lg transition-colors ${
+                  answers[currentQuestionIndex] === index
+                    ? isDarkMode
+                      ? 'bg-violet-600 text-white'
+                      : 'bg-violet-100 text-violet-900'
+                    : isDarkMode
+                      ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
                 }`}
               >
-                <input
-                  type="radio"
-                  name={`question-${currentQuestionIndex}`}
-                  onChange={() => handleAnswerSelect(currentQuestionIndex, optionIndex + 1)}
-                  checked={answers[currentQuestionIndex] === optionIndex + 1}
-                  disabled={examSubmitting}
-                  className={`h-4 w-4 text-violet-600 focus:ring-violet-500 ${
-                    isDarkMode 
-                      ? 'border-gray-600 bg-gray-700' 
-                      : 'border-gray-300 bg-white'
-                  }`}
-                />
-                <span>
-                  {String.fromCharCode(65 + optionIndex)}. {option}
-                </span>
-              </label>
+                {option}
+              </button>
             ))}
+          </div>
+
+          {/* Navigation Buttons */}
+          <div className="flex justify-between items-center mt-6">
+            <button
+              onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
+              disabled={currentQuestionIndex === 0}
+              className={`px-4 py-2 rounded ${
+                currentQuestionIndex === 0
+                  ? 'bg-gray-300 cursor-not-allowed'
+                  : 'bg-violet-600 hover:bg-violet-700 text-white'
+              }`}
+            >
+              Previous
+            </button>
+
+            {currentQuestionIndex === currentExam.questions.length - 1 ? (
+              <button
+                onClick={handleSubmitExam}
+                disabled={examSubmitting}
+                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded"
+              >
+                {examSubmitting ? 'Submitting...' : 'Submit Exam'}
+              </button>
+            ) : (
+              <button
+                onClick={() => setCurrentQuestionIndex(prev => 
+                  Math.min(currentExam.questions.length - 1, prev + 1)
+                )}
+                className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded"
+              >
+                Next
+              </button>
+            )}
+          </div>
+
+          {/* Question Navigation */}
+          <div className="mt-8">
+            <h4 className={`text-sm font-medium mb-2 ${
+              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+            }`}>
+              Question Navigation
+            </h4>
+            <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2">
+              {currentExam.questions.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentQuestionIndex(index)}
+                  className={`p-2 text-sm rounded ${
+                    currentQuestionIndex === index
+                      ? 'bg-violet-600 text-white'
+                      : answers[index] !== undefined
+                        ? isDarkMode
+                          ? 'bg-violet-900/50 text-violet-100'
+                          : 'bg-violet-100 text-violet-900'
+                        : isDarkMode
+                          ? 'bg-gray-800 text-gray-300'
+                          : 'bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  {index + 1}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Navigation Buttons */}
-        <div className="flex justify-between mb-6">
-          <button
-            onClick={() => setCurrentQuestionIndex(prev => prev - 1)}
-            disabled={currentQuestionIndex === 0 || examSubmitting}
-            className={`px-4 py-2 rounded-lg disabled:opacity-50 ${
-              isDarkMode 
-                ? 'bg-gray-600 text-white hover:bg-gray-700' 
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            Previous
-          </button>
-
-          {currentQuestionIndex === totalQuestions - 1 ? (
-            <button
-              onClick={handleSubmitExam}
-              disabled={examSubmitting || answeredQuestions !== totalQuestions}
-              className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50 flex items-center"
-            >
-              {examSubmitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                  Submitting...
-                </>
-              ) : (
-                'Submit Exam'
-              )}
-            </button>
-          ) : (
-            <button
-              onClick={() => setCurrentQuestionIndex(prev => prev + 1)}
-              disabled={examSubmitting}
-              className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50"
-            >
-              Next
-            </button>
-          )}
-        </div>
-
-        {/* Question Navigation Pills */}
-        <div className="flex flex-wrap gap-2">
-          {currentExam.questions.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentQuestionIndex(index)}
-              disabled={examSubmitting}
-              className={`w-8 h-8 rounded-full font-medium ${
-                answers[index]
-                  ? 'bg-green-600 text-white hover:bg-green-700'
-                  : index === currentQuestionIndex
-                  ? 'bg-violet-600 text-white hover:bg-violet-700'
-                  : isDarkMode
-                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              } disabled:opacity-50`}
-            >
-              {index + 1}
-            </button>
-          ))}
-        </div>
+        {/* Warning Banner - Fixed at bottom with proper z-index */}
+        {isExamMode && (
+          <div className="fixed bottom-0 left-0 right-0 bg-red-600 text-white p-4 text-center z-50">
+            Warning: Leaving this page will submit your exam automatically
+          </div>
+        )}
       </div>
     );
   };
@@ -597,13 +589,6 @@ const StudentDashboard = () => {
           </div>
         </div>
       </div>
-
-      {/* Exit Exam Warning Modal */}
-      {isExamMode && (
-        <div className="fixed bottom-0 left-0 right-0 bg-red-600 text-white p-4 text-center">
-          Warning: Leaving this page will submit your exam automatically
-        </div>
-      )}
     </div>
   );
 };
