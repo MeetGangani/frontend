@@ -278,6 +278,27 @@ const StudentDashboard = () => {
     }));
   };
 
+  // Add this function to check if all questions are answered
+  const areAllQuestionsAnswered = () => {
+    if (!currentExam) return false;
+    
+    const totalQuestions = currentExam.questions.length;
+    const answeredQuestions = Object.keys(answers).length;
+    
+    return answeredQuestions === totalQuestions;
+  };
+
+  // Add this function to get the number of remaining questions
+  const getRemainingQuestions = () => {
+    if (!currentExam) return 0;
+    
+    const totalQuestions = currentExam.questions.length;
+    const answeredQuestions = Object.keys(answers).length;
+    
+    return totalQuestions - answeredQuestions;
+  };
+
+  // Update the exam rendering with submit button validation
   const renderExam = () => {
     if (!currentExam) {
       return (
@@ -289,16 +310,25 @@ const StudentDashboard = () => {
       );
     }
 
+    const remainingQuestions = getRemainingQuestions();
+    const allAnswered = areAllQuestionsAnswered();
+
     return (
       <div className="relative">
         {/* Exam Content */}
-        <div className="space-y-6 pb-16"> {/* Add padding bottom to avoid warning overlap */}
-          {/* Timer */}
-          <div className="sticky top-0 z-10 bg-inherit py-2">
+        <div className="space-y-6 pb-16">
+          {/* Timer and Progress */}
+          <div className="sticky top-0 z-10 bg-inherit py-2 space-y-2">
             <div className={`text-lg font-semibold ${
               timeLeft <= 300 ? 'text-red-500' : isDarkMode ? 'text-gray-200' : 'text-gray-800'
             }`}>
               Time Remaining: {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+            </div>
+            <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              {remainingQuestions > 0 
+                ? `${remainingQuestions} question${remainingQuestions > 1 ? 's' : ''} remaining`
+                : 'All questions answered!'
+              }
             </div>
           </div>
 
@@ -333,7 +363,7 @@ const StudentDashboard = () => {
             ))}
           </div>
 
-          {/* Navigation Buttons */}
+          {/* Navigation and Submit Buttons */}
           <div className="flex justify-between items-center mt-6">
             <button
               onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
@@ -348,13 +378,31 @@ const StudentDashboard = () => {
             </button>
 
             {currentQuestionIndex === currentExam.questions.length - 1 ? (
-              <button
-                onClick={handleSubmitExam}
-                disabled={examSubmitting}
-                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded"
-              >
-                {examSubmitting ? 'Submitting...' : 'Submit Exam'}
-              </button>
+              <div className="flex flex-col items-end">
+                <button
+                  onClick={handleSubmitExam}
+                  disabled={examSubmitting || !allAnswered}
+                  className={`px-6 py-2 rounded transition-all ${
+                    examSubmitting
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : allAnswered
+                        ? 'bg-green-600 hover:bg-green-700 text-white'
+                        : 'bg-gray-300 cursor-not-allowed'
+                  }`}
+                >
+                  {examSubmitting 
+                    ? 'Submitting...' 
+                    : allAnswered
+                      ? 'Submit Exam'
+                      : `Answer All Questions (${remainingQuestions} left)`
+                  }
+                </button>
+                {!allAnswered && (
+                  <span className="text-xs text-red-500 mt-1">
+                    Please answer all questions before submitting
+                  </span>
+                )}
+              </div>
             ) : (
               <button
                 onClick={() => setCurrentQuestionIndex(prev => 
@@ -367,7 +415,7 @@ const StudentDashboard = () => {
             )}
           </div>
 
-          {/* Question Navigation */}
+          {/* Question Navigation with Answer Status */}
           <div className="mt-8">
             <h4 className={`text-sm font-medium mb-2 ${
               isDarkMode ? 'text-gray-300' : 'text-gray-700'
@@ -379,7 +427,7 @@ const StudentDashboard = () => {
                 <button
                   key={index}
                   onClick={() => setCurrentQuestionIndex(index)}
-                  className={`p-2 text-sm rounded ${
+                  className={`p-2 text-sm rounded relative ${
                     currentQuestionIndex === index
                       ? 'bg-violet-600 text-white'
                       : answers[index] !== undefined
@@ -392,13 +440,21 @@ const StudentDashboard = () => {
                   }`}
                 >
                   {index + 1}
+                  {answers[index] !== undefined && (
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full"></span>
+                  )}
                 </button>
               ))}
             </div>
           </div>
+
+          {/* Progress Summary */}
+          <div className={`mt-4 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            Answered: {Object.keys(answers).length} / {currentExam.questions.length}
+          </div>
         </div>
 
-        {/* Warning Banner - Fixed at bottom with proper z-index */}
+        {/* Warning Banner */}
         {isExamMode && (
           <div className="fixed bottom-0 left-0 right-0 bg-red-600 text-white p-4 text-center z-50">
             Warning: Leaving this page will submit your exam automatically
