@@ -59,11 +59,18 @@ const StudentDashboard = () => {
 
   const fetchResults = async () => {
     try {
-      const response = await axios.get('/api/exams/my-results');
-      setExamResults(response.data || []);
+      setLoading(true);
+      const response = await axios.get(
+        `${config.API_BASE_URL}/api/exams/my-results`,
+        { withCredentials: true }
+      );
+      
+      // Ensure we have an array, even if empty
+      setExamResults(Array.isArray(response.data) ? response.data : []);
       setError(null);
     } catch (error) {
       console.error('Error fetching results:', error);
+      setExamResults([]);
       setError('Failed to fetch exam results');
     } finally {
       setLoading(false);
@@ -391,111 +398,89 @@ const StudentDashboard = () => {
   const renderResultsTab = () => {
     return (
       <div>
-        <h2 className={`text-2xl font-bold mb-6 ${
-          isDarkMode ? 'text-white' : 'text-gray-900'
-        }`}>
+        <h2 className={`text-2xl font-bold mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
           My Results
         </h2>
         
-        {examResults.length === 0 ? (
-          <div className={`p-4 rounded-lg ${
-            isDarkMode 
-              ? 'bg-blue-900/20 text-blue-300' 
-              : 'bg-blue-50 text-blue-700'
-          }`}>
-            No exam results available.
-          </div>
-        ) : (
-          <div className="overflow-x-auto rounded-lg">
-            <table className={`min-w-full divide-y ${
-              isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
-            }`}>
-              <thead className={isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'}>
-                <tr>
-                  {['Exam Name', 'Score', 'Correct Answers', 'Status', 'Submission Date'].map((header) => (
-                    <th
-                      key={header}
-                      className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                        isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                      }`}
-                    >
-                      {header}
+        <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-lg shadow-lg`}>
+          {examResults && examResults.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className={isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}>
+                  <tr>
+                    <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${
+                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                    } uppercase tracking-wider`}>
+                      Exam Name
                     </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className={`divide-y ${
-                isDarkMode 
-                  ? 'divide-gray-700 bg-[#1a1f2e]' 
-                  : 'divide-gray-200 bg-white'
-              }`}>
-                {examResults.map((result) => (
-                  <tr key={result._id}>
-                    {/* Exam Name - Always show */}
-                    <td className={`px-6 py-4 whitespace-nowrap ${
-                      isDarkMode ? 'text-gray-300' : 'text-gray-900'
-                    }`}>
-                      {result.exam?.examName || 'Loading...'}
-                    </td>
-
-                    {/* Score */}
-                    <td className={`px-6 py-4 whitespace-nowrap`}>
-                      {result.exam?.resultsReleased 
-                        ? <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
-                            {result.score?.toFixed(2)}%
-                          </span>
-                        : <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            isDarkMode ? 'bg-yellow-900/20 text-yellow-300' : 'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            Pending
-                          </span>
-                      }
-                    </td>
-
-                    {/* Correct Answers */}
-                    <td className={`px-6 py-4 whitespace-nowrap`}>
-                      {result.exam?.resultsReleased
-                        ? <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
-                            {result.correctAnswers} / {result.totalQuestions}
-                          </span>
-                        : <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            isDarkMode ? 'bg-yellow-900/20 text-yellow-300' : 'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            Pending
-                          </span>
-                      }
-                    </td>
-
-                    {/* Status */}
-                    <td className={`px-6 py-4 whitespace-nowrap`}>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        result.exam?.resultsReleased 
-                          ? isDarkMode ? 'bg-green-900/20 text-green-300' : 'bg-green-100 text-green-800'
-                          : isDarkMode ? 'bg-yellow-900/20 text-yellow-300' : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {result.exam?.resultsReleased ? 'Released' : 'Pending'}
-                      </span>
-                    </td>
-
-                    {/* Submission Date - Always show */}
-                    <td className={`px-6 py-4 whitespace-nowrap`}>
-                      {result.submittedAt 
-                        ? <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
-                            {new Date(result.submittedAt).toLocaleString()}
-                          </span>
-                        : <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            isDarkMode ? 'bg-yellow-900/20 text-yellow-300' : 'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            Pending
-                          </span>
-                      }
-                    </td>
+                    <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${
+                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                    } uppercase tracking-wider`}>
+                      Score
+                    </th>
+                    <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${
+                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                    } uppercase tracking-wider`}>
+                      Status
+                    </th>
+                    <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${
+                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                    } uppercase tracking-wider`}>
+                      Submitted At
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+                <tbody className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                  {Array.isArray(examResults) && examResults.map((result) => (
+                    <tr key={result._id}>
+                      <td className={`px-6 py-4 whitespace-nowrap ${
+                        isDarkMode ? 'text-gray-300' : 'text-gray-900'
+                      }`}>
+                        {result.exam?.examName || 'N/A'}
+                      </td>
+                      <td className={`px-6 py-4 whitespace-nowrap ${
+                        isDarkMode ? 'text-gray-300' : 'text-gray-900'
+                      }`}>
+                        {result.score ? `${result.score.toFixed(2)}%` : 'N/A'}
+                        <br />
+                        <span className="text-sm text-gray-500">
+                          ({result.correctAnswers}/{result.totalQuestions} correct)
+                        </span>
+                      </td>
+                      <td className={`px-6 py-4 whitespace-nowrap`}>
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          result.exam?.resultsReleased
+                            ? isDarkMode 
+                              ? 'bg-green-900/20 text-green-300' 
+                              : 'bg-green-100 text-green-800'
+                            : isDarkMode
+                              ? 'bg-yellow-900/20 text-yellow-300'
+                              : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {result.exam?.resultsReleased ? 'Released' : 'Pending'}
+                        </span>
+                      </td>
+                      <td className={`px-6 py-4 whitespace-nowrap ${
+                        isDarkMode ? 'text-gray-300' : 'text-gray-900'
+                      }`}>
+                        {result.submittedAt 
+                          ? new Date(result.submittedAt).toLocaleString()
+                          : 'N/A'
+                        }
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className={`p-6 text-center ${
+              isDarkMode ? 'text-gray-400' : 'text-gray-500'
+            }`}>
+              No exam results found
+            </div>
+          )}
+        </div>
       </div>
     );
   };
