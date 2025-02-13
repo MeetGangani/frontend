@@ -18,6 +18,9 @@ const InstituteDashboard = () => {
   const [examResults, setExamResults] = useState([]);
   const [activeTab, setActiveTab] = useState('upload');
 
+  // Add backend URL
+  const BACKEND_URL = 'https://backdeploy-9bze.onrender.com';
+
   useEffect(() => {
     fetchUploads();
   }, []);
@@ -37,7 +40,7 @@ const InstituteDashboard = () => {
 
   const fetchUploads = async () => {
     try {
-      const response = await axios.get('/api/upload/my-uploads', {
+      const response = await axios.get(`${BACKEND_URL}/api/upload/my-uploads`, {
         withCredentials: true
       });
       setUploads(response.data);
@@ -96,7 +99,8 @@ const InstituteDashboard = () => {
           formData.append('examName', examName);
           formData.append('description', description);
 
-          const response = await axios.post('/api/upload', formData, {
+          // Use the backend URL for the upload request
+          const response = await axios.post(`${BACKEND_URL}/api/upload`, formData, {
             headers: {
               'Content-Type': 'multipart/form-data',
             },
@@ -108,7 +112,8 @@ const InstituteDashboard = () => {
           fetchUploads();
           resetForm();
         } catch (error) {
-          setError(error.message);
+          console.error('Upload error:', error);
+          setError(error.response?.data?.message || 'Failed to upload file');
           toast.error(error.response?.data?.message || 'Failed to upload file');
         } finally {
           setLoading(false);
