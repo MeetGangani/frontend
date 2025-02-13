@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useTheme } from '../context/ThemeContext';
 import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
+import axiosInstance from '../utils/axiosConfig';
 
 const InstituteDashboard = () => {
   const { isDarkMode } = useTheme();
@@ -18,20 +18,17 @@ const InstituteDashboard = () => {
   const [examResults, setExamResults] = useState([]);
   const [activeTab, setActiveTab] = useState('upload');
 
-  // Add backend URL
-  const BACKEND_URL = 'https://backdeploy-9bze.onrender.com';
-
   useEffect(() => {
     fetchUploads();
   }, []);
 
-  const resetForm= () => {
+  const resetForm = () => {
     setFile(null);
     setExamName('');
     setDescription('');
     setError(null);
     setSuccess(null);
-    // Reset the file input by clearing its value
+    // Reset the file input
     const fileInput = document.querySelector('input[type="file"]');
     if (fileInput) {
       fileInput.value = '';
@@ -40,13 +37,12 @@ const InstituteDashboard = () => {
 
   const fetchUploads = async () => {
     try {
-      const response = await axios.get(`${BACKEND_URL}/api/upload/my-uploads`, {
-        withCredentials: true
-      });
+      const response = await axiosInstance.get('/api/upload/my-uploads');
       setUploads(response.data);
     } catch (error) {
       console.error('Error fetching uploads:', error);
-      toast.error('Failed to fetch uploads');
+      toast.error('Failed to fetch uploads: ' + (error.response?.data?.message || 'Network error'));
+      setError('Failed to fetch uploads');
     }
   };
 
@@ -58,7 +54,6 @@ const InstituteDashboard = () => {
     } else {
       setFile(null);
       setError('Please select a valid JSON file');
-      // Reset the file input
       e.target.value = '';
     }
   };
@@ -93,11 +88,10 @@ const InstituteDashboard = () => {
       formData.append('examName', examName);
       formData.append('description', description);
 
-      const response = await axios.post(`${BACKEND_URL}/api/upload`, formData, {
+      const response = await axiosInstance.post('/api/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
-        },
-        withCredentials: true
+        }
       });
 
       if (response.status === 201) {
@@ -108,8 +102,9 @@ const InstituteDashboard = () => {
       }
     } catch (error) {
       console.error('Upload error:', error);
-      setError(error.response?.data?.message || 'Failed to upload file');
-      toast.error(error.response?.data?.message || 'Failed to upload file');
+      const errorMessage = error.response?.data?.message || 'Failed to upload file';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -118,12 +113,13 @@ const InstituteDashboard = () => {
   const handleViewResults = async (examId) => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/exams/results/${examId}`);
+      const response = await axiosInstance.get(`/api/exams/results/${examId}`);
       setExamResults(response.data);
       setSelectedExam(uploads.find(u => u._id === examId));
       setShowResultsModal(true);
     } catch (error) {
       console.error('Error fetching results:', error);
+      toast.error('Failed to fetch exam results');
       setError('Failed to fetch exam results');
     } finally {
       setLoading(false);
@@ -133,16 +129,19 @@ const InstituteDashboard = () => {
   const handleReleaseResults = async (examId) => {
     try {
       setLoading(true);
-      await axios.post(`/api/exams/release/${examId}`);
+      await axiosInstance.post(`/api/exams/release/${examId}`);
       setSuccess('Results released successfully');
+      toast.success('Results released successfully');
       await fetchUploads();
       if (selectedExam?._id === examId) {
-        const response = await axios.get(`/api/exams/results/${examId}`);
+        const response = await axiosInstance.get(`/api/exams/results/${examId}`);
         setExamResults(response.data);
       }
     } catch (error) {
       console.error('Error releasing results:', error);
-      setError('Failed to release results: ' + (error.response?.data?.message || error.message));
+      const errorMessage = 'Failed to release results: ' + (error.response?.data?.message || error.message);
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

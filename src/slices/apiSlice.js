@@ -6,9 +6,13 @@ import { logout } from './authSlice';
 export const baseUrl = 'https://backdeploy-9bze.onrender.com';
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: config.API_BASE_URL,
+  baseUrl: process.env.REACT_APP_API_URL || 'https://backdeploy-9bze.onrender.com',
   credentials: 'include',
   prepareHeaders: (headers, { getState }) => {
+    const token = getState()?.auth?.userInfo?.token;
+    if (token) {
+      headers.set('authorization', `Bearer ${token}`);
+    }
     headers.set('Accept', 'application/json');
     // Don't set X-Forwarded-Proto header, let the server handle HTTPS
     return headers;
@@ -40,7 +44,7 @@ const baseQueryWithAuth = async (args, api, extraOptions) => {
 
 export const apiSlice = createApi({
   baseQuery: baseQueryWithAuth,
-  tagTypes: ['User', 'Exam', 'Result'],
+  tagTypes: ['User', 'Exam', 'Result', 'Upload'],
   endpoints: (builder) => ({
     // Add any common endpoints here
     healthCheck: builder.query({

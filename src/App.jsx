@@ -14,6 +14,7 @@ import StudentDashboard from './screens/StudentDashboard';
 import ContactScreen from './screens/ContactScreen';
 import AboutScreen from './screens/AboutScreen';
 import { useTheme } from './context/ThemeContext';
+import { Toaster } from 'react-hot-toast';
 
 // Create route components here to preserve existing dashboard logic
 const AdminRouteWrapper = () => {
@@ -71,56 +72,59 @@ const App = () => {
   };
 
   return (
-    <div className={isDarkMode ? 'dark' : ''}>
-      <Header />
-      <main className="min-h-screen">
-        <Routes>
-          <Route path="/" element={<HomeScreen />} />
-          <Route path="/about" element={<AboutScreen />} />
-          <Route path="/contact" element={<ContactScreen />} />
-          
-          {/* Public routes */}
-          <Route
-            path="/login"
-            element={
-              userInfo ? (
-                <Navigate to={getRedirectPath(userInfo.userType)} replace />
-              ) : (
-                <LoginScreen />
-              )
-            }
-          />
-          <Route
-            path="/register"
-            element={
-              userInfo ? (
-                <Navigate to={getRedirectPath(userInfo.userType)} replace />
-              ) : (
-                <RegisterScreen />
-              )
-            }
-          />
+    <>
+      <Toaster position="top-right" />
+      <div className={isDarkMode ? 'dark' : ''}>
+        <Header />
+        <main className="min-h-screen">
+          <Routes>
+            <Route path="/" element={<HomeScreen />} />
+            <Route path="/about" element={<AboutScreen />} />
+            <Route path="/contact" element={<ContactScreen />} />
+            
+            {/* Public routes */}
+            <Route
+              path="/login"
+              element={
+                userInfo ? (
+                  <Navigate to={getRedirectPath(userInfo.userType)} replace />
+                ) : (
+                  <LoginScreen />
+                )
+              }
+            />
+            <Route
+              path="/register"
+              element={
+                userInfo ? (
+                  <Navigate to={getRedirectPath(userInfo.userType)} replace />
+                ) : (
+                  <RegisterScreen />
+                )
+              }
+            />
 
-          {/* Protected routes */}
-          <Route
-            path="/profile"
-            element={
-              <PrivateRouteWrapper>
-                <ProfileScreen />
-              </PrivateRouteWrapper>
-            }
-          />
+            {/* Protected routes */}
+            <Route
+              path="/profile"
+              element={
+                <PrivateRouteWrapper>
+                  <ProfileScreen />
+                </PrivateRouteWrapper>
+              }
+            />
 
-          {/* Role-specific routes */}
-          <Route path="/admin/dashboard" element={<AdminRouteWrapper />} />
-          <Route path="/institute/dashboard" element={<InstituteRouteWrapper />} />
-          <Route path="/student/dashboard" element={<StudentRouteWrapper />} />
+            {/* Role-specific routes */}
+            <Route path="/admin/dashboard" element={<AdminRouteWrapper />} />
+            <Route path="/institute/dashboard" element={<InstituteRouteWrapper />} />
+            <Route path="/student/dashboard" element={<StudentRouteWrapper />} />
 
-          {/* Catch all */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </main>
-    </div>
+            {/* Catch all */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </main>
+      </div>
+    </>
   );
 };
 
