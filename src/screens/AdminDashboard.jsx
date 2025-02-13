@@ -97,13 +97,24 @@ const AdminDashboard = () => {
 
   const handleApprove = async (requestId) => {
     try {
-      await axios.put(`${BACKEND_URL}/api/admin/requests/${requestId}`, {
-        status: 'approved'
-      }, {
-        withCredentials: true
-      });
-      toast.success('Request approved successfully');
-      fetchData(); // Refresh the data
+      const response = await axios.put(
+        `${BACKEND_URL}/api/admin/requests/${requestId}`,
+        {
+          status: 'approved'
+        },
+        {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        }
+      );
+      
+      if (response.data) {
+        toast.success('Request approved successfully');
+        fetchData(); // Refresh the data
+      }
     } catch (error) {
       console.error('Approval error:', error);
       toast.error(error.response?.data?.message || 'Failed to approve request');
@@ -112,13 +123,24 @@ const AdminDashboard = () => {
 
   const handleReject = async (requestId) => {
     try {
-      await axios.put(`${BACKEND_URL}/api/admin/requests/${requestId}`, {
-        status: 'rejected'
-      }, {
-        withCredentials: true
-      });
-      toast.success('Request rejected successfully');
-      fetchData(); // Refresh the data
+      const response = await axios.put(
+        `${BACKEND_URL}/api/admin/requests/${requestId}`,
+        {
+          status: 'rejected'
+        },
+        {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        }
+      );
+      
+      if (response.data) {
+        toast.success('Request rejected successfully');
+        fetchData(); // Refresh the data
+      }
     } catch (error) {
       console.error('Rejection error:', error);
       toast.error(error.response?.data?.message || 'Failed to reject request');
