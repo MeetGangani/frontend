@@ -2,6 +2,9 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import config from '../config/config.js';
 import { logout } from './authSlice';
 
+// Update the base URL to your deployed backend
+export const baseUrl = 'https://backdeploy-9bze.onrender.com';
+
 const baseQuery = fetchBaseQuery({
   baseUrl: config.API_BASE_URL,
   credentials: 'include',

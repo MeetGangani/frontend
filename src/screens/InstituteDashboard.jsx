@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useTheme } from '../context/ThemeContext';
 import { motion } from 'framer-motion';
+import { toast } from 'react-hot-toast';
 
 const InstituteDashboard = () => {
   const { isDarkMode } = useTheme();
@@ -36,10 +37,13 @@ const InstituteDashboard = () => {
 
   const fetchUploads = async () => {
     try {
-      const response = await axios.get('/api/upload/my-uploads');
+      const response = await axios.get('/api/upload/my-uploads', {
+        withCredentials: true
+      });
       setUploads(response.data);
     } catch (error) {
       console.error('Error fetching uploads:', error);
+      toast.error('Failed to fetch uploads');
     }
   };
 
@@ -81,7 +85,6 @@ const InstituteDashboard = () => {
     setSuccess(null);
 
     try {
-      // First validate the JSON content
       const reader = new FileReader();
       reader.onload = async (e) => {
         try {
@@ -93,18 +96,20 @@ const InstituteDashboard = () => {
           formData.append('examName', examName);
           formData.append('description', description);
 
-          await axios.post('/api/upload', formData, {
+          const response = await axios.post('/api/upload', formData, {
             headers: {
               'Content-Type': 'multipart/form-data',
             },
+            withCredentials: true
           });
 
           setSuccess('Questions uploaded successfully!');
+          toast.success('File uploaded successfully');
           fetchUploads();
-          resetForm(); // Reset form after successful upload
-          
+          resetForm();
         } catch (error) {
           setError(error.message);
+          toast.error(error.response?.data?.message || 'Failed to upload file');
         } finally {
           setLoading(false);
         }
@@ -116,7 +121,6 @@ const InstituteDashboard = () => {
       };
 
       reader.readAsText(file);
-
     } catch (error) {
       setError(error.response?.data?.message || 'Failed to upload file');
       setLoading(false);
