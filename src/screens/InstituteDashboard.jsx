@@ -83,29 +83,45 @@ const InstituteDashboard = () => {
     setSuccess(null);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('examName', examName);
-      formData.append('description', description);
+      // 1. Validate file content
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          // 2. Parse and validate JSON
+          const jsonContent = JSON.parse(e.target.result);
+          validateJsonContent(jsonContent);
 
-      const response = await axiosInstance.post('/api/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
+          // 3. Create form data
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('examName', examName);
+          formData.append('description', description);
+
+          // 4. Send request to server
+          const response = await axiosInstance.post('/api/upload', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            }
+          });
+
+          // 5. Handle success
+          if (response.status === 201) {
+            setSuccess('File uploaded successfully!');
+            toast.success('File uploaded successfully');
+            fetchUploads();
+            resetForm();
+          }
+        } catch (error) {
+          setError(error.message);
+          toast.error(error.message);
+        } finally {
+          setLoading(false);
         }
-      });
+      };
 
-      if (response.status === 201) {
-        setSuccess('File uploaded successfully!');
-        toast.success('File uploaded successfully');
-        fetchUploads();
-        resetForm();
-      }
+      reader.readAsText(file);
     } catch (error) {
-      console.error('Upload error:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to upload file';
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
+      setError(error.response?.data?.message || 'Failed to upload file');
       setLoading(false);
     }
   };
