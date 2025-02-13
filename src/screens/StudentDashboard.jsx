@@ -500,7 +500,7 @@ const StudentDashboard = () => {
                   </tr>
                 </thead>
                 <tbody className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                  {Array.isArray(examResults) && examResults.map((result) => (
+                  {examResults.map((result) => (
                     <tr key={result._id}>
                       <td className={`px-6 py-4 whitespace-nowrap ${
                         isDarkMode ? 'text-gray-300' : 'text-gray-900'
@@ -512,11 +512,19 @@ const StudentDashboard = () => {
                       }`}>
                         {result.exam?.resultsReleased ? (
                           <>
-                            {result.score ? `${result.score.toFixed(2)}%` : 'N/A'}
-                            <br />
-                            <span className="text-sm text-gray-500">
-                              ({result.correctAnswers}/{result.totalQuestions} correct)
-                            </span>
+                            {typeof result.score === 'number' ? (
+                              <>
+                                {result.score.toFixed(2)}%
+                                <br />
+                                <span className="text-sm text-gray-500">
+                                  ({result.correctAnswers}/{result.totalQuestions} correct)
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-sm text-yellow-500">
+                                Score processing...
+                              </span>
+                            )}
                           </>
                         ) : (
                           <span className="text-sm text-gray-500">
@@ -554,7 +562,13 @@ const StudentDashboard = () => {
             <div className={`p-6 text-center ${
               isDarkMode ? 'text-gray-400' : 'text-gray-500'
             }`}>
-              No exam results found
+              {loading ? (
+                <div className="flex justify-center items-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
+                </div>
+              ) : (
+                'No exam results found'
+              )}
             </div>
           )}
         </div>
