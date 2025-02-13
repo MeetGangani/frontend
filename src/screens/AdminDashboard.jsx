@@ -104,27 +104,31 @@ const AdminDashboard = () => {
         {
           withCredentials: true,
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
           }
         }
       );
 
-      // Update local state
-      setRequests(requests.map(req =>
-        req._id === selectedRequest._id
-          ? { ...req, status: response.data.status }
-          : req
-      ));
+      console.log('Response:', response.data); // Debug log
 
-      // Refresh stats
-      await fetchData();
+      if (response.data) {
+        // Update local state
+        setRequests(requests.map(req =>
+          req._id === selectedRequest._id
+            ? { ...req, status: response.data.status }
+            : req
+        ));
 
-      setShowModal(false);
-      setSelectedRequest(null);
-      setAdminComment('');
-      setProcessingType(null);
-      toast.success(`Request ${status} successfully`);
+        // Refresh data
+        await fetchData();
 
+        setShowModal(false);
+        setSelectedRequest(null);
+        setAdminComment('');
+        setProcessingType(null);
+        toast.success(`Request ${status} successfully`);
+      }
     } catch (error) {
       console.error('Status update error:', error);
       toast.error(error.response?.data?.message || `Failed to ${status} request`);
