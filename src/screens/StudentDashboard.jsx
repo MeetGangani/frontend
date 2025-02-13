@@ -441,11 +441,19 @@ const StudentDashboard = () => {
                       <td className={`px-6 py-4 whitespace-nowrap ${
                         isDarkMode ? 'text-gray-300' : 'text-gray-900'
                       }`}>
-                        {result.score ? `${result.score.toFixed(2)}%` : 'N/A'}
-                        <br />
-                        <span className="text-sm text-gray-500">
-                          ({result.correctAnswers}/{result.totalQuestions} correct)
-                        </span>
+                        {result.exam?.resultsReleased ? (
+                          <>
+                            {result.score ? `${result.score.toFixed(2)}%` : 'N/A'}
+                            <br />
+                            <span className="text-sm text-gray-500">
+                              ({result.correctAnswers}/{result.totalQuestions} correct)
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-sm text-gray-500">
+                            Results pending
+                          </span>
+                        )}
                       </td>
                       <td className={`px-6 py-4 whitespace-nowrap`}>
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${
@@ -485,53 +493,66 @@ const StudentDashboard = () => {
     );
   };
 
-  if (loading && !currentExam) {
-    return (
-      <div className="flex justify-center items-center min-h-[80vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className={`min-h-screen ${
-      isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'
-    }`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {error && (
-          <div className={`mb-4 p-4 rounded-lg ${
-            isDarkMode 
-              ? 'bg-red-900/20 border-red-800 text-red-300' 
-              : 'bg-red-50 border-red-200 text-red-700'
-          } border`}>
-            {error}
+    <div className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-100'} min-h-screen p-8`}>
+      <div className="container mx-auto">
+        <div className="flex gap-8">
+          <div className="w-1/4">
+            <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-lg p-6 shadow-lg`}>
+              <h2 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                Navigation
+              </h2>
+              <ul className="space-y-2">
+                <li>
+                  <button
+                    onClick={() => setActiveTab('start')}
+                    className={`block w-full text-left px-4 py-2 rounded-lg ${
+                      activeTab === 'start'
+                        ? 'bg-violet-600 text-white'
+                        : isDarkMode
+                          ? 'text-gray-300 hover:bg-gray-700'
+                          : 'text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Start Exam
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => setActiveTab('exam')}
+                    className={`block w-full text-left px-4 py-2 rounded-lg ${
+                      activeTab === 'exam'
+                        ? 'bg-violet-600 text-white'
+                        : isDarkMode
+                          ? 'text-gray-300 hover:bg-gray-700'
+                          : 'text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Exam
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => setActiveTab('results')}
+                    className={`block w-full text-left px-4 py-2 rounded-lg ${
+                      activeTab === 'results'
+                        ? 'bg-violet-600 text-white'
+                        : isDarkMode
+                          ? 'text-gray-300 hover:bg-gray-700'
+                          : 'text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Results
+                  </button>
+                </li>
+              </ul>
+            </div>
           </div>
-        )}
-        
-        <div className="mb-8">
-          <nav className="flex space-x-8">
-            {['start', 'results'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`py-2 px-1 text-sm font-medium border-b-2 transition-colors duration-200 ${
-                  activeTab === tab
-                    ? 'border-violet-500 text-violet-500'
-                    : isDarkMode 
-                      ? 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-700'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {tab === 'start' ? 'Start Exam' : 'My Results'}
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        <div>
-          {activeTab === 'start' && renderStartExam()}
-          {activeTab === 'exam' && currentExam && renderExam()}
-          {activeTab === 'results' && renderResultsTab()}
+          <div className="w-3/4">
+            {activeTab === 'start' && renderStartExam()}
+            {activeTab === 'exam' && renderExam()}
+            {activeTab === 'results' && renderResultsTab()}
+          </div>
         </div>
       </div>
     </div>
