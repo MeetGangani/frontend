@@ -88,52 +88,29 @@ const InstituteDashboard = () => {
     setSuccess(null);
 
     try {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          const jsonContent = JSON.parse(e.target.result);
-          validateJsonContent(jsonContent);
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('examName', examName);
+      formData.append('description', description);
 
-          const formData = new FormData();
-          formData.append('file', file);
-          formData.append('examName', examName);
-          formData.append('description', description);
+      const response = await axios.post(`${BACKEND_URL}/api/upload`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        withCredentials: true
+      });
 
-          const response = await axios.post(`${BACKEND_URL}/api/upload`, formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-            withCredentials: true,
-            validateStatus: function (status) {
-              return status >= 200 && status < 500; // Handle all status codes to prevent axios from throwing
-            }
-          });
-
-          if (response.status === 201) {
-            setSuccess('Questions uploaded successfully!');
-            toast.success('File uploaded successfully');
-            fetchUploads();
-            resetForm();
-          } else {
-            throw new Error(response.data.message || 'Upload failed');
-          }
-        } catch (error) {
-          console.error('Upload error:', error);
-          setError(error.response?.data?.message || 'Failed to upload file');
-          toast.error(error.response?.data?.message || 'Failed to upload file');
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      reader.onerror = () => {
-        setError('Error reading file');
-        setLoading(false);
-      };
-
-      reader.readAsText(file);
+      if (response.status === 201) {
+        setSuccess('File uploaded successfully!');
+        toast.success('File uploaded successfully');
+        fetchUploads();
+        resetForm();
+      }
     } catch (error) {
-      setError(error.message || 'Failed to upload file');
+      console.error('Upload error:', error);
+      setError(error.response?.data?.message || 'Failed to upload file');
+      toast.error(error.response?.data?.message || 'Failed to upload file');
+    } finally {
       setLoading(false);
     }
   };
