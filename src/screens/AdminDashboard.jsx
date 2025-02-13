@@ -15,7 +15,12 @@ const AdminDashboard = () => {
   const [userType, setUserType] = useState('student');
   const [success, setSuccess] = useState('');
   const [requests, setRequests] = useState([]);
-  const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState({
+    totalRequests: 0,
+    pendingRequests: 0,
+    approvedRequests: 0,
+    rejectedRequests: 0
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -29,33 +34,41 @@ const AdminDashboard = () => {
   const [register, { isLoading }] = useRegisterMutation();
 
   useEffect(() => {
-    Promise.all([fetchRequests(), fetchStats()])
-      .finally(() => setLoading(false));
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [requestsResponse, statsResponse] = await Promise.all([
+          axios.get('/api/admin/requests'),
+          axios.get('/api/admin/dashboard')
+        ]);
+
+        setRequests(Array.isArray(requestsResponse.data) ? requestsResponse.data : []);
+        
+        setStats({
+          totalRequests: statsResponse.data?.totalRequests || 0,
+          pendingRequests: statsResponse.data?.pendingRequests || 0,
+          approvedRequests: statsResponse.data?.approvedRequests || 0,
+          rejectedRequests: statsResponse.data?.rejectedRequests || 0
+        });
+        
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError('Failed to fetch data');
+        setRequests([]);
+        setStats({
+          totalRequests: 0,
+          pendingRequests: 0,
+          approvedRequests: 0,
+          rejectedRequests: 0
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
-
-  const fetchRequests = async () => {
-    try {
-      const response = await axios.get('/api/admin/requests');
-      setRequests(response.data);
-      setError(null);
-    } catch (error) {
-      console.error('Error fetching requests:', error);
-      setError('Failed to fetch requests');
-      setRequests([]);
-    }
-  };
-
-  const fetchStats = async () => {
-    try {
-      const response = await axios.get('/api/admin/dashboard');
-      setStats(response.data);
-      setError(null);
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-      setError('Failed to fetch statistics');
-      setStats(null);
-    }
-  };
 
   const submitHandler = async (e) => {
     e.preventDefault();
@@ -120,7 +133,7 @@ const AdminDashboard = () => {
       ));
 
       // Refresh stats
-      await fetchStats();
+      await fetchData();
       
       setShowModal(false);
       setSelectedRequest(null);
@@ -141,8 +154,8 @@ const AdminDashboard = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[80vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="flex justify-center items-center min-h-screen">
+        <Loader />
       </div>
     );
   }
@@ -232,15 +245,7 @@ const AdminDashboard = () => {
               File Requests
             </h2>
             
-            {requests.length === 0 ? (
-              <div className={`p-4 rounded-lg ${
-                isDarkMode 
-                  ? 'bg-blue-900/20 text-blue-300' 
-                  : 'bg-blue-50 text-blue-700'
-              }`}>
-                No requests found.
-              </div>
-            ) : (
+            {Array.isArray(requests) && requests.length > 0 ? (
               <div className="overflow-x-auto rounded-lg">
                 <table className={`min-w-full divide-y ${
                   isDarkMode 
@@ -307,6 +312,14 @@ const AdminDashboard = () => {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            ) : (
+              <div className={`p-4 rounded-lg ${
+                isDarkMode 
+                  ? 'bg-blue-900/20 text-blue-300' 
+                  : 'bg-blue-50 text-blue-700'
+              }`}>
+                No requests found.
               </div>
             )}
           </div>
