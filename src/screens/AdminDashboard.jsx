@@ -36,20 +36,23 @@ const AdminDashboard = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      setError(null);
       
       // Fetch requests
-      const requestsResponse = await axios.get('/api/admin/requests');
+      const requestsResponse = await axios.get('/api/admin/requests', {
+        withCredentials: true
+      });
+      console.log('Fetched requests:', requestsResponse.data); // Debug log
       setRequests(Array.isArray(requestsResponse.data) ? requestsResponse.data : []);
 
       // Fetch stats
-      const statsResponse = await axios.get('/api/admin/dashboard');
+      const statsResponse = await axios.get('/api/admin/dashboard', {
+        withCredentials: true
+      });
       setStats(statsResponse.data);
-
-      setError(null);
     } catch (error) {
       console.error('Error fetching data:', error);
       setError('Failed to fetch data');
-      toast.error('Failed to fetch data');
       setRequests([]);
     } finally {
       setLoading(false);
@@ -257,101 +260,76 @@ const AdminDashboard = () => {
             </div>
 
             {/* Requests Table */}
-            <h2 className={`text-2xl font-bold mb-4 ${
-              isDarkMode ? 'text-white' : 'text-gray-900'
-            }`}>
-              File Requests
-            </h2>
-            
-            {loading ? (
-              <div className="flex justify-center items-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-500"></div>
-              </div>
-            ) : error ? (
-              <div className={`p-4 rounded-lg ${
-                isDarkMode 
-                  ? 'bg-red-900/20 text-red-300' 
-                  : 'bg-red-50 text-red-700'
+            <div className="mt-8">
+              <h2 className={`text-2xl font-bold mb-4 ${
+                isDarkMode ? 'text-white' : 'text-gray-900'
               }`}>
-                {error}
-              </div>
-            ) : requests.length === 0 ? (
-              <div className={`p-4 rounded-lg ${
-                isDarkMode 
-                  ? 'bg-blue-900/20 text-blue-300' 
-                  : 'bg-blue-50 text-blue-700'
-              }`}>
-                No pending requests found.
-              </div>
-            ) : (
-              <div className="overflow-x-auto rounded-lg">
-                <table className={`min-w-full divide-y ${
-                  isDarkMode 
-                    ? 'divide-gray-700' 
-                    : 'divide-gray-200'
-                }`}>
-                  <thead className={isDarkMode ? 'bg-[#1a1f2e]' : 'bg-gray-50'}>
-                    <tr>
-                      {['Exam Name', 'Institute', 'Status', 'Date', 'Actions'].map((header) => (
-                        <th key={header} className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                          isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                        }`}>
-                          {header}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className={`divide-y ${
-                    isDarkMode 
-                      ? 'divide-gray-700 bg-[#1a1f2e]' 
-                      : 'divide-gray-200 bg-white'
-                  }`}>
-                    {requests.map((request) => (
-                      <tr key={request._id}>
-                        <td className={`px-6 py-4 whitespace-nowrap ${
-                          isDarkMode ? 'text-gray-300' : 'text-gray-900'
-                        }`}>
-                          {request.fileName}
-                        </td>
-                        <td className={`px-6 py-4 whitespace-nowrap ${
-                          isDarkMode ? 'text-gray-300' : 'text-gray-900'
-                        }`}>
-                          {request.institute?.name}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {getStatusBadge(request.status)}
-                        </td>
-                        <td className={`px-6 py-4 whitespace-nowrap ${
-                          isDarkMode ? 'text-gray-300' : 'text-gray-900'
-                        }`}>
-                          {new Date(request.createdAt).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {request.status === 'pending' && (
-                            <div className="space-x-2">
-                              <button
-                                onClick={() => handleApprove(request)}
-                                disabled={actionLoading}
-                                className="px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50"
-                              >
-                                Approve
-                              </button>
-                              <button
-                                onClick={() => handleReject(request)}
-                                disabled={actionLoading}
-                                className="px-3 py-1 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50"
-                              >
-                                Reject
-                              </button>
-                            </div>
-                          )}
-                        </td>
+                Exam Requests
+              </h2>
+              {loading ? (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-500"></div>
+                </div>
+              ) : error ? (
+                <div className="text-red-500 p-4">{error}</div>
+              ) : requests.length === 0 ? (
+                <div className="text-gray-500 p-4">No pending requests</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead>
+                      <tr>
+                        <th>Exam Name</th>
+                        <th>Institute</th>
+                        <th>Status</th>
+                        <th>Questions</th>
+                        <th>Date</th>
+                        <th>Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {requests.map((request) => (
+                        <tr key={request._id}>
+                          <td>{request.examName}</td>
+                          <td>{request.institute?.name}</td>
+                          <td>
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              request.status === 'pending' 
+                                ? 'bg-yellow-100 text-yellow-800' 
+                                : request.status === 'approved'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {request.status}
+                            </span>
+                          </td>
+                          <td>{request.totalQuestions}</td>
+                          <td>{new Date(request.createdAt).toLocaleDateString()}</td>
+                          <td>
+                            {request.status === 'pending' && (
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() => handleApprove(request._id)}
+                                  className="bg-green-500 text-white px-3 py-1 rounded"
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={() => handleReject(request._id)}
+                                  className="bg-red-500 text-white px-3 py-1 rounded"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
