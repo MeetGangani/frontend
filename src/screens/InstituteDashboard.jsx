@@ -99,18 +99,24 @@ const InstituteDashboard = () => {
           formData.append('examName', examName);
           formData.append('description', description);
 
-          // Use the backend URL for the upload request
           const response = await axios.post(`${BACKEND_URL}/api/upload`, formData, {
             headers: {
               'Content-Type': 'multipart/form-data',
             },
-            withCredentials: true
+            withCredentials: true,
+            validateStatus: function (status) {
+              return status >= 200 && status < 500; // Handle all status codes to prevent axios from throwing
+            }
           });
 
-          setSuccess('Questions uploaded successfully!');
-          toast.success('File uploaded successfully');
-          fetchUploads();
-          resetForm();
+          if (response.status === 201) {
+            setSuccess('Questions uploaded successfully!');
+            toast.success('File uploaded successfully');
+            fetchUploads();
+            resetForm();
+          } else {
+            throw new Error(response.data.message || 'Upload failed');
+          }
         } catch (error) {
           console.error('Upload error:', error);
           setError(error.response?.data?.message || 'Failed to upload file');
@@ -127,7 +133,7 @@ const InstituteDashboard = () => {
 
       reader.readAsText(file);
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to upload file');
+      setError(error.message || 'Failed to upload file');
       setLoading(false);
     }
   };
