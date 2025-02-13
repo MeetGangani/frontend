@@ -33,40 +33,29 @@ const AdminDashboard = () => {
 
   const [register, { isLoading }] = useRegisterMutation();
 
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch requests
+      const requestsResponse = await axios.get('/api/admin/requests');
+      setRequests(requestsResponse.data);
+
+      // Fetch stats
+      const statsResponse = await axios.get('/api/admin/dashboard');
+      setStats(statsResponse.data);
+
+      setError(null);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setError('Failed to fetch data');
+      toast.error('Failed to fetch data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [requestsResponse, statsResponse] = await Promise.all([
-          axios.get('/api/admin/requests'),
-          axios.get('/api/admin/dashboard')
-        ]);
-
-        setRequests(Array.isArray(requestsResponse.data) ? requestsResponse.data : []);
-        
-        setStats({
-          totalRequests: statsResponse.data?.totalRequests || 0,
-          pendingRequests: statsResponse.data?.pendingRequests || 0,
-          approvedRequests: statsResponse.data?.approvedRequests || 0,
-          rejectedRequests: statsResponse.data?.rejectedRequests || 0
-        });
-        
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Failed to fetch data');
-        setRequests([]);
-        setStats({
-          totalRequests: 0,
-          pendingRequests: 0,
-          approvedRequests: 0,
-          rejectedRequests: 0
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
 
@@ -161,17 +150,45 @@ const AdminDashboard = () => {
   }
 
   const getStatusBadge = (status) => {
-    const variants = {
-      pending: 'bg-yellow-500',
-      approved: 'bg-green-500',
-      rejected: 'bg-red-500'
-    };
-    return (
-      <span className={`${variants[status]} text-white text-xs font-medium px-2.5 py-0.5 rounded-full`}>
-        {status}
-      </span>
-    );
+    const baseClasses = "px-2 py-1 text-xs font-medium rounded-full";
+    switch (status) {
+      case 'pending':
+        return (
+          <span className={`${baseClasses} ${
+            isDarkMode 
+              ? 'bg-yellow-900/20 text-yellow-300' 
+              : 'bg-yellow-100 text-yellow-800'
+          }`}>
+            Pending
+          </span>
+        );
+      case 'approved':
+        return (
+          <span className={`${baseClasses} ${
+            isDarkMode 
+              ? 'bg-green-900/20 text-green-300' 
+              : 'bg-green-100 text-green-800'
+          }`}>
+            Approved
+          </span>
+        );
+      case 'rejected':
+        return (
+          <span className={`${baseClasses} ${
+            isDarkMode 
+              ? 'bg-red-900/20 text-red-300' 
+              : 'bg-red-100 text-red-800'
+          }`}>
+            Rejected
+          </span>
+        );
+      default:
+        return null;
+    }
   };
+
+  console.log('Current requests:', requests);
+  console.log('Current stats:', stats);
 
   return (
     <div className={`min-h-screen ${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'}`}>
@@ -245,7 +262,27 @@ const AdminDashboard = () => {
               File Requests
             </h2>
             
-            {Array.isArray(requests) && requests.length > 0 ? (
+            {loading ? (
+              <div className="flex justify-center items-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-500"></div>
+              </div>
+            ) : error ? (
+              <div className={`p-4 rounded-lg ${
+                isDarkMode 
+                  ? 'bg-red-900/20 text-red-300' 
+                  : 'bg-red-50 text-red-700'
+              }`}>
+                {error}
+              </div>
+            ) : requests.length === 0 ? (
+              <div className={`p-4 rounded-lg ${
+                isDarkMode 
+                  ? 'bg-blue-900/20 text-blue-300' 
+                  : 'bg-blue-50 text-blue-700'
+              }`}>
+                No pending requests found.
+              </div>
+            ) : (
               <div className="overflow-x-auto rounded-lg">
                 <table className={`min-w-full divide-y ${
                   isDarkMode 
@@ -312,14 +349,6 @@ const AdminDashboard = () => {
                     ))}
                   </tbody>
                 </table>
-              </div>
-            ) : (
-              <div className={`p-4 rounded-lg ${
-                isDarkMode 
-                  ? 'bg-blue-900/20 text-blue-300' 
-                  : 'bg-blue-50 text-blue-700'
-              }`}>
-                No requests found.
               </div>
             )}
           </div>
