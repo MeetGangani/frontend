@@ -17,6 +17,7 @@ const StudentDashboard = () => {
   const [examSubmitting, setExamSubmitting] = useState(false);
   const [ipfsHash, setIpfsHash] = useState('');
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [isExamMode, setIsExamMode] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -43,6 +44,14 @@ const StudentDashboard = () => {
       if (timer) clearInterval(timer);
     };
   }, [currentExam, timeLeft]); // Dependencies for the timer effect
+
+  useEffect(() => {
+    if (currentExam) {
+      setIsExamMode(true);
+    } else {
+      setIsExamMode(false);
+    }
+  }, [currentExam]);
 
   const fetchExams = async () => {
     try {
@@ -77,60 +86,136 @@ const StudentDashboard = () => {
     }
   };
 
-  const renderStartExam = () => (
-    <div>
-      <h2 className={`text-2xl font-bold mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-        Start New Exam
-      </h2>
-      <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-lg p-8 shadow-lg`}>
+  const handleTabSwitch = (tab) => {
+    if (isExamMode && tab !== 'exam') {
+      // Prevent switching tabs during exam
+      return;
+    }
+    setActiveTab(tab);
+  };
+
+  const renderStartExam = () => {
+    return (
+      <div className="space-y-6">
+        <h2 className={`text-xl md:text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+          Start Exam
+        </h2>
+
+        {/* Available Exams Section */}
         <div className="space-y-4">
-          <div>
-            <label className={`block text-sm font-medium mb-2 ${
-              isDarkMode ? 'text-gray-300' : 'text-gray-700'
-            }`}>
-              Enter Exam IPFS Hash
-            </label>
-            <form onSubmit={handleStartExam} className="space-y-4">
-              <div className="flex gap-3">
-                <input
-                  type="text"
-                  placeholder="Enter the IPFS hash provided by your institute"
-                  value={ipfsHash}
-                  onChange={(e) => setIpfsHash(e.target.value)}
-                  disabled={loading}
-                  required
-                  className={`flex-1 px-4 py-3 rounded-lg ${
-                    isDarkMode 
-                      ? 'bg-[#0A0F1C] border-gray-700 text-white placeholder-gray-500' 
-                      : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400'
-                  } border focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
-                />
-                <button
-                  type="submit"
-                  disabled={loading || !ipfsHash.trim()}
-                  className={`px-6 py-3 rounded-lg font-medium transition-colors duration-200 
-                    ${loading ? 'cursor-not-allowed opacity-50' : 'hover:bg-violet-500'} 
-                    bg-violet-600 text-white`}
-                >
-                  {loading ? (
-                    <div className="flex items-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Starting...
-                    </div>
-                  ) : (
-                    'Start Exam'
-                  )}
-                </button>
-              </div>
-              {error && (
-                <p className="text-red-500 text-sm mt-2">{error}</p>
-              )}
-            </form>
+          <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+            Available Exams
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className={isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}>
+                <tr>
+                  <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${
+                    isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                  } uppercase tracking-wider`}>
+                    Exam Name
+                  </th>
+                  <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${
+                    isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                  } uppercase tracking-wider`}>
+                    Institute
+                  </th>
+                  <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${
+                    isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                  } uppercase tracking-wider`}>
+                    Total Questions
+                  </th>
+                  <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${
+                    isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                  } uppercase tracking-wider`}>
+                    Time Limit
+                  </th>
+                  <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${
+                    isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                  } uppercase tracking-wider`}>
+                    Action
+                  </th>
+                </tr>
+              </thead>
+              <tbody className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                {availableExams.map((exam) => (
+                  <tr key={exam._id}>
+                    <td className={`px-6 py-4 whitespace-nowrap ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-900'
+                    }`}>
+                      {exam.examName}
+                    </td>
+                    <td className={`px-6 py-4 whitespace-nowrap ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-900'
+                    }`}>
+                      {exam.instituteName}
+                    </td>
+                    <td className={`px-6 py-4 whitespace-nowrap ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-900'
+                    }`}>
+                      {exam.totalQuestions}
+                    </td>
+                    <td className={`px-6 py-4 whitespace-nowrap ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-900'
+                    }`}>
+                      {exam.timeLimit} minutes
+                    </td>
+                    <td className={`px-6 py-4 whitespace-nowrap`}>
+                      <button
+                        onClick={() => handleStartExam(exam.ipfsHash)}
+                        disabled={loading}
+                        className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50"
+                      >
+                        Start Exam
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
+
+        {/* IPFS Hash Input Section */}
+        <div className="space-y-4">
+          <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+            Enter Exam Hash
+          </h3>
+          <div className="flex flex-col md:flex-row gap-4">
+            <input
+              type="text"
+              value={ipfsHash}
+              onChange={(e) => setIpfsHash(e.target.value)}
+              placeholder="Enter IPFS hash provided by your institute"
+              className={`flex-1 p-2 rounded-lg border ${
+                isDarkMode 
+                  ? 'bg-gray-800 border-gray-700 text-white' 
+                  : 'bg-white border-gray-300'
+              }`}
+            />
+            <button
+              onClick={handleStartExam}
+              disabled={loading || !ipfsHash}
+              className={`px-6 py-2 rounded-lg ${
+                loading || !ipfsHash
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-violet-600 hover:bg-violet-700'
+              } text-white transition-colors`}
+            >
+              {loading ? 'Starting...' : 'Start Exam'}
+            </button>
+          </div>
+        </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="p-4 bg-red-100 text-red-700 rounded-lg">
+            {error}
+          </div>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   const handleStartExam = async (e) => {
     e.preventDefault();
@@ -217,37 +302,6 @@ const StudentDashboard = () => {
       [questionIndex]: optionIndex
     }));
   };
-
-  const renderAvailableExams = () => (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">Available Exams</h2>
-      {availableExams.length === 0 ? (
-        <div className="p-4 bg-blue-50 text-blue-700 rounded-lg">
-          No exams available at the moment.
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {availableExams.map((exam) => (
-            <div key={exam._id} className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-xl font-semibold mb-2">{exam.examName}</h3>
-              <p className="text-gray-600 mb-2">Institute: {exam.instituteName}</p>
-              <p className="text-gray-600 mb-4">
-                Total Questions: {exam.totalQuestions}<br />
-                Time Limit: {exam.timeLimit} minutes
-              </p>
-              <button
-                onClick={() => handleStartExam(exam.ipfsHash)}
-                disabled={loading}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50"
-              >
-                Start Exam
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
 
   const renderExam = () => {
     if (!currentExam || !currentExam.questions) return null;
@@ -494,53 +548,61 @@ const StudentDashboard = () => {
   };
 
   return (
-    <div className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-100'} min-h-screen p-8`}>
+    <div className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-100'} min-h-screen p-4 md:p-8`}>
       <div className="container mx-auto">
-        <div className="flex gap-8">
-          <div className="w-1/4">
-            <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-lg p-6 shadow-lg`}>
-              <h2 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+        <div className="flex flex-col md:flex-row gap-4 md:gap-8">
+          {/* Navigation Sidebar - Hidden during exam mode on mobile */}
+          <div className={`w-full md:w-1/4 ${isExamMode ? 'hidden md:block' : ''}`}>
+            <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-lg p-4 md:p-6 shadow-lg`}>
+              <h2 className={`text-xl md:text-2xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 Navigation
               </h2>
               <ul className="space-y-2">
                 <li>
                   <button
-                    onClick={() => setActiveTab('start')}
-                    className={`block w-full text-left px-4 py-2 rounded-lg ${
-                      activeTab === 'start'
+                    onClick={() => handleTabSwitch('start')}
+                    disabled={isExamMode}
+                    className={`block w-full text-left px-4 py-2 rounded-lg transition-colors
+                      ${activeTab === 'start'
                         ? 'bg-violet-600 text-white'
                         : isDarkMode
                           ? 'text-gray-300 hover:bg-gray-700'
                           : 'text-gray-700 hover:bg-gray-200'
-                    }`}
+                      }
+                      ${isExamMode ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                    `}
                   >
                     Start Exam
                   </button>
                 </li>
                 <li>
                   <button
-                    onClick={() => setActiveTab('exam')}
-                    className={`block w-full text-left px-4 py-2 rounded-lg ${
-                      activeTab === 'exam'
+                    onClick={() => handleTabSwitch('exam')}
+                    className={`block w-full text-left px-4 py-2 rounded-lg transition-colors
+                      ${activeTab === 'exam'
                         ? 'bg-violet-600 text-white'
                         : isDarkMode
                           ? 'text-gray-300 hover:bg-gray-700'
                           : 'text-gray-700 hover:bg-gray-200'
-                    }`}
+                      }
+                    `}
                   >
                     Exam
                   </button>
                 </li>
                 <li>
                   <button
-                    onClick={() => setActiveTab('results')}
-                    className={`block w-full text-left px-4 py-2 rounded-lg ${
-                      activeTab === 'results'
+                    onClick={() => handleTabSwitch('results')}
+                    disabled={isExamMode}
+                    className={`block w-full text-left px-4 py-2 rounded-lg transition-colors
+                      ${activeTab === 'results'
                         ? 'bg-violet-600 text-white'
                         : isDarkMode
                           ? 'text-gray-300 hover:bg-gray-700'
                           : 'text-gray-700 hover:bg-gray-200'
-                    }`}
+                      }
+                      ${isExamMode ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                    `}
                   >
                     Results
                   </button>
@@ -548,13 +610,33 @@ const StudentDashboard = () => {
               </ul>
             </div>
           </div>
-          <div className="w-3/4">
-            {activeTab === 'start' && renderStartExam()}
-            {activeTab === 'exam' && renderExam()}
-            {activeTab === 'results' && renderResultsTab()}
+
+          {/* Main Content Area */}
+          <div className="w-full md:w-3/4">
+            <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-lg p-4 md:p-6 shadow-lg`}>
+              {/* Warning Banner for Exam Mode */}
+              {isExamMode && (
+                <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4 rounded">
+                  <p className="font-bold">Exam in Progress</p>
+                  <p>Please do not leave this page or switch tabs until you complete the exam.</p>
+                </div>
+              )}
+
+              {/* Content Sections */}
+              {activeTab === 'start' && !isExamMode && renderStartExam()}
+              {activeTab === 'exam' && renderExam()}
+              {activeTab === 'results' && !isExamMode && renderResultsTab()}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Exit Exam Warning Modal */}
+      {isExamMode && (
+        <div className="fixed bottom-0 left-0 right-0 bg-red-600 text-white p-4 text-center">
+          Warning: Leaving this page will submit your exam automatically
+        </div>
+      )}
     </div>
   );
 };
