@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Form, Button, Table, Container, Alert, Modal, Tab, Tabs, Badge } from 'react-bootstrap';
 import axios from 'axios';
 import { useTheme } from '../context/ThemeContext';
 import { motion } from 'framer-motion';
@@ -11,23 +12,37 @@ const InstituteDashboard = () => {
   const [examName, setExamName] = useState('');
   const [description, setDescription] = useState('');
   const [uploading, setUploading] = useState(false);
-  const [myUploads, setMyUploads] = useState([]);
+  const [uploads, setUploads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showResultsModal, setShowResultsModal] = useState(false);
   const [selectedExam, setSelectedExam] = useState(null);
   const [examResults, setExamResults] = useState([]);
   const [activeTab, setActiveTab] = useState('upload');
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
 
   useEffect(() => {
-    fetchMyUploads();
+    fetchUploads();
   }, []);
 
-  const fetchMyUploads = async () => {
+  const resetForm = () => {
+    setFile(null);
+    setExamName('');
+    setDescription('');
+    setError(null);
+    setSuccess(null);
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  };
+
+  const fetchUploads = async () => {
     try {
-      const { data } = await axios.get(`${config.API_BASE_URL}/api/upload/my-uploads`, {
+      const response = await axios.get(`${config.API_BASE_URL}/api/upload/my-uploads`, {
         withCredentials: true
       });
-      setMyUploads(data);
+      setUploads(response.data);
       setLoading(false);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to fetch uploads');
@@ -39,43 +54,78 @@ const InstituteDashboard = () => {
     const selectedFile = e.target.files[0];
     if (selectedFile && selectedFile.type === 'application/json') {
       setFile(selectedFile);
+      setError(null);
     } else {
-      toast.error('Please upload a JSON file');
-      e.target.value = null;
+      setFile(null);
+      setError('Please select a valid JSON file');
+      e.target.value = '';
     }
+  };
+
+  const validateJsonContent = (content) => {
+    if (!content.questions || !Array.isArray(content.questions)) {
+      throw new Error('Invalid JSON format: missing questions array');
+    }
+
+    content.questions.forEach((q, index) => {
+      if (!q.question) {
+        throw new Error(`Question ${index + 1} is missing question text`);
+      }
+      if (!Array.isArray(q.options) || q.options.length !== 4) {
+        throw new Error(`Question ${index + 1} must have exactly 4 options`);
+      }
+      if (typeof q.correctAnswer !== 'number' || q.correctAnswer < 0 || q.correctAnswer > 3) {
+        throw new Error(`Question ${index + 1} has invalid correct answer index`);
+      }
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!file || !examName || !description) {
-      toast.error('Please fill all required fields');
-      return;
-    }
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('examName', examName);
-    formData.append('description', description);
-
-    setUploading(true);
     try {
-      const { data } = await axios.post(`${config.API_BASE_URL}/api/upload`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        },
-        withCredentials: true
-      });
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const jsonContent = JSON.parse(e.target.result);
+          validateJsonContent(jsonContent);
 
-      toast.success('Exam uploaded successfully');
-      setFile(null);
-      setExamName('');
-      setDescription('');
-      fetchMyUploads(); // Refresh the list
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('examName', examName);
+          formData.append('description', description);
+
+          const { data } = await axios.post(`${config.API_BASE_URL}/api/upload`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+            withCredentials: true
+          });
+
+          setSuccess('Questions uploaded successfully!');
+          fetchUploads();
+          resetForm();
+          
+        } catch (error) {
+          setError(error.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      reader.onerror = () => {
+        setError('Error reading file');
+        setLoading(false);
+      };
+
+      reader.readAsText(file);
+
     } catch (error) {
-      console.error('Upload error:', error);
-      toast.error(error.response?.data?.message || 'Upload failed');
-    } finally {
-      setUploading(false);
+      setError(error.response?.data?.message || 'Failed to upload file');
+      setLoading(false);
     }
   };
 
@@ -94,7 +144,7 @@ const InstituteDashboard = () => {
         withCredentials: true
       });
       setExamResults(response.data);
-      setSelectedExam(myUploads.find(u => u._id === examId));
+      setSelectedExam(uploads.find(u => u._id === examId));
       setShowResultsModal(true);
     } catch (error) {
       console.error('Error fetching results:', error);
@@ -111,7 +161,7 @@ const InstituteDashboard = () => {
         withCredentials: true
       });
       toast.success('Results released successfully');
-      await fetchMyUploads();
+      await fetchUploads();
       if (selectedExam?._id === examId) {
         const response = await axios.get(`${config.API_BASE_URL}/api/exams/results/${examId}`, {
           withCredentials: true
@@ -127,7 +177,7 @@ const InstituteDashboard = () => {
   };
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'}`}>
+    <Container className="py-3">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <nav className="flex space-x-8">
@@ -281,7 +331,7 @@ const InstituteDashboard = () => {
                     ? 'divide-gray-700 bg-[#1a1f2e]' 
                     : 'divide-gray-200 bg-white'
                 }`}>
-                  {myUploads.map((exam) => (
+                  {uploads.map((exam) => (
                     <tr key={exam._id}>
                       <td className={`px-6 py-4 whitespace-nowrap ${
                         isDarkMode ? 'text-gray-300' : 'text-gray-900'
@@ -444,7 +494,7 @@ const InstituteDashboard = () => {
           </div>
         )}
       </div>
-    </div>
+    </Container>
   );
 };
 
