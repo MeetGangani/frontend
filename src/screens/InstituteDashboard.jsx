@@ -10,7 +10,6 @@ const InstituteDashboard = () => {
   const [file, setFile] = useState(null);
   const [examName, setExamName] = useState('');
   const [description, setDescription] = useState('');
-  const [timeLimit, setTimeLimit] = useState(60);
   const [uploading, setUploading] = useState(false);
   const [myUploads, setMyUploads] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,7 +24,9 @@ const InstituteDashboard = () => {
 
   const fetchMyUploads = async () => {
     try {
-      const { data } = await axios.get('/api/upload/my-uploads');
+      const { data } = await axios.get(`${config.API_BASE_URL}/api/upload/my-uploads`, {
+        withCredentials: true
+      });
       setMyUploads(data);
       setLoading(false);
     } catch (error) {
@@ -55,23 +56,23 @@ const InstituteDashboard = () => {
     formData.append('file', file);
     formData.append('examName', examName);
     formData.append('description', description);
-    formData.append('timeLimit', timeLimit);
 
     setUploading(true);
     try {
-      const { data } = await axios.post('/api/upload', formData, {
+      const { data } = await axios.post(`${config.API_BASE_URL}/api/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
-        }
+        },
+        withCredentials: true
       });
 
       toast.success('Exam uploaded successfully');
       setFile(null);
       setExamName('');
       setDescription('');
-      setTimeLimit(60);
       fetchMyUploads(); // Refresh the list
     } catch (error) {
+      console.error('Upload error:', error);
       toast.error(error.response?.data?.message || 'Upload failed');
     } finally {
       setUploading(false);
@@ -159,7 +160,7 @@ const InstituteDashboard = () => {
             <h2 className={`text-2xl font-bold mb-6 ${
               isDarkMode ? 'text-white' : 'text-gray-900'
             }`}>
-              Upload Exam Questions
+              Upload New Exam
             </h2>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
@@ -206,26 +207,6 @@ const InstituteDashboard = () => {
                 <label className={`block text-sm font-medium mb-1 ${
                   isDarkMode ? 'text-gray-300' : 'text-gray-700'
                 }`}>
-                  Time Limit (minutes)
-                </label>
-                <input
-                  type="number"
-                  value={timeLimit}
-                  onChange={(e) => setTimeLimit(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-lg ${
-                    isDarkMode 
-                      ? 'bg-[#0A0F1C] border-gray-700 text-white placeholder-gray-500' 
-                      : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400'
-                  } border focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
-                  min="15"
-                  max="180"
-                />
-              </div>
-
-              <div>
-                <label className={`block text-sm font-medium mb-1 ${
-                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                }`}>
                   Upload JSON File
                 </label>
                 <input
@@ -243,7 +224,7 @@ const InstituteDashboard = () => {
                   isDarkMode ? 'text-gray-400' : 'text-gray-500'
                 }`}>
                   Upload a JSON file containing exam questions. Each question must have 4 options 
-                  and one correct answer (numbered 1-4). The correctAnswer should be the index (1-4) of the correct option.
+                  and one correct answer (numbered 0-3).
                 </p>
               </div>
 
