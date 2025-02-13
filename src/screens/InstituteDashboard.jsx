@@ -44,9 +44,9 @@ const InstituteDashboard = () => {
       }
     } catch (error) {
       console.error('Error fetching uploads:', error);
-      const errorMessage = error.response?.data?.message || 'Network error';
-      toast.error('Failed to fetch uploads: ' + errorMessage);
-      setError('Failed to fetch uploads');
+      const errorMessage = error.response?.data?.message || 'Failed to fetch uploads';
+      toast.error(errorMessage);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -54,13 +54,16 @@ const InstituteDashboard = () => {
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
-    if (selectedFile && selectedFile.type === 'application/json') {
-      setFile(selectedFile);
-      setError(null);
-    } else {
-      setFile(null);
-      setError('Please select a valid JSON file');
-      e.target.value = '';
+    if (selectedFile) {
+      if (selectedFile.type === 'application/json') {
+        setFile(selectedFile);
+        setError(null);
+      } else {
+        setFile(null);
+        setError('Please select a valid JSON file');
+        toast.error('Please select a valid JSON file');
+        e.target.value = ''; // Reset file input
+      }
     }
   };
 
@@ -88,46 +91,59 @@ const InstituteDashboard = () => {
     setError(null);
     setSuccess(null);
 
+    if (!file || !examName || !description) {
+      setError('Please fill in all required fields');
+      setLoading(false);
+      return;
+    }
+
     try {
-      // 1. Validate file content
       const reader = new FileReader();
+      
       reader.onload = async (e) => {
         try {
-          // 2. Parse and validate JSON
+          // Validate JSON format
           const jsonContent = JSON.parse(e.target.result);
-          validateJsonContent(jsonContent);
-
-          // 3. Create form data
+          
+          // Create form data
           const formData = new FormData();
           formData.append('file', file);
           formData.append('examName', examName);
           formData.append('description', description);
 
-          // 4. Send request to server
+          // Upload file
           const response = await axiosInstance.post('/api/upload', formData, {
             headers: {
               'Content-Type': 'multipart/form-data',
-            }
+            },
           });
 
-          // 5. Handle success
           if (response.status === 201) {
             setSuccess('File uploaded successfully!');
             toast.success('File uploaded successfully');
-            fetchUploads();
+            await fetchUploads(); // Refresh the uploads list
             resetForm();
           }
         } catch (error) {
-          setError(error.message);
-          toast.error(error.message);
+          const errorMessage = error.response?.data?.message || 'Invalid JSON format';
+          setError(errorMessage);
+          toast.error(errorMessage);
         } finally {
           setLoading(false);
         }
       };
 
+      reader.onerror = () => {
+        setError('Error reading file');
+        setLoading(false);
+      };
+
       reader.readAsText(file);
+
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to upload file');
+      const errorMessage = error.response?.data?.message || 'Failed to upload file';
+      setError(errorMessage);
+      toast.error(errorMessage);
       setLoading(false);
     }
   };
