@@ -22,7 +22,7 @@ const InstituteDashboard = () => {
     fetchUploads();
   }, []);
 
-  const resetForm = () => {
+  const resetForm= () => {
     setFile(null);
     setExamName('');
     setDescription('');
