@@ -92,7 +92,7 @@ const AdminDashboard = () => {
 
     setActionLoading(true);
     const status = processingType === 'approve' ? 'approved' : 'rejected';
-    setProcessingStatus('Processing request...');
+    setProcessingStatus(status === 'approved' ? 'Encrypting and uploading to IPFS...' : 'Processing request...');
 
     try {
       const response = await axios.put(
@@ -110,24 +110,32 @@ const AdminDashboard = () => {
         }
       );
 
-      console.log('Response:', response.data); // Debug log
-
       if (response.data) {
         // Update local state
         setRequests(requests.map(req =>
           req._id === selectedRequest._id
-            ? { ...req, status: response.data.status }
+            ? {
+                ...req,
+                status: response.data.status,
+                ipfsHash: response.data.ipfsHash,
+                ipfsEncryptionKey: response.data.ipfsEncryptionKey
+              }
             : req
         ));
 
-        // Refresh data
-        await fetchData();
+        // Show success message with IPFS details if approved
+        if (status === 'approved' && response.data.ipfsHash) {
+          toast.success(`Request approved and uploaded to IPFS\nHash: ${response.data.ipfsHash.slice(0, 10)}...`);
+        } else {
+          toast.success(`Request ${status} successfully`);
+        }
 
+        // Refresh data and reset state
+        await fetchData();
         setShowModal(false);
         setSelectedRequest(null);
         setAdminComment('');
         setProcessingType(null);
-        toast.success(`Request ${status} successfully`);
       }
     } catch (error) {
       console.error('Status update error:', error);
