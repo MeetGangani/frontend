@@ -173,25 +173,29 @@ const StudentDashboard = () => {
     }
   };
 
-  const submitExam = async () => {
-    if (!currentExam) return;
-
+  const handleSubmitExam = async () => {
     try {
       setExamSubmitting(true);
-      const response = await axios.post('/api/exams/submit', {
-        examId: currentExam._id,
-        answers
-      });
-      
-      // First fetch fresh results to ensure we have the latest data
-      await fetchResults();
-      
-      // Then update the UI state
-      setCurrentExam(null);
-      setAnswers({});
-      setTimeLeft(null);
-      setActiveTab('results');
-      
+      setError(null);
+
+      const response = await axios.post(
+        `${config.API_BASE_URL}/api/exams/submit`, // Make sure this matches your backend route
+        {
+          examId: currentExam._id,
+          answers: answers
+        },
+        {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.data) {
+        setActiveTab('results');
+        await fetchResults(); // Refresh results after submission
+      }
     } catch (error) {
       console.error('Submit exam error:', error);
       setError(error.response?.data?.message || 'Failed to submit exam');
@@ -335,7 +339,7 @@ const StudentDashboard = () => {
 
           {currentQuestionIndex === totalQuestions - 1 ? (
             <button
-              onClick={submitExam}
+              onClick={handleSubmitExam}
               disabled={examSubmitting || answeredQuestions !== totalQuestions}
               className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50 flex items-center"
             >
