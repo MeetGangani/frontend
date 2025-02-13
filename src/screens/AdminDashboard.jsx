@@ -15,12 +15,7 @@ const AdminDashboard = () => {
   const [userType, setUserType] = useState('student');
   const [success, setSuccess] = useState('');
   const [requests, setRequests] = useState([]);
-  const [stats, setStats] = useState({
-    totalRequests: 0,
-    pendingRequests: 0,
-    approvedRequests: 0,
-    rejectedRequests: 0
-  });
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -39,33 +34,16 @@ const AdminDashboard = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      const [requestsRes, statsRes] = await Promise.all([
+        axios.get(`${BACKEND_URL}/api/admin/requests`, { withCredentials: true }),
+        axios.get(`${BACKEND_URL}/api/admin/dashboard`, { withCredentials: true })
+      ]);
+      setRequests(requestsRes.data);
+      setStats(statsRes.data);
       setError(null);
-      
-      // Update API endpoints to include BACKEND_URL
-      const requestsResponse = await axios.get(`${BACKEND_URL}/api/admin/requests`, {
-        withCredentials: true,
-        headers: {
-          'Accept': 'application/json'
-        }
-      });
-      
-      console.log('Raw response:', requestsResponse); // Debug log
-      console.log('Fetched requests:', requestsResponse.data);
-      setRequests(Array.isArray(requestsResponse.data) ? requestsResponse.data : []);
-
-      // Fetch stats with updated URL
-      const statsResponse = await axios.get(`${BACKEND_URL}/api/admin/dashboard`, {
-        withCredentials: true,
-        headers: {
-          'Accept': 'application/json'
-        }
-      });
-      console.log('Stats response:', statsResponse.data);
-      setStats(statsResponse.data);
     } catch (error) {
       console.error('Error fetching data:', error);
-      setError(error.response?.data?.message || 'Failed to fetch data');
-      setRequests([]);
+      setError('Failed to fetch data');
     } finally {
       setLoading(false);
     }
@@ -95,56 +73,18 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleApprove = async (requestId) => {
-    try {
-      const response = await axios.put(
-        `${BACKEND_URL}/api/admin/requests/${requestId}`,
-        {
-          status: 'approved'
-        },
-        {
-          withCredentials: true,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          }
-        }
-      );
-      
-      if (response.data) {
-        toast.success('Request approved successfully');
-        fetchData(); // Refresh the data
-      }
-    } catch (error) {
-      console.error('Approval error:', error);
-      toast.error(error.response?.data?.message || 'Failed to approve request');
-    }
+  const handleApprove = (request) => {
+    setSelectedRequest(request);
+    setAdminComment('Approved by admin');
+    setShowModal(true);
+    setProcessingType('approve');
   };
 
-  const handleReject = async (requestId) => {
-    try {
-      const response = await axios.put(
-        `${BACKEND_URL}/api/admin/requests/${requestId}`,
-        {
-          status: 'rejected'
-        },
-        {
-          withCredentials: true,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          }
-        }
-      );
-      
-      if (response.data) {
-        toast.success('Request rejected successfully');
-        fetchData(); // Refresh the data
-      }
-    } catch (error) {
-      console.error('Rejection error:', error);
-      toast.error(error.response?.data?.message || 'Failed to reject request');
-    }
+  const handleReject = (request) => {
+    setSelectedRequest(request);
+    setAdminComment('');
+    setShowModal(true);
+    setProcessingType('reject');
   };
 
   const handleStatusUpdate = async () => {
@@ -152,43 +92,42 @@ const AdminDashboard = () => {
 
     setActionLoading(true);
     const status = processingType === 'approve' ? 'approved' : 'rejected';
-    setProcessingStatus('Initiating process...');
+    setProcessingStatus('Processing request...');
 
     try {
-      if (processingType === 'approve') {
-        setProcessingStatus('Encrypting and uploading to IPFS...');
-      } else {
-        setProcessingStatus('Processing rejection...');
-      }
-      
-      const response = await axios.put(`/api/admin/requests/${selectedRequest._id}`, {
-        status,
-        adminComment
-      });
+      const response = await axios.put(
+        `${BACKEND_URL}/api/admin/requests/${selectedRequest._id}`,
+        {
+          status,
+          adminComment
+        },
+        {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
 
-      setProcessingStatus('Finalizing...');
-      
-      // Update the local state
-      setRequests(requests.map(req => 
-        req._id === selectedRequest._id 
+      // Update local state
+      setRequests(requests.map(req =>
+        req._id === selectedRequest._id
           ? { ...req, status: response.data.status }
           : req
       ));
 
       // Refresh stats
       await fetchData();
-      
+
       setShowModal(false);
       setSelectedRequest(null);
       setAdminComment('');
-      setError(null);
       setProcessingType(null);
-
       toast.success(`Request ${status} successfully`);
 
     } catch (error) {
-      console.error('Error updating status:', error);
-      setError(`Failed to ${status} request: ${error.response?.data?.message || error.message}`);
+      console.error('Status update error:', error);
+      toast.error(error.response?.data?.message || `Failed to ${status} request`);
     } finally {
       setActionLoading(false);
       setProcessingStatus('');
@@ -334,13 +273,13 @@ const AdminDashboard = () => {
                       {request.status === 'pending' && (
                         <div className="flex space-x-2">
                           <button
-                            onClick={() => handleApprove(request._id)}
+                            onClick={() => handleApprove(request)}
                             className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors"
                           >
                             Approve
                           </button>
                           <button
-                            onClick={() => handleReject(request._id)}
+                            onClick={() => handleReject(request)}
                             className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-colors"
                           >
                             Reject
@@ -355,6 +294,94 @@ const AdminDashboard = () => {
           </div>
         )}
       </div>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className={`${
+              isDarkMode 
+                ? 'bg-[#1a1f2e] text-white' 
+                : 'bg-white text-gray-900'
+            } rounded-lg max-w-md w-full shadow-xl`}
+          >
+            <div className={`flex justify-between items-center p-6 border-b ${
+              isDarkMode ? 'border-gray-700' : 'border-gray-200'
+            }`}>
+              <h3 className="text-lg font-medium">
+                {processingType === 'approve' ? 'Approve' : 'Reject'} Request
+              </h3>
+              {!actionLoading && (
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <span className="sr-only">Close</span>
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            <div className="p-6">
+              <div className="mb-4">
+                <label className={`block text-sm font-medium mb-1 ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Admin Comment
+                </label>
+                <textarea
+                  rows={3}
+                  value={adminComment}
+                  onChange={(e) => setAdminComment(e.target.value)}
+                  disabled={actionLoading}
+                  className={`w-full px-3 py-2 rounded-lg shadow-sm ${
+                    isDarkMode 
+                      ? 'bg-[#2a2f3e] border-gray-700 text-white' 
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
+                />
+              </div>
+
+              {actionLoading && (
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-violet-500"></div>
+                  <span>{processingStatus}</span>
+                </div>
+              )}
+            </div>
+
+            <div className={`px-6 py-4 flex justify-end space-x-3 ${
+              isDarkMode ? 'bg-[#2a2f3e]' : 'bg-gray-50'
+            }`}>
+              <button
+                onClick={() => setShowModal(false)}
+                disabled={actionLoading}
+                className={`px-4 py-2 rounded-lg ${
+                  isDarkMode 
+                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleStatusUpdate}
+                disabled={actionLoading}
+                className={`px-4 py-2 text-white rounded-lg ${
+                  processingType === 'approve'
+                    ? 'bg-green-600 hover:bg-green-700'
+                    : 'bg-red-600 hover:bg-red-700'
+                }`}
+              >
+                {actionLoading ? 'Processing...' : processingType === 'approve' ? 'Approve' : 'Reject'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };
