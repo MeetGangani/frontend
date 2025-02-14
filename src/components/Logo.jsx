@@ -27,45 +27,37 @@ const Logo = ({ width = "200", height = "200", className = "" }) => {
         {/* Main Circle */}
         <circle cx="100" cy="100" r="60" fill="url(#logoGradient)" opacity="0.1"/>
         
-        {/* Atom-like Rings */}
-        <ellipse 
-          cx="100" 
-          cy="100" 
-          rx="50" 
-          ry="20" 
+        {/* Stylized Check Mark */}
+        <path 
+          d="M70 100L90 120L130 80" 
           stroke="url(#logoGradient)" 
-          strokeWidth="4" 
+          strokeWidth="8" 
+          strokeLinecap="round" 
+          strokeLinejoin="round"
           fill="none"
-          transform="rotate(0 100 100)"
-        />
-        <ellipse 
-          cx="100" 
-          cy="100" 
-          rx="50" 
-          ry="20" 
-          stroke="url(#logoGradient2)" 
-          strokeWidth="4" 
-          fill="none"
-          transform="rotate(60 100 100)"
-        />
-        <ellipse 
-          cx="100" 
-          cy="100" 
-          rx="50" 
-          ry="20" 
-          stroke="url(#logoGradient)" 
-          strokeWidth="4" 
-          fill="none"
-          transform="rotate(120 100 100)"
         />
 
-        {/* Center Sphere */}
-        <circle cx="100" cy="100" r="15" fill="url(#logoGradient)"/>
+        {/* Document Outline */}
+        <path 
+          d="M65 60H135V140H65V60Z" 
+          stroke="url(#logoGradient)" 
+          strokeWidth="4" 
+          fill="none"
+        />
         
-        {/* Orbital Points */}
-        <circle cx="100" cy="50" r="8" fill="url(#logoGradient2)"/>
-        <circle cx="143" cy="125" r="8" fill="url(#logoGradient)"/>
-        <circle cx="57" cy="125" r="8" fill="url(#logoGradient2)"/>
+        {/* Lines representing text */}
+        <path 
+          d="M80 90H120M80 110H120" 
+          stroke="url(#logoGradient2)" 
+          strokeWidth="4" 
+          strokeLinecap="round"
+        />
+
+        {/* Corner Decorations */}
+        <circle cx="65" cy="60" r="6" fill="url(#logoGradient)"/>
+        <circle cx="135" cy="60" r="6" fill="url(#logoGradient2)"/>
+        <circle cx="65" cy="140" r="6" fill="url(#logoGradient2)"/>
+        <circle cx="135" cy="140" r="6" fill="url(#logoGradient)"/>
       </g>
     </svg>
   );
