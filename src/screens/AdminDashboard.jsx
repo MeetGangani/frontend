@@ -417,7 +417,9 @@ const AdminDashboard = () => {
               isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
             }`}>
               <div className="p-6">
-                <h2 className="text-xl font-semibold mb-6">Create New User</h2>
+                <h2 className={`text-xl font-semibold mb-6 ${
+                  isDarkMode ? 'text-white' : 'text-gray-900'
+                }`}>Create New User</h2>
                 <AdminUserCreate onUserCreated={fetchUsers} />
               </div>
             </div>
@@ -430,7 +432,9 @@ const AdminDashboard = () => {
             }`}>
               <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-semibold">User List</h2>
+                  <h2 className={`text-xl font-semibold ${
+                    isDarkMode ? 'text-white' : 'text-gray-900'
+                  }`}>User List</h2>
                   <div className="relative">
                     <input
                       type="text"
@@ -460,11 +464,13 @@ const AdminDashboard = () => {
                     <table className="min-w-full">
                       <thead className={`sticky top-0 ${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'}`}>
                         <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Name</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Email</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Type</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Status</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
+                          {['Name', 'Email', 'Type', 'Status', 'Actions'].map((header) => (
+                            <th key={header} className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                            }`}>
+                              {header}
+                            </th>
+                          ))}
                         </tr>
                       </thead>
                       <tbody className={`divide-y ${
@@ -480,11 +486,7 @@ const AdminDashboard = () => {
                             <td className="px-4 py-3 whitespace-nowrap">{user.email}</td>
                             <td className="px-4 py-3 whitespace-nowrap capitalize">{user.userType}</td>
                             <td className="px-4 py-3 whitespace-nowrap">
-                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                                user.isActive
-                                  ? 'bg-green-500 text-white'
-                                  : 'bg-red-500 text-white'
-                              }`}>
+                              <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-500 text-white">
                                 {user.isActive ? 'Active' : 'Inactive'}
                               </span>
                             </td>
