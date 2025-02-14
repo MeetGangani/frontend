@@ -7,6 +7,7 @@ import { logout } from '../slices/authSlice';
 import { FaSignInAlt, FaSignOutAlt, FaUser, FaBrain, FaChalkboardTeacher, FaMoon, FaSun } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
+import { clearAuthCookies } from '../utils/cookieUtils';
 
 const Header = () => {
   const { userInfo } = useSelector((state) => state.auth);
@@ -27,11 +28,21 @@ const Header = () => {
 
   const logoutHandler = async () => {
     try {
-      await logoutApiCall().unwrap();
-      dispatch(logout());
-      navigate('/login');
+      const response = await logoutApiCall().unwrap();
+      if (response.success) {
+        // Clear all auth-related data
+        clearAuthCookies();
+        dispatch(logout());
+        
+        // Force a page reload to clear any cached state
+        window.location.href = '/login';
+      }
     } catch (err) {
-      console.error(err);
+      console.error('Logout failed:', err);
+      // Attempt to logout anyway
+      clearAuthCookies();
+      dispatch(logout());
+      window.location.href = '/login';
     }
   };
 
