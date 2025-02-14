@@ -37,11 +37,11 @@ const AdminUserCreate = () => {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <h2 className={`text-2xl font-bold mb-6 ${
+      {/* <h2 className={`text-2xl font-bold mb-6 ${
         isDarkMode ? 'text-white' : 'text-gray-900'
       }`}>
         Create New User
-      </h2>
+      </h2> */}
       
       {success && (
         <div className={`mb-4 p-4 rounded-lg ${
