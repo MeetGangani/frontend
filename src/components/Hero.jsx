@@ -157,7 +157,7 @@ const Hero = () => {
                         onClick={handleCreateAccount}
                         className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-medium rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg hover:shadow-violet-500/25 transition-all duration-300"
                       >
-                        Create Free Account
+                        Get Started
                         <FaArrowRight className="ml-2 group-hover:translate-x-1 transition-transform duration-300" />
                       </button>
                     </motion.div>
@@ -345,12 +345,12 @@ const Hero = () => {
                 <h2 className={`text-3xl md:text-4xl font-bold mb-6 ${
                   isDarkMode ? 'text-white' : 'text-gray-900'
                 }`}>
-                  Ready to Get Started?
+                  Ready to Transform Your Examination Process?
                 </h2>
                 <p className={`text-lg mb-8 ${
                   isDarkMode ? 'text-gray-400' : 'text-gray-600'
                 }`}>
-                  Join NexusEdu today and transform your examination process
+                  Join thousands of institutions using NexusEdu
                 </p>
                 <motion.div
                   whileHover={{ scale: 1.05 }}
