@@ -13,44 +13,42 @@ const Logo = ({ width = "200", height = "200", className = "" }) => {
           <stop offset="0%" style={{stopColor:"#7C3AED"}}/> 
           <stop offset="100%" style={{stopColor:"#4F46E5"}}/> 
         </linearGradient>
-        <linearGradient id="logoGradient2" x1="0%" y1="100%" x2="100%" y2="0%">
-          <stop offset="0%" style={{stopColor:"#7C3AED"}}/> 
-          <stop offset="100%" style={{stopColor:"#4F46E5"}}/> 
-        </linearGradient>
       </defs>
 
-      {/* Background Shape */}
+
+      {/* Large Connection Points */}
+      <circle cx="100" cy="50" r="20" fill="url(#logoGradient)"/>
+      <circle cx="60" cy="120" r="15" fill="url(#logoGradient)"/>
+      <circle cx="140" cy="120" r="15" fill="url(#logoGradient)"/>
+
+      {/* Medium Connection Points */}
+      <circle cx="100" cy="90" r="12" fill="url(#logoGradient)"/>
+      <circle cx="80" cy="150" r="10" fill="url(#logoGradient)"/>
+      <circle cx="120" cy="150" r="10" fill="url(#logoGradient)"/>
+
+      {/* Small Connection Points */}
+      <circle cx="40" cy="90" r="8" fill="url(#logoGradient)"/>
+      <circle cx="160" cy="90" r="8" fill="url(#logoGradient)"/>
+
+      {/* Connection Lines */}
       <path 
-        d="M40 80C40 60 50 40 80 40H120C150 40 160 60 160 80V120C160 140 150 160 120 160H80C50 160 40 140 40 120V80Z" 
-        fill="url(#logoGradient)"
+        d="M100 70L60 120M100 70L140 120M100 70L40 90M100 70L160 90
+           M60 120L80 150M140 120L120 150M100 90L80 150M100 90L120 150
+           M60 120L140 120" 
+        stroke="url(#logoGradient)" 
+        strokeWidth="3"
+        opacity="0.6"
+      />
+
+      {/* Background Circle */}
+      <circle 
+        cx="100" 
+        cy="100" 
+        r="80" 
+        stroke="url(#logoGradient)" 
+        strokeWidth="2"
         opacity="0.1"
-      />
-
-      {/* Main Shield Shape */}
-      <path 
-        d="M70 60C70 50 75 40 100 40C125 40 130 50 130 60V100C130 120 115 130 100 130C85 130 70 120 70 100V60Z" 
-        fill="url(#logoGradient)"
-      />
-
-      {/* Inner Elements */}
-      <path 
-        d="M85 70H115M85 90H115" 
-        stroke="white" 
-        strokeWidth="6" 
-        strokeLinecap="round"
-      />
-
-      {/* Decorative Elements */}
-      <circle cx="85" cy="110" r="4" fill="white"/>
-      <circle cx="100" cy="110" r="4" fill="white"/>
-      <circle cx="115" cy="110" r="4" fill="white"/>
-
-      {/* Bottom Accent */}
-      <path 
-        d="M80 140H120M90 150H110" 
-        stroke="url(#logoGradient2)" 
-        strokeWidth="6" 
-        strokeLinecap="round"
+        fill="none"
       />
     </svg>
   );
