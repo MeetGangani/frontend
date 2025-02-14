@@ -18,14 +18,22 @@ const Logo = ({ width = "200", height = "200", className = "" }) => {
       <circle cx="100" cy="100" r="90" fill="url(#logoGradient)" opacity="0.1"/>
       
       <path 
-        d="M60 140L60 60L100 110L140 60L140 140L120 140L120 90L100 120L80 90L80 140Z" 
+        d="M50 90L100 65L150 90L100 115L50 90Z M100 125L70 110V130Q85 140 100 145Q115 140 130 130V110L100 125Z" 
         fill="url(#logoGradient)"
       />
 
       <path 
-        d="M85 130Q100 120 115 130L115 135Q100 125 85 135Z" 
-        fill="url(#logoGradient)"
+        d="M60 80Q80 60 100 55Q120 60 140 80M60 100Q80 120 100 125Q120 120 140 100" 
+        stroke="url(#logoGradient)" 
+        strokeWidth="4" 
+        fill="none"
+        strokeLinecap="round"
       />
+
+      <circle cx="60" cy="80" r="4" fill="url(#logoGradient)"/>
+      <circle cx="140" cy="80" r="4" fill="url(#logoGradient)"/>
+      <circle cx="60" cy="100" r="4" fill="url(#logoGradient)"/>
+      <circle cx="140" cy="100" r="4" fill="url(#logoGradient)"/>
     </svg>
   );
 };
