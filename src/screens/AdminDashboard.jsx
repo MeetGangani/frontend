@@ -6,6 +6,7 @@ import AdminUserCreate from './AdminUserCreate';
 import axios from 'axios';
 import { useTheme } from '../context/ThemeContext';
 import { motion } from 'framer-motion';
+import { FaTrash, FaUserSlash, FaUserCheck } from 'react-icons/fa';
 
 const AdminDashboard = () => {
   const { isDarkMode } = useTheme();
@@ -25,6 +26,9 @@ const AdminDashboard = () => {
   const [processingStatus, setProcessingStatus] = useState('');
   const [activeTab, setActiveTab] = useState('dashboard');
   const [processingType, setProcessingType] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [userLoading, setUserLoading] = useState(false);
+  const [userError, setUserError] = useState(null);
 
   const [register, { isLoading }] = useRegisterMutation();
 
@@ -87,7 +91,8 @@ const AdminDashboard = () => {
     setProcessingType('reject');
   };
 
-  const handleStatusUpdate = async () => {
+  // Handle request status update (for exam requests)
+  const handleRequestStatusUpdate = async () => {  
     if (!selectedRequest) return;
 
     setActionLoading(true);
@@ -111,7 +116,6 @@ const AdminDashboard = () => {
       );
 
       if (response.data) {
-        // Update local state
         setRequests(requests.map(req =>
           req._id === selectedRequest._id
             ? {
@@ -123,14 +127,12 @@ const AdminDashboard = () => {
             : req
         ));
 
-        // Show success message with IPFS details if approved
         if (status === 'approved' && response.data.ipfsHash) {
           toast.success(`Request approved and uploaded to IPFS\nHash: ${response.data.ipfsHash.slice(0, 10)}...`);
         } else {
           toast.success(`Request ${status} successfully`);
         }
 
-        // Refresh data and reset state
         await fetchData();
         setShowModal(false);
         setSelectedRequest(null);
@@ -143,6 +145,60 @@ const AdminDashboard = () => {
     } finally {
       setActionLoading(false);
       setProcessingStatus('');
+    }
+  };
+
+  // Fetch users
+  const fetchUsers = async () => {
+    try {
+      setUserLoading(true);
+      const response = await axios.get(`${BACKEND_URL}/api/admin/users`, {
+        withCredentials: true
+      });
+      setUsers(response.data);
+      setUserError(null);
+    } catch (error) {
+      setUserError('Failed to fetch users');
+      console.error('Error fetching users:', error);
+    } finally {
+      setUserLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'users') {
+      fetchUsers();
+    }
+  }, [activeTab]);
+
+  // Handle user status update (for user management)
+  const handleUserStatusUpdate = async (userId, newStatus) => {
+    try {
+      await axios.put(
+        `${BACKEND_URL}/api/admin/users/${userId}/status`,
+        { isActive: newStatus },
+        { withCredentials: true }
+      );
+      fetchUsers(); // Refresh user list
+      toast.success('User status updated successfully');
+    } catch (error) {
+      toast.error('Failed to update user status');
+    }
+  };
+
+  // Handle user deletion
+  const handleDeleteUser = async (userId) => {
+    if (window.confirm('Are you sure you want to delete this user?')) {
+      try {
+        await axios.delete(
+          `${BACKEND_URL}/api/admin/users/${userId}`,
+          { withCredentials: true }
+        );
+        fetchUsers(); // Refresh user list
+        toast.success('User deleted successfully');
+      } catch (error) {
+        toast.error('Failed to delete user');
+      }
     }
   };
 
@@ -349,6 +405,85 @@ const AdminDashboard = () => {
         </div>
       )}
 
+      {activeTab === 'users' && (
+        <div className={`rounded-lg shadow-md ${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'}`}>
+          <div className="p-6">
+            <h2 className="text-2xl font-bold mb-6">Manage Users</h2>
+            
+            {/* Create User Form */}
+            <AdminUserCreate onUserCreated={fetchUsers} />
+
+            {/* Users Table */}
+            {userLoading ? (
+              <div className="flex justify-center items-center p-8">
+                <Loader />
+              </div>
+            ) : userError ? (
+              <div className="text-red-500 p-4">{userError}</div>
+            ) : (
+              <div className="mt-8 overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className={isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}>
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Name</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Email</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Type</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className={`divide-y divide-gray-200 ${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'}`}>
+                    {users.map((user) => (
+                      <tr key={user._id}>
+                        <td className="px-6 py-4 whitespace-nowrap">{user.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
+                        <td className="px-6 py-4 whitespace-nowrap capitalize">{user.userType}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            user.isActive
+                              ? isDarkMode 
+                                ? 'bg-green-900/20 text-green-300'
+                                : 'bg-green-100 text-green-800'
+                              : isDarkMode
+                                ? 'bg-red-900/20 text-red-300'
+                                : 'bg-red-100 text-red-800'
+                          }`}>
+                            {user.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleUserStatusUpdate(user._id, !user.isActive)}
+                              className={`p-2 rounded-full ${
+                                isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+                              }`}
+                            >
+                              {user.isActive ? 
+                                <FaUserSlash className="text-red-500" /> : 
+                                <FaUserCheck className="text-green-500" />
+                              }
+                            </button>
+                            <button
+                              onClick={() => handleDeleteUser(user._id)}
+                              className={`p-2 rounded-full ${
+                                isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+                              }`}
+                            >
+                              <FaTrash className="text-red-500" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <motion.div
@@ -422,15 +557,15 @@ const AdminDashboard = () => {
                 Cancel
               </button>
               <button
-                onClick={handleStatusUpdate}
+                onClick={handleRequestStatusUpdate}
                 disabled={actionLoading}
-                className={`px-4 py-2 text-white rounded-lg ${
-                  processingType === 'approve'
-                    ? 'bg-green-600 hover:bg-green-700'
-                    : 'bg-red-600 hover:bg-red-700'
+                className={`px-4 py-2 rounded-lg ${
+                  isDarkMode 
+                    ? 'bg-violet-600 text-white hover:bg-violet-700' 
+                    : 'bg-violet-500 text-white hover:bg-violet-600'
                 }`}
               >
-                {actionLoading ? 'Processing...' : processingType === 'approve' ? 'Approve' : 'Reject'}
+                {processingType === 'approve' ? 'Approve' : 'Reject'}
               </button>
             </div>
           </motion.div>
