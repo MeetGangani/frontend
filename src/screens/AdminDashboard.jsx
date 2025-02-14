@@ -398,25 +398,25 @@ const AdminDashboard = () => {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <div className="flex gap-4">
           {/* Create User Form */}
-          <div className="lg:col-span-1">
-            <div className={`rounded-lg shadow-md transition-none ${
+          <div className="w-1/4">
+            <div className={`rounded-lg shadow-md h-full transition-none ${
               isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
             }`}>
-              <div className="p-4">
-                <h2 className="text-lg font-semibold mb-4">Create New User</h2>
+              <div className="p-6">
+                {/* <h2 className="text-lg font-semibold mb-4">Create New User</h2> */}
                 <AdminUserCreate onUserCreated={fetchUsers} />
               </div>
             </div>
           </div>
 
           {/* Users Table */}
-          <div className="lg:col-span-3">
-            <div className={`rounded-lg shadow-md transition-none ${
+          <div className="w-3/4">
+            <div className={`rounded-lg shadow-md h-full transition-none ${
               isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
             }`}>
-              <div className="p-4">
+              <div className="p-6">
                 <h2 className="text-lg font-semibold mb-4">User List</h2>
                 {userLoading ? (
                   <div className="flex justify-center items-center p-4">
@@ -440,7 +440,9 @@ const AdminDashboard = () => {
                         isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
                       }`}>
                         {users.map((user) => (
-                          <tr key={user._id} className="transition-none">
+                          <tr key={user._id} className={`transition-none hover:bg-gray-50 ${
+                            isDarkMode ? 'hover:bg-[#2a2f3e]' : ''
+                          }`}>
                             <td className="px-4 py-3 whitespace-nowrap">{user.name}</td>
                             <td className="px-4 py-3 whitespace-nowrap">{user.email}</td>
                             <td className="px-4 py-3 whitespace-nowrap capitalize">{user.userType}</td>
