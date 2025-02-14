@@ -46,3 +46,20 @@ body {
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.hover\:rotate-180:hover {
+  transform: rotate(180deg);
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
