@@ -80,7 +80,7 @@ const Hero = () => {
           />
         </motion.div>
 
-        {/* Main content sections with enhanced animations */}
+        {/* Optimize content animations */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -209,9 +209,6 @@ const Hero = () => {
                   ))}
                 </div>
 
-                <div className="flex justify-center mb-8">
-                  <Logo width="80" height="80" className="animate-float" />
-                </div>
               </motion.div>
             </div>
           </div>
