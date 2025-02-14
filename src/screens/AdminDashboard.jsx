@@ -252,22 +252,22 @@ const AdminDashboard = () => {
   console.log('Current stats:', stats);
 
   return (
-    <div className={`min-h-screen p-8 transition-none ${isDarkMode ? 'bg-[#0A0F1C] text-white' : 'bg-gray-50 text-gray-900'}`}>
+    <div className={`min-h-screen p-4 transition-none ${isDarkMode ? 'bg-[#0A0F1C] text-white' : 'bg-gray-50 text-gray-900'}`}>
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className={`p-6 rounded-lg shadow-md ${
-          isDarkMode ? 'bg-[#1a1f2e] text-white' : 'bg-white text-gray-900'
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className={`p-4 rounded-lg shadow-md transition-none ${
+          isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
         }`}>
           <h3 className="text-lg font-semibold mb-2">Total Requests</h3>
           <p className="text-3xl font-bold">{stats?.totalRequests || 0}</p>
         </div>
-        <div className={`p-6 rounded-lg shadow-md ${
+        <div className={`p-4 rounded-lg shadow-md ${
           isDarkMode ? 'bg-[#1a1f2e] text-white' : 'bg-white text-gray-900'
         }`}>
           <h3 className="text-lg font-semibold mb-2">Pending Requests</h3>
           <p className="text-3xl font-bold">{stats?.pendingRequests || 0}</p>
         </div>
-        <div className={`p-6 rounded-lg shadow-md ${
+        <div className={`p-4 rounded-lg shadow-md ${
           isDarkMode ? 'bg-[#1a1f2e] text-white' : 'bg-white text-gray-900'
         }`}>
           <h3 className="text-lg font-semibold mb-2">Approved Requests</h3>
@@ -276,7 +276,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Tab Navigation */}
-      <div className="mb-8">
+      <div className="mb-6">
         <div className={`flex space-x-4 border-b transition-none ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
           <button
             onClick={() => setActiveTab('dashboard')}
@@ -398,116 +398,86 @@ const AdminDashboard = () => {
           )}
         </div>
       ) : (
-        <div className={`rounded-lg shadow-md transition-none h-[calc(100vh-300px)] ${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'}`}>
-          <div className="p-6 h-full">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-              {/* Create User Form */}
-              <div className="lg:col-span-1 h-full">
-                <div className={`p-6 rounded-lg shadow-md transition-none h-full ${
-                  isDarkMode ? 'bg-[#2a2f3e]' : 'bg-gray-50'
-                }`}>
-                  <h2 className={`text-xl font-bold mb-6 transition-none ${
-                    isDarkMode ? 'text-white' : 'text-gray-900'
-                  }`}>Create New User</h2>
-                  <AdminUserCreate onUserCreated={fetchUsers} />
-                </div>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          {/* Create User Form */}
+          <div className="lg:col-span-1">
+            <div className={`rounded-lg shadow-md transition-none ${
+              isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
+            }`}>
+              <div className="p-4">
+                <h2 className="text-lg font-semibold mb-4">Create New User</h2>
+                <AdminUserCreate onUserCreated={fetchUsers} />
               </div>
+            </div>
+          </div>
 
-              {/* Users Table */}
-              <div className="lg:col-span-2 h-full">
-                <div className={`p-6 rounded-lg shadow-md transition-none h-full ${
-                  isDarkMode ? 'bg-[#2a2f3e]' : 'bg-gray-50'
-                }`}>
-                  <h2 className={`text-xl font-bold mb-6 transition-none ${
-                    isDarkMode ? 'text-white' : 'text-gray-900'
-                  }`}>User List</h2>
-                  {userLoading ? (
-                    <div className="flex justify-center items-center p-8">
-                      <Loader />
-                    </div>
-                  ) : userError ? (
-                    <div className="text-red-500 p-4">{userError}</div>
-                  ) : (
-                    <div className="overflow-auto max-h-[calc(100vh-450px)]">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className={`sticky top-0 transition-none ${isDarkMode ? 'bg-[#2a2f3e]' : 'bg-gray-50'}`}>
-                          <tr>
-                            <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-none ${
-                              isDarkMode ? 'text-gray-300' : 'text-gray-500'
-                            }`}>Name</th>
-                            <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-none ${
-                              isDarkMode ? 'text-gray-300' : 'text-gray-500'
-                            }`}>Email</th>
-                            <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-none ${
-                              isDarkMode ? 'text-gray-300' : 'text-gray-500'
-                            }`}>Type</th>
-                            <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-none ${
-                              isDarkMode ? 'text-gray-300' : 'text-gray-500'
-                            }`}>Status</th>
-                            <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-none ${
-                              isDarkMode ? 'text-gray-300' : 'text-gray-500'
-                            }`}>Actions</th>
+          {/* Users Table */}
+          <div className="lg:col-span-3">
+            <div className={`rounded-lg shadow-md transition-none ${
+              isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
+            }`}>
+              <div className="p-4">
+                <h2 className="text-lg font-semibold mb-4">User List</h2>
+                {userLoading ? (
+                  <div className="flex justify-center items-center p-4">
+                    <Loader />
+                  </div>
+                ) : userError ? (
+                  <div className="text-red-500 p-4">{userError}</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className={`transition-none ${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'}`}>
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Name</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Email</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Type</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Status</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className={`divide-y transition-none ${
+                        isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
+                      }`}>
+                        {users.map((user) => (
+                          <tr key={user._id} className="transition-none">
+                            <td className="px-4 py-3 whitespace-nowrap">{user.name}</td>
+                            <td className="px-4 py-3 whitespace-nowrap">{user.email}</td>
+                            <td className="px-4 py-3 whitespace-nowrap capitalize">{user.userType}</td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                user.isActive
+                                  ? 'bg-green-500 text-white'
+                                  : 'bg-red-500 text-white'
+                              }`}>
+                                {user.isActive ? 'Active' : 'Inactive'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() => handleUserStatusUpdate(user._id, !user.isActive)}
+                                  className="text-gray-400 hover:text-gray-600"
+                                >
+                                  {user.isActive ? 
+                                    <FaUserSlash className="w-4 h-4" /> : 
+                                    <FaUserCheck className="w-4 h-4" />
+                                  }
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteUser(user._id)}
+                                  className="text-red-400 hover:text-red-600"
+                                >
+                                  <FaTrash className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody className={`divide-y transition-none ${
-                          isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
-                        }`}>
-                          {users.map((user) => (
-                            <tr key={user._id} className={`transition-none ${
-                              isDarkMode ? 'hover:bg-[#3a3f4e]' : 'hover:bg-gray-50'
-                            }`}>
-                              <td className={`px-6 py-4 whitespace-nowrap transition-none ${
-                                isDarkMode ? 'text-gray-200' : 'text-gray-900'
-                              }`}>{user.name}</td>
-                              <td className={`px-6 py-4 whitespace-nowrap transition-none ${
-                                isDarkMode ? 'text-gray-200' : 'text-gray-900'
-                              }`}>{user.email}</td>
-                              <td className={`px-6 py-4 whitespace-nowrap capitalize transition-none ${
-                                isDarkMode ? 'text-gray-200' : 'text-gray-900'
-                              }`}>{user.userType}</td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <span className={`px-2 py-1 text-xs font-medium rounded-full transition-none ${
-                                  user.isActive
-                                    ? isDarkMode 
-                                      ? 'bg-green-900/20 text-green-300'
-                                      : 'bg-green-100 text-green-800'
-                                    : isDarkMode
-                                      ? 'bg-red-900/20 text-red-300'
-                                      : 'bg-red-100 text-red-800'
-                                }`}>
-                                  {user.isActive ? 'Active' : 'Inactive'}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="flex space-x-2">
-                                  <button
-                                    onClick={() => handleUserStatusUpdate(user._id, !user.isActive)}
-                                    className={`p-2 rounded-full transition-none ${
-                                      isDarkMode ? 'hover:bg-[#4a4f5e]' : 'hover:bg-gray-100'
-                                    }`}
-                                  >
-                                    {user.isActive ? 
-                                      <FaUserSlash className="text-red-500" /> : 
-                                      <FaUserCheck className="text-green-500" />
-                                    }
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteUser(user._id)}
-                                    className={`p-2 rounded-full transition-none ${
-                                      isDarkMode ? 'hover:bg-[#4a4f5e]' : 'hover:bg-gray-100'
-                                    }`}
-                                  >
-                                    <FaTrash className="text-red-500" />
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
           </div>
