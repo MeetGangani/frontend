@@ -23,6 +23,15 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    rollupOptions: {
+      output: {
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name.endsWith('.xml')) return 'sitemap.xml';
+          if (assetInfo.name.endsWith('.txt')) return 'robots.txt';
+          return `assets/[name]-[hash][extname]`;
+        },
+      },
+    },
   },
   define: {
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
