@@ -219,93 +219,135 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Requests Table */}
-      <div className={`rounded-lg shadow-md overflow-hidden ${
-        isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
-      }`}>
-        <h2 className={`text-2xl font-bold p-6 border-b ${
-          isDarkMode ? 'border-gray-700' : 'border-gray-200'
-        }`}>
-          Exam Requests
-        </h2>
-        
-        {loading ? (
-          <div className="flex justify-center items-center p-8">
-            <div className={`animate-spin rounded-full h-8 w-8 border-b-2 ${
-              isDarkMode ? 'border-violet-400' : 'border-violet-600'
-            }`}></div>
-          </div>
-        ) : error ? (
-          <div className="text-red-500 p-6">{error}</div>
-        ) : requests.length === 0 ? (
-          <div className={`text-center p-6 ${
-            isDarkMode ? 'text-gray-400' : 'text-gray-500'
-          }`}>
-            No pending requests
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className={isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'}>
-                <tr>
-                  {['Exam Name', 'Institute', 'Status', 'Questions', 'Date', 'Actions'].map((header) => (
-                    <th key={header} className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                    }`}>
-                      {header}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className={`divide-y ${
-                isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
-              }`}>
-                {requests.map((request) => (
-                  <tr key={request._id} className={
-                    isDarkMode ? 'hover:bg-[#2a2f3e]' : 'hover:bg-gray-50'
-                  }>
-                    <td className="px-6 py-4 whitespace-nowrap">{request.examName}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{request.institute?.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        request.status === 'pending'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : request.status === 'approved'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {request.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">{request.totalQuestions}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {new Date(request.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {request.status === 'pending' && (
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleApprove(request)}
-                            className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors"
-                          >
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => handleReject(request)}
-                            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-colors"
-                          >
-                            Reject
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+      {/* Tab Navigation */}
+      <div className="mb-8">
+        <div className={`flex space-x-4 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+          <button
+            onClick={() => setActiveTab('dashboard')}
+            className={`px-4 py-2 font-medium transition-colors ${
+              activeTab === 'dashboard'
+                ? isDarkMode
+                  ? 'text-violet-400 border-b-2 border-violet-400'
+                  : 'text-violet-600 border-b-2 border-violet-600'
+                : isDarkMode
+                ? 'text-gray-400 hover:text-gray-300'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Exam Requests
+          </button>
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`px-4 py-2 font-medium transition-colors ${
+              activeTab === 'users'
+                ? isDarkMode
+                  ? 'text-violet-400 border-b-2 border-violet-400'
+                  : 'text-violet-600 border-b-2 border-violet-600'
+                : isDarkMode
+                ? 'text-gray-400 hover:text-gray-300'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Manage Users
+          </button>
+        </div>
       </div>
+
+      {/* Content Area */}
+      {activeTab === 'dashboard' ? (
+        <div className={`rounded-lg shadow-md overflow-hidden ${
+          isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
+        }`}>
+          <h2 className={`text-2xl font-bold p-6 border-b ${
+            isDarkMode ? 'border-gray-700' : 'border-gray-200'
+          }`}>
+            Exam Requests
+          </h2>
+          
+          {loading ? (
+            <div className="flex justify-center items-center p-8">
+              <div className={`animate-spin rounded-full h-8 w-8 border-b-2 ${
+                isDarkMode ? 'border-violet-400' : 'border-violet-600'
+              }`}></div>
+            </div>
+          ) : error ? (
+            <div className="text-red-500 p-6">{error}</div>
+          ) : requests.length === 0 ? (
+            <div className={`text-center p-6 ${
+              isDarkMode ? 'text-gray-400' : 'text-gray-500'
+            }`}>
+              No pending requests
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className={isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'}>
+                  <tr>
+                    {['Exam Name', 'Institute', 'Status', 'Questions', 'Date', 'Actions'].map((header) => (
+                      <th key={header} className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                        isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
+                        {header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className={`divide-y ${
+                  isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
+                }`}>
+                  {requests.map((request) => (
+                    <tr key={request._id} className={
+                      isDarkMode ? 'hover:bg-[#2a2f3e]' : 'hover:bg-gray-50'
+                    }>
+                      <td className="px-6 py-4 whitespace-nowrap">{request.examName}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{request.institute?.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          request.status === 'pending'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : request.status === 'approved'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {request.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">{request.totalQuestions}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {new Date(request.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {request.status === 'pending' && (
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleApprove(request)}
+                              className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => handleReject(request)}
+                              className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-colors"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className={`rounded-lg shadow-md ${
+          isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
+        } p-6`}>
+          <AdminUserCreate />
+        </div>
+      )}
 
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
