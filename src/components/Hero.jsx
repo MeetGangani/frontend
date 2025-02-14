@@ -4,6 +4,7 @@ import { FaRocket, FaShieldAlt, FaBrain, FaArrowRight } from 'react-icons/fa';
 import Footer from './Footer';
 import { useTheme } from '../context/ThemeContext';
 import { useRef } from 'react';
+import Logo from './Logo';
 
 const Hero = () => {
   const { isDarkMode } = useTheme();
@@ -206,6 +207,10 @@ const Hero = () => {
                       </div>
                     </motion.div>
                   ))}
+                </div>
+
+                <div className="flex justify-center mb-8">
+                  <Logo width="80" height="80" className="animate-float" />
                 </div>
               </motion.div>
             </div>

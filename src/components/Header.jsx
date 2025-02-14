@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 import { clearAuthCookies } from '../utils/cookieUtils';
 import { debounce } from 'lodash';
+import Logo from './Logo';
 
 const Header = () => {
   const { userInfo } = useSelector((state) => state.auth);
@@ -110,13 +111,7 @@ const Header = () => {
         <nav className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center space-x-3">
-              <motion.div
-                whileHover={{ scale: 1.1, rotate: 360 }}
-                transition={{ duration: 0.5 }}
-                className="p-2 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-600"
-              >
-                <FaBrain className="text-2xl text-white" />
-              </motion.div>
+              <Logo width="40" height="40" className="mr-2" />
               <span className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 NexusEdu
               </span>
