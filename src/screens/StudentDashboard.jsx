@@ -242,9 +242,31 @@ const StudentDashboard = () => {
     fetchResults(); // Refresh results
   };
 
+  const handleAnswerSelect = (questionIndex, optionIndex) => {
+    setAnswers(prev => {
+      const newAnswers = {
+        ...prev,
+        [questionIndex]: optionIndex // Store the actual option index
+      };
+      
+      // Log the answer selection for debugging
+      console.log('Answer selected:', {
+        questionIndex,
+        selectedOption: optionIndex,
+        allAnswers: newAnswers
+      });
+      
+      return newAnswers;
+    });
+  };
+
   const handleSubmitExam = async () => {
     try {
       setExamSubmitting(true);
+      
+      // Log the answers being submitted
+      console.log('Submitting answers:', answers);
+      
       const response = await axios.post(
         `${config.API_BASE_URL}/api/exams/submit`,
         {
@@ -257,16 +279,18 @@ const StudentDashboard = () => {
       );
 
       if (response.data) {
+        console.log('Submission response:', response.data);
+        
         toast.success(`Exam submitted successfully! Score: ${response.data.score}%`);
         
-        // Update the results immediately
+        // Update the results immediately with the correct score
         const newResult = {
-          _id: Date.now(), // temporary ID
+          _id: Date.now(),
           exam: {
             examName: currentExam.examName,
             resultsReleased: true
           },
-          score: response.data.score,
+          score: Number(response.data.score),
           correctAnswers: response.data.correctAnswers,
           totalQuestions: response.data.totalQuestions,
           submittedAt: new Date(),
@@ -274,7 +298,7 @@ const StudentDashboard = () => {
         };
 
         setExamResults(prev => [newResult, ...prev]);
-        setActiveTab('results');
+        handleExamCompletion();
       }
     } catch (error) {
       console.error('Error submitting exam:', error);
@@ -285,13 +309,6 @@ const StudentDashboard = () => {
       setAnswers({});
       setTimeLeft(null);
     }
-  };
-
-  const handleAnswerSelect = (questionIndex, optionIndex) => {
-    setAnswers(prev => ({
-      ...prev,
-      [questionIndex]: optionIndex
-    }));
   };
 
   // Add this function to check if all questions are answered
