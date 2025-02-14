@@ -24,38 +24,48 @@ const Logo = ({ width = "200", height = "200", className = "" }) => {
       
       {/* Inner Rotating Elements */}
       <g className="origin-center">
-        {/* Hexagon Background */}
-        <path 
-          d="M100 40L160 70V130L100 160L40 130V70L100 40Z" 
-          fill="url(#logoGradient)" 
-          opacity="0.1"
-        />
-
-        {/* Connected Circles */}
-        <circle cx="100" cy="60" r="15" fill="url(#logoGradient)"/>
-        <circle cx="140" cy="100" r="15" fill="url(#logoGradient2)"/>
-        <circle cx="100" cy="140" r="15" fill="url(#logoGradient)"/>
-        <circle cx="60" cy="100" r="15" fill="url(#logoGradient2)"/>
-
-        {/* Connection Lines */}
-        <path 
-          d="M100 75L100 125M75 100L125 100" 
+        {/* Main Circle */}
+        <circle cx="100" cy="100" r="60" fill="url(#logoGradient)" opacity="0.1"/>
+        
+        {/* Atom-like Rings */}
+        <ellipse 
+          cx="100" 
+          cy="100" 
+          rx="50" 
+          ry="20" 
           stroke="url(#logoGradient)" 
-          strokeWidth="6" 
-          strokeLinecap="round"
-        />
-
-        {/* Curved Connection Lines */}
-        <path 
-          d="M85 85Q100 100 115 85M85 115Q100 100 115 115" 
-          stroke="url(#logoGradient)" 
-          strokeWidth="6" 
-          strokeLinecap="round"
+          strokeWidth="4" 
           fill="none"
+          transform="rotate(0 100 100)"
+        />
+        <ellipse 
+          cx="100" 
+          cy="100" 
+          rx="50" 
+          ry="20" 
+          stroke="url(#logoGradient2)" 
+          strokeWidth="4" 
+          fill="none"
+          transform="rotate(60 100 100)"
+        />
+        <ellipse 
+          cx="100" 
+          cy="100" 
+          rx="50" 
+          ry="20" 
+          stroke="url(#logoGradient)" 
+          strokeWidth="4" 
+          fill="none"
+          transform="rotate(120 100 100)"
         />
 
-        {/* Center Circle */}
-        <circle cx="100" cy="100" r="10" fill="url(#logoGradient)"/>
+        {/* Center Sphere */}
+        <circle cx="100" cy="100" r="15" fill="url(#logoGradient)"/>
+        
+        {/* Orbital Points */}
+        <circle cx="100" cy="50" r="8" fill="url(#logoGradient2)"/>
+        <circle cx="143" cy="125" r="8" fill="url(#logoGradient)"/>
+        <circle cx="57" cy="125" r="8" fill="url(#logoGradient2)"/>
       </g>
     </svg>
   );
