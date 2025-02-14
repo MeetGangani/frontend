@@ -5,7 +5,7 @@ import Loader from '../components/Loader';
 import { useTheme } from '../context/ThemeContext';
 import { motion } from 'framer-motion';
 
-const AdminUserCreate = () => {
+const AdminUserCreate = ({ onUserCreated }) => {
   const { isDarkMode } = useTheme();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -30,6 +30,7 @@ const AdminUserCreate = () => {
       setEmail('');
       setPassword('');
       setUserType('student');
+      onUserCreated();
     } catch (err) {
       toast.error(err?.data?.message || err.error);
     }
@@ -61,7 +62,7 @@ const AdminUserCreate = () => {
       >
         {['name', 'email', 'password'].map((field) => (
           <div key={field}>
-            <label className={`block text-sm font-medium mb-2 ${
+            <label className={`block text-sm font-medium mb-1 ${
               isDarkMode ? 'text-gray-300' : 'text-gray-700'
             }`}>
               {field.charAt(0).toUpperCase() + field.slice(1)}
@@ -72,9 +73,9 @@ const AdminUserCreate = () => {
               value={eval(field)}
               onChange={(e) => eval(`set${field.charAt(0).toUpperCase() + field.slice(1)}`)(e.target.value)}
               required
-              className={`w-full px-4 py-3 rounded-lg ${
+              className={`w-full px-4 py-2 rounded-lg ${
                 isDarkMode 
-                  ? 'bg-[#0A0F1C] border-gray-700 text-white placeholder-gray-500' 
+                  ? 'bg-[#2a2f3e] border-gray-700 text-white placeholder-gray-500' 
                   : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400'
               } border focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
             />
@@ -82,7 +83,7 @@ const AdminUserCreate = () => {
         ))}
 
         <div>
-          <label className={`block text-sm font-medium mb-2 ${
+          <label className={`block text-sm font-medium mb-1 ${
             isDarkMode ? 'text-gray-300' : 'text-gray-700'
           }`}>
             User Type
@@ -90,9 +91,9 @@ const AdminUserCreate = () => {
           <select
             value={userType}
             onChange={(e) => setUserType(e.target.value)}
-            className={`w-full px-4 py-3 rounded-lg ${
+            className={`w-full px-4 py-2 rounded-lg ${
               isDarkMode 
-                ? 'bg-[#0A0F1C] border-gray-700 text-white' 
+                ? 'bg-[#2a2f3e] border-gray-700 text-white' 
                 : 'bg-gray-50 border-gray-200 text-gray-900'
             } border focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
           >

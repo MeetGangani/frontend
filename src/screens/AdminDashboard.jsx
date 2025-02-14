@@ -412,7 +412,7 @@ const AdminDashboard = () => {
       ) : (
         <div className="flex gap-4">
           {/* Create User Form */}
-          <div className="w-1/4">
+          <div className="w-1/4 min-w-[350px]">
             <div className={`rounded-lg shadow-md transition-none ${
               isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
             }`}>
@@ -424,11 +424,11 @@ const AdminDashboard = () => {
           </div>
 
           {/* Users Table */}
-          <div className="w-3/4">
-            <div className={`rounded-lg shadow-md transition-none ${
+          <div className="w-3/4 flex-1">
+            <div className={`rounded-lg shadow-md transition-none h-[calc(100vh-180px)] flex flex-col ${
               isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
             }`}>
-              <div className="p-6">
+              <div className="p-6 flex flex-col h-full">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-lg font-semibold">User List</h2>
                   <div className="relative">
@@ -456,7 +456,7 @@ const AdminDashboard = () => {
                 ) : userError ? (
                   <div className="text-red-500 p-4">{userError}</div>
                 ) : (
-                  <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
+                  <div className="flex-1 overflow-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className={`sticky top-0 transition-none ${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'}`}>
                         <tr>
