@@ -349,6 +349,10 @@ const Hero = () => {
                 <Link
                   to="/register"
                   className="group inline-flex items-center px-8 py-4 text-lg font-medium rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg hover:shadow-violet-500/25 transition-all duration-300"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.location.href = '/register';
+                  }}
                 >
                   Create Free Account
                   <FaArrowRight className="ml-2 transform group-hover:translate-x-1 transition-transform duration-300" />
