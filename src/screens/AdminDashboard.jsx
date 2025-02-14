@@ -6,7 +6,7 @@ import AdminUserCreate from './AdminUserCreate';
 import axios from 'axios';
 import { useTheme } from '../context/ThemeContext';
 import { motion } from 'framer-motion';
-import { FaTrash, FaUserSlash, FaUserCheck, FaSearch } from 'react-icons/fa';
+import { FaTrash, FaSearch } from 'react-icons/fa';
 
 const AdminDashboard = () => {
   const { isDarkMode } = useTheme();
@@ -31,6 +31,7 @@ const AdminDashboard = () => {
   const [userError, setUserError] = useState(null);
   const [searchEmail, setSearchEmail] = useState('');
   const [filteredUsers, setFilteredUsers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const [register, { isLoading }] = useRegisterMutation();
 
@@ -177,26 +178,12 @@ const AdminDashboard = () => {
     if (users) {
       setFilteredUsers(
         users.filter(user => 
-          user.email.toLowerCase().includes(searchEmail.toLowerCase())
+          user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.userType.toLowerCase().includes(searchTerm.toLowerCase())
         )
       );
     }
-  }, [users, searchEmail]);
-
-  // Handle user status update (for user management)
-  const handleUserStatusUpdate = async (userId, newStatus) => {
-    try {
-      await axios.put(
-        `${BACKEND_URL}/api/admin/users/${userId}/status`,
-        { isActive: newStatus },
-        { withCredentials: true }
-      );
-      fetchUsers(); // Refresh user list
-      toast.success('User status updated successfully');
-    } catch (error) {
-      toast.error('Failed to update user status');
-    }
-  };
+  }, [users, searchTerm]);
 
   // Handle user deletion
   const handleDeleteUser = async (userId) => {
@@ -438,10 +425,10 @@ const AdminDashboard = () => {
                   <div className="relative">
                     <input
                       type="text"
-                      placeholder="Search by email..."
-                      value={searchEmail}
-                      onChange={(e) => setSearchEmail(e.target.value)}
-                      className={`pl-10 pr-4 py-2 rounded-lg w-64 ${
+                      placeholder="Search by email or type..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className={`pl-10 pr-4 py-2 rounded-lg w-72 ${
                         isDarkMode 
                           ? 'bg-[#2a2f3e] text-white border-gray-700' 
                           : 'bg-white text-gray-900 border-gray-300'
@@ -486,25 +473,16 @@ const AdminDashboard = () => {
                             <td className="px-4 py-3 whitespace-nowrap">{user.email}</td>
                             <td className="px-4 py-3 whitespace-nowrap capitalize">{user.userType}</td>
                             <td className="px-4 py-3 whitespace-nowrap">
-                              <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-500 text-white">
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                user.isActive
+                                  ? 'bg-green-500 text-white'
+                                  : 'bg-red-500 text-white'
+                              }`}>
                                 {user.isActive ? 'Active' : 'Inactive'}
                               </span>
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap">
                               <div className="flex space-x-2">
-                                <button
-                                  onClick={() => handleUserStatusUpdate(user._id, !user.isActive)}
-                                  className={`p-1.5 rounded-full ${
-                                    isDarkMode 
-                                      ? 'hover:bg-[#3a3f4e] text-gray-300' 
-                                      : 'hover:bg-gray-100 text-gray-600'
-                                  }`}
-                                >
-                                  {user.isActive ? 
-                                    <FaUserSlash className="w-4 h-4" /> : 
-                                    <FaUserCheck className="w-4 h-4" />
-                                  }
-                                </button>
                                 <button
                                   onClick={() => handleDeleteUser(user._id)}
                                   className={`p-1.5 rounded-full ${
