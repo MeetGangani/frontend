@@ -257,12 +257,24 @@ const StudentDashboard = () => {
       );
 
       if (response.data) {
-        // Show immediate results
-        toast.success('Exam submitted successfully!');
-        setActiveTab('results');
+        toast.success(`Exam submitted successfully! Score: ${response.data.score}%`);
         
-        // Refresh results to show the latest submission
-        fetchResults();
+        // Update the results immediately
+        const newResult = {
+          _id: Date.now(), // temporary ID
+          exam: {
+            examName: currentExam.examName,
+            resultsReleased: true
+          },
+          score: response.data.score,
+          correctAnswers: response.data.correctAnswers,
+          totalQuestions: response.data.totalQuestions,
+          submittedAt: new Date(),
+          resultsAvailable: true
+        };
+
+        setExamResults(prev => [newResult, ...prev]);
+        setActiveTab('results');
       }
     } catch (error) {
       console.error('Error submitting exam:', error);
@@ -492,14 +504,16 @@ const StudentDashboard = () => {
                     <div>
                       <p className="text-sm text-gray-500">Score</p>
                       <p className="font-medium">
-                        {result.score !== null ? `${result.score.toFixed(2)}%` : 'Pending'}
+                        {result.score !== null && result.score !== undefined
+                          ? `${Number(result.score).toFixed(2)}%`
+                          : 'Pending'}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Correct Answers</p>
                       <p className="font-medium">
-                        {result.correctAnswers !== null 
-                          ? `${result.correctAnswers}/${result.totalQuestions}` 
+                        {result.correctAnswers !== null && result.correctAnswers !== undefined
+                          ? `${result.correctAnswers}/${result.totalQuestions}`
                           : 'Pending'}
                       </p>
                     </div>
