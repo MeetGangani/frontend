@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useTheme } from '../context/ThemeContext';
 import config from '../config/config.js';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const StudentDashboard = () => {
   const { isDarkMode } = useTheme();
@@ -244,8 +245,6 @@ const StudentDashboard = () => {
   const handleSubmitExam = async () => {
     try {
       setExamSubmitting(true);
-      setError(null);
-
       const response = await axios.post(
         `${config.API_BASE_URL}/api/exams/submit`,
         {
@@ -253,21 +252,26 @@ const StudentDashboard = () => {
           answers: answers
         },
         {
-          withCredentials: true,
-          headers: {
-            'Content-Type': 'application/json'
-          }
+          withCredentials: true
         }
       );
 
       if (response.data) {
-        handleExamCompletion(); // Call the new function after successful submission
+        // Show immediate results
+        toast.success('Exam submitted successfully!');
+        setActiveTab('results');
+        
+        // Refresh results to show the latest submission
+        fetchResults();
       }
     } catch (error) {
-      console.error('Submit exam error:', error);
-      setError(error.response?.data?.message || 'Failed to submit exam');
+      console.error('Error submitting exam:', error);
+      toast.error(error.response?.data?.message || 'Failed to submit exam');
     } finally {
       setExamSubmitting(false);
+      setCurrentExam(null);
+      setAnswers({});
+      setTimeLeft(null);
     }
   };
 
@@ -473,90 +477,38 @@ const StudentDashboard = () => {
         
         <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-lg shadow-lg`}>
           {examResults && examResults.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className={isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}>
-                  <tr>
-                    <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${
-                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                    } uppercase tracking-wider`}>
-                      Exam Name
-                    </th>
-                    <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${
-                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                    } uppercase tracking-wider`}>
-                      Score
-                    </th>
-                    <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${
-                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                    } uppercase tracking-wider`}>
-                      Status
-                    </th>
-                    <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${
-                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                    } uppercase tracking-wider`}>
-                      Submitted At
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                  {examResults.map((result) => (
-                    <tr key={result._id}>
-                      <td className={`px-6 py-4 whitespace-nowrap ${
-                        isDarkMode ? 'text-gray-300' : 'text-gray-900'
-                      }`}>
-                        {result.exam?.examName || 'N/A'}
-                      </td>
-                      <td className={`px-6 py-4 whitespace-nowrap ${
-                        isDarkMode ? 'text-gray-300' : 'text-gray-900'
-                      }`}>
-                        {result.exam?.resultsReleased ? (
-                          <>
-                            {typeof result.score === 'number' ? (
-                              <>
-                                {result.score.toFixed(2)}%
-                                <br />
-                                <span className="text-sm text-gray-500">
-                                  ({result.correctAnswers}/{result.totalQuestions} correct)
-                                </span>
-                              </>
-                            ) : (
-                              <span className="text-sm text-yellow-500">
-                                Score processing...
-                              </span>
-                            )}
-                          </>
-                        ) : (
-                          <span className="text-sm text-gray-500">
-                            Results pending
-                          </span>
-                        )}
-                      </td>
-                      <td className={`px-6 py-4 whitespace-nowrap`}>
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          result.exam?.resultsReleased
-                            ? isDarkMode 
-                              ? 'bg-green-900/20 text-green-300' 
-                              : 'bg-green-100 text-green-800'
-                            : isDarkMode
-                              ? 'bg-yellow-900/20 text-yellow-300'
-                              : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {result.exam?.resultsReleased ? 'Released' : 'Pending'}
-                        </span>
-                      </td>
-                      <td className={`px-6 py-4 whitespace-nowrap ${
-                        isDarkMode ? 'text-gray-300' : 'text-gray-900'
-                      }`}>
-                        {result.submittedAt 
-                          ? new Date(result.submittedAt).toLocaleString()
-                          : 'N/A'
-                        }
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="space-y-4">
+              {examResults.map((result) => (
+                <div
+                  key={result._id}
+                  className={`p-4 rounded-lg ${
+                    isDarkMode ? 'bg-gray-800' : 'bg-white'
+                  } shadow`}
+                >
+                  <h3 className="font-semibold text-lg mb-2">
+                    {result.exam.examName}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-500">Score</p>
+                      <p className="font-medium">
+                        {result.score !== null ? `${result.score.toFixed(2)}%` : 'Pending'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Correct Answers</p>
+                      <p className="font-medium">
+                        {result.correctAnswers !== null 
+                          ? `${result.correctAnswers}/${result.totalQuestions}` 
+                          : 'Pending'}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Submitted: {new Date(result.submittedAt).toLocaleString()}
+                  </p>
+                </div>
+              ))}
             </div>
           ) : (
             <div className={`p-6 text-center ${

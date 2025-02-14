@@ -43,7 +43,8 @@ const Header = () => {
       clearAuthCookies();
       dispatch(logout());
       window.location.href = '/login';
-    }
+    
+    } 
   };
 
   // Generate avatar using DiceBear API
