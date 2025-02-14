@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll, useSpring, useTransform } from 'framer-motion';
 import { FaRocket, FaShieldAlt, FaBrain, FaArrowRight } from 'react-icons/fa';
 import Footer from './Footer';
 import { useTheme } from '../context/ThemeContext';
@@ -9,15 +9,34 @@ const Hero = () => {
   const { isDarkMode } = useTheme();
   const ref = useRef(null);
   
-  // Enhanced scroll animations
+  // Optimize scroll animations
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start start", "end start"]
   });
 
-  const y = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
-  const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
-  const scale = useTransform(scrollYProgress, [0, 0.5], [1, 0.95]);
+  // Reduce transform calculations
+  const y = useSpring(
+    useTransform(scrollYProgress, [0, 1], ["0%", "50%"]),
+    { stiffness: 100, damping: 30 }
+  );
+  const opacity = useSpring(
+    useTransform(scrollYProgress, [0, 0.5], [1, 0]),
+    { stiffness: 100, damping: 30 }
+  );
+
+  // Optimize background animations
+  const backgroundVariants = {
+    animate: {
+      scale: [1, 1.1, 1],
+      rotate: [0, 180, 360],
+      transition: {
+        duration: 30,
+        repeat: Infinity,
+        ease: "linear"
+      }
+    }
+  };
 
   // Smooth scroll function
   const scrollToSection = (sectionId) => {
@@ -35,51 +54,28 @@ const Hero = () => {
           isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'
         } scroll-smooth pt-24`}
       >
-        {/* Enhanced Parallax Background Elements */}
+        {/* Optimize background elements */}
         <motion.div 
-          style={{ y, opacity, scale }} 
+          style={{ y, opacity }} 
           className="absolute inset-0"
+          initial={false}
         >
           <div className={`absolute inset-0 bg-gradient-to-br ${
             isDarkMode 
               ? 'from-violet-600/10 via-transparent to-indigo-600/10'
               : 'from-violet-600/5 via-transparent to-indigo-600/5'
           }`} />
+          
+          {/* Reduce number of animated elements on mobile */}
           <motion.div 
-            animate={{ 
-              scale: [1, 1.2, 1],
-              rotate: [0, 180, 360] 
-            }}
-            transition={{ 
-              duration: 20,
-              repeat: Infinity,
-              ease: "linear" 
-            }}
-            className="absolute top-0 left-0 w-96 h-96 bg-violet-500/10 rounded-full filter blur-3xl" 
+            variants={backgroundVariants}
+            animate="animate"
+            className="hidden md:block absolute top-0 left-0 w-96 h-96 bg-violet-500/10 rounded-full filter blur-3xl" 
           />
           <motion.div 
-            animate={{ 
-              scale: [1.2, 1, 1.2],
-              rotate: [180, 360, 180] 
-            }}
-            transition={{ 
-              duration: 15,
-              repeat: Infinity,
-              ease: "linear" 
-            }}
-            className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full filter blur-3xl" 
-          />
-          <motion.div 
-            animate={{ 
-              scale: [1, 1.3, 1],
-              rotate: [360, 0, 360] 
-            }}
-            transition={{ 
-              duration: 25,
-              repeat: Infinity,
-              ease: "linear" 
-            }}
-            className="absolute -bottom-8 left-1/2 w-96 h-96 bg-violet-500/10 rounded-full filter blur-3xl" 
+            variants={backgroundVariants}
+            animate="animate"
+            className="hidden md:block absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full filter blur-3xl" 
           />
         </motion.div>
 
@@ -87,7 +83,7 @@ const Hero = () => {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 1 }}
+          transition={{ duration: 0.5 }}
           className="relative min-h-screen"
         >
           <div className="relative min-h-[85vh] flex flex-col justify-center px-4 sm:px-6 lg:px-8 -mt-20">
