@@ -8,8 +8,6 @@ import { FaSignInAlt, FaSignOutAlt, FaUser, FaBrain, FaChalkboardTeacher, FaMoon
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 import { clearAuthCookies } from '../utils/cookieUtils';
-import { debounce } from 'lodash';
-import Logo from './Logo';
 
 const Header = () => {
   const { userInfo } = useSelector((state) => state.auth);
@@ -23,10 +21,7 @@ const Header = () => {
   const { isDarkMode, toggleTheme } = useTheme();
 
   useEffect(() => {
-    const handleScroll = debounce(() => {
-      setScrolled(window.scrollY > 20);
-    }, 10);
-
+    const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -70,17 +65,17 @@ const Header = () => {
         className={`p-2 rounded-full ${
           isDarkMode ? 'bg-gray-800' : 'bg-gray-100'
         } focus:outline-none`}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        transition={{ duration: 0.2, type: "tween" }}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        layout
       >
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={isDarkMode ? 'dark' : 'light'}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.1 }}
+            initial={{ y: -20, opacity: 0, rotate: -90 }}
+            animate={{ y: 0, opacity: 1, rotate: 0 }}
+            exit={{ y: 20, opacity: 0, rotate: 90 }}
+            transition={{ duration: 0.2 }}
           >
             {isDarkMode ? (
               <FaSun className="w-5 h-5 text-yellow-400" />
@@ -97,21 +92,28 @@ const Header = () => {
     <>
       <div className="h-20"></div>
       <motion.header
-        initial={false}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           scrolled 
             ? isDarkMode 
-              ? 'bg-[#0A0F1C]/90 backdrop-blur-sm shadow-lg'
-              : 'bg-white/90 backdrop-blur-sm shadow-lg'
+              ? 'bg-[#0A0F1C]/90 backdrop-blur-xl shadow-lg'
+              : 'bg-white/90 backdrop-blur-xl shadow-lg'
             : isDarkMode
-              ? 'bg-[#0A0F1C]/50'
-              : 'bg-white/50'
+              ? 'bg-[#0A0F1C]/50 backdrop-blur-sm'
+              : 'bg-white/50 backdrop-blur-sm'
         }`}
       >
         <nav className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center space-x-3">
-              <Logo width="40" height="40" className="mr-2" />
+              <motion.div
+                whileHover={{ scale: 1.1, rotate: 360 }}
+                transition={{ duration: 0.5 }}
+                className="p-2 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-600"
+              >
+                <FaBrain className="text-2xl text-white" />
+              </motion.div>
               <span className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 NexusEdu
               </span>
