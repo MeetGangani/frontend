@@ -398,25 +398,29 @@ const AdminDashboard = () => {
           )}
         </div>
       ) : (
-        <div className={`rounded-lg shadow-md transition-none ${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'}`}>
-          <div className="p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className={`rounded-lg shadow-md transition-none h-[calc(100vh-300px)] ${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'}`}>
+          <div className="p-6 h-full">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
               {/* Create User Form */}
-              <div className="lg:col-span-1">
-                <div className={`p-6 rounded-lg shadow-md transition-none ${
+              <div className="lg:col-span-1 h-full">
+                <div className={`p-6 rounded-lg shadow-md transition-none h-full ${
                   isDarkMode ? 'bg-[#2a2f3e]' : 'bg-gray-50'
                 }`}>
-                  <h2 className="text-xl font-bold mb-6">Create New User</h2>
+                  <h2 className={`text-xl font-bold mb-6 transition-none ${
+                    isDarkMode ? 'text-white' : 'text-gray-900'
+                  }`}>Create New User</h2>
                   <AdminUserCreate onUserCreated={fetchUsers} />
                 </div>
               </div>
 
               {/* Users Table */}
-              <div className="lg:col-span-2">
-                <div className={`p-6 rounded-lg shadow-md transition-none ${
+              <div className="lg:col-span-2 h-full">
+                <div className={`p-6 rounded-lg shadow-md transition-none h-full ${
                   isDarkMode ? 'bg-[#2a2f3e]' : 'bg-gray-50'
                 }`}>
-                  <h2 className="text-xl font-bold mb-6">User List</h2>
+                  <h2 className={`text-xl font-bold mb-6 transition-none ${
+                    isDarkMode ? 'text-white' : 'text-gray-900'
+                  }`}>User List</h2>
                   {userLoading ? (
                     <div className="flex justify-center items-center p-8">
                       <Loader />
@@ -424,27 +428,43 @@ const AdminDashboard = () => {
                   ) : userError ? (
                     <div className="text-red-500 p-4">{userError}</div>
                   ) : (
-                    <div className="overflow-x-auto">
+                    <div className="overflow-auto max-h-[calc(100vh-450px)]">
                       <table className="min-w-full divide-y divide-gray-200">
-                        <thead className={`transition-none ${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'}`}>
+                        <thead className={`sticky top-0 transition-none ${isDarkMode ? 'bg-[#2a2f3e]' : 'bg-gray-50'}`}>
                           <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Name</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Email</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Type</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Status</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
+                            <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-none ${
+                              isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                            }`}>Name</th>
+                            <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-none ${
+                              isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                            }`}>Email</th>
+                            <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-none ${
+                              isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                            }`}>Type</th>
+                            <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-none ${
+                              isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                            }`}>Status</th>
+                            <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-none ${
+                              isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                            }`}>Actions</th>
                           </tr>
                         </thead>
-                        <tbody className={`divide-y divide-gray-200 transition-none ${
-                          isDarkMode ? 'bg-[#1a1f2e] divide-gray-700' : 'bg-white divide-gray-200'
+                        <tbody className={`divide-y transition-none ${
+                          isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
                         }`}>
                           {users.map((user) => (
                             <tr key={user._id} className={`transition-none ${
-                              isDarkMode ? 'hover:bg-[#2a2f3e]' : 'hover:bg-gray-50'
+                              isDarkMode ? 'hover:bg-[#3a3f4e]' : 'hover:bg-gray-50'
                             }`}>
-                              <td className="px-6 py-4 whitespace-nowrap">{user.name}</td>
-                              <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
-                              <td className="px-6 py-4 whitespace-nowrap capitalize">{user.userType}</td>
+                              <td className={`px-6 py-4 whitespace-nowrap transition-none ${
+                                isDarkMode ? 'text-gray-200' : 'text-gray-900'
+                              }`}>{user.name}</td>
+                              <td className={`px-6 py-4 whitespace-nowrap transition-none ${
+                                isDarkMode ? 'text-gray-200' : 'text-gray-900'
+                              }`}>{user.email}</td>
+                              <td className={`px-6 py-4 whitespace-nowrap capitalize transition-none ${
+                                isDarkMode ? 'text-gray-200' : 'text-gray-900'
+                              }`}>{user.userType}</td>
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <span className={`px-2 py-1 text-xs font-medium rounded-full transition-none ${
                                   user.isActive
@@ -463,7 +483,7 @@ const AdminDashboard = () => {
                                   <button
                                     onClick={() => handleUserStatusUpdate(user._id, !user.isActive)}
                                     className={`p-2 rounded-full transition-none ${
-                                      isDarkMode ? 'hover:bg-[#3a3f4e]' : 'hover:bg-gray-100'
+                                      isDarkMode ? 'hover:bg-[#4a4f5e]' : 'hover:bg-gray-100'
                                     }`}
                                   >
                                     {user.isActive ? 
@@ -474,7 +494,7 @@ const AdminDashboard = () => {
                                   <button
                                     onClick={() => handleDeleteUser(user._id)}
                                     className={`p-2 rounded-full transition-none ${
-                                      isDarkMode ? 'hover:bg-[#3a3f4e]' : 'hover:bg-gray-100'
+                                      isDarkMode ? 'hover:bg-[#4a4f5e]' : 'hover:bg-gray-100'
                                     }`}
                                   >
                                     <FaTrash className="text-red-500" />
