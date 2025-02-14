@@ -410,37 +410,37 @@ const AdminDashboard = () => {
           )}
         </div>
       ) : (
-        <div className="flex gap-4">
+        <div className="flex gap-6">
           {/* Create User Form */}
-          <div className="w-1/4 min-w-[350px]">
-            <div className={`rounded-lg shadow-md transition-none ${
+          <div className="w-[400px]">
+            <div className={`rounded-lg shadow-md ${
               isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
             }`}>
               <div className="p-6">
-                <h2 className="text-lg font-semibold mb-4">Create New User</h2>
+                <h2 className="text-xl font-semibold mb-6">Create New User</h2>
                 <AdminUserCreate onUserCreated={fetchUsers} />
               </div>
             </div>
           </div>
 
           {/* Users Table */}
-          <div className="w-3/4 flex-1">
-            <div className={`rounded-lg shadow-md transition-none h-[calc(100vh-180px)] flex flex-col ${
+          <div className="flex-1">
+            <div className={`rounded-lg shadow-md ${
               isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
             }`}>
-              <div className="p-6 flex flex-col h-full">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold">User List</h2>
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-semibold">User List</h2>
                   <div className="relative">
                     <input
                       type="text"
                       placeholder="Search by email..."
                       value={searchEmail}
                       onChange={(e) => setSearchEmail(e.target.value)}
-                      className={`pl-10 pr-4 py-2 rounded-lg w-64 transition-none ${
+                      className={`pl-10 pr-4 py-2 rounded-lg w-64 ${
                         isDarkMode 
-                          ? 'bg-[#2a2f3e] text-white border-gray-700 focus:border-violet-500' 
-                          : 'bg-white text-gray-900 border-gray-300 focus:border-violet-500'
+                          ? 'bg-[#2a2f3e] text-white border-gray-700' 
+                          : 'bg-white text-gray-900 border-gray-300'
                       } border focus:outline-none focus:ring-1 focus:ring-violet-500`}
                     />
                     <FaSearch className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${
@@ -456,9 +456,9 @@ const AdminDashboard = () => {
                 ) : userError ? (
                   <div className="text-red-500 p-4">{userError}</div>
                 ) : (
-                  <div className="flex-1 overflow-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className={`sticky top-0 transition-none ${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'}`}>
+                  <div className="overflow-auto max-h-[calc(100vh-320px)]">
+                    <table className="min-w-full">
+                      <thead className={`sticky top-0 ${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'}`}>
                         <tr>
                           <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Name</th>
                           <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Email</th>
@@ -467,12 +467,14 @@ const AdminDashboard = () => {
                           <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
                         </tr>
                       </thead>
-                      <tbody className={`divide-y transition-none ${
+                      <tbody className={`divide-y ${
                         isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
                       }`}>
                         {filteredUsers.map((user) => (
-                          <tr key={user._id} className={`transition-none hover:bg-gray-50 ${
-                            isDarkMode ? 'hover:bg-[#2a2f3e]' : ''
+                          <tr key={user._id} className={`${
+                            isDarkMode 
+                              ? 'hover:bg-[#2a2f3e] text-gray-200' 
+                              : 'hover:bg-gray-50 text-gray-900'
                           }`}>
                             <td className="px-4 py-3 whitespace-nowrap">{user.name}</td>
                             <td className="px-4 py-3 whitespace-nowrap">{user.email}</td>
@@ -490,7 +492,11 @@ const AdminDashboard = () => {
                               <div className="flex space-x-2">
                                 <button
                                   onClick={() => handleUserStatusUpdate(user._id, !user.isActive)}
-                                  className="text-gray-400 hover:text-gray-600"
+                                  className={`p-1.5 rounded-full ${
+                                    isDarkMode 
+                                      ? 'hover:bg-[#3a3f4e] text-gray-300' 
+                                      : 'hover:bg-gray-100 text-gray-600'
+                                  }`}
                                 >
                                   {user.isActive ? 
                                     <FaUserSlash className="w-4 h-4" /> : 
@@ -499,7 +505,11 @@ const AdminDashboard = () => {
                                 </button>
                                 <button
                                   onClick={() => handleDeleteUser(user._id)}
-                                  className="text-red-400 hover:text-red-600"
+                                  className={`p-1.5 rounded-full ${
+                                    isDarkMode 
+                                      ? 'hover:bg-[#3a3f4e] text-red-400' 
+                                      : 'hover:bg-gray-100 text-red-500'
+                                  }`}
                                 >
                                   <FaTrash className="w-4 h-4" />
                                 </button>
