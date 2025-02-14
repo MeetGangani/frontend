@@ -6,7 +6,7 @@ import AdminUserCreate from './AdminUserCreate';
 import axios from 'axios';
 import { useTheme } from '../context/ThemeContext';
 import { motion } from 'framer-motion';
-import { FaTrash, FaUserSlash, FaUserCheck } from 'react-icons/fa';
+import { FaTrash, FaUserSlash, FaUserCheck, FaSearch } from 'react-icons/fa';
 
 const AdminDashboard = () => {
   const { isDarkMode } = useTheme();
@@ -29,6 +29,8 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [userLoading, setUserLoading] = useState(false);
   const [userError, setUserError] = useState(null);
+  const [searchEmail, setSearchEmail] = useState('');
+  const [filteredUsers, setFilteredUsers] = useState([]);
 
   const [register, { isLoading }] = useRegisterMutation();
 
@@ -170,6 +172,16 @@ const AdminDashboard = () => {
       fetchUsers();
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    if (users) {
+      setFilteredUsers(
+        users.filter(user => 
+          user.email.toLowerCase().includes(searchEmail.toLowerCase())
+        )
+      );
+    }
+  }, [users, searchEmail]);
 
   // Handle user status update (for user management)
   const handleUserStatusUpdate = async (userId, newStatus) => {
@@ -401,11 +413,11 @@ const AdminDashboard = () => {
         <div className="flex gap-4">
           {/* Create User Form */}
           <div className="w-1/4">
-            <div className={`rounded-lg shadow-md h-full transition-none ${
+            <div className={`rounded-lg shadow-md transition-none ${
               isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
             }`}>
               <div className="p-6">
-                {/* <h2 className="text-lg font-semibold mb-4">Create New User</h2> */}
+                <h2 className="text-lg font-semibold mb-4">Create New User</h2>
                 <AdminUserCreate onUserCreated={fetchUsers} />
               </div>
             </div>
@@ -413,11 +425,30 @@ const AdminDashboard = () => {
 
           {/* Users Table */}
           <div className="w-3/4">
-            <div className={`rounded-lg shadow-md h-full transition-none ${
+            <div className={`rounded-lg shadow-md transition-none ${
               isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
             }`}>
               <div className="p-6">
-                <h2 className="text-lg font-semibold mb-4">User List</h2>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold">User List</h2>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search by email..."
+                      value={searchEmail}
+                      onChange={(e) => setSearchEmail(e.target.value)}
+                      className={`pl-10 pr-4 py-2 rounded-lg w-64 transition-none ${
+                        isDarkMode 
+                          ? 'bg-[#2a2f3e] text-white border-gray-700 focus:border-violet-500' 
+                          : 'bg-white text-gray-900 border-gray-300 focus:border-violet-500'
+                      } border focus:outline-none focus:ring-1 focus:ring-violet-500`}
+                    />
+                    <FaSearch className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${
+                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                    }`} />
+                  </div>
+                </div>
+                
                 {userLoading ? (
                   <div className="flex justify-center items-center p-4">
                     <Loader />
@@ -425,9 +456,9 @@ const AdminDashboard = () => {
                 ) : userError ? (
                   <div className="text-red-500 p-4">{userError}</div>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
                     <table className="min-w-full divide-y divide-gray-200">
-                      <thead className={`transition-none ${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'}`}>
+                      <thead className={`sticky top-0 transition-none ${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'}`}>
                         <tr>
                           <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Name</th>
                           <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Email</th>
@@ -439,7 +470,7 @@ const AdminDashboard = () => {
                       <tbody className={`divide-y transition-none ${
                         isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
                       }`}>
-                        {users.map((user) => (
+                        {filteredUsers.map((user) => (
                           <tr key={user._id} className={`transition-none hover:bg-gray-50 ${
                             isDarkMode ? 'hover:bg-[#2a2f3e]' : ''
                           }`}>
