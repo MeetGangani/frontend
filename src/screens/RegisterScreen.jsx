@@ -135,43 +135,25 @@ const RegisterScreen = () => {
   };
 
   return (
-    <div className={`min-h-screen flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8 relative ${
-      isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'
-    }`}> 
-      {/* Background Effects - Update z-index to ensure it stays behind the form */}
-      <div className="absolute inset-0 z-0">
-        <div className={`absolute inset-0 bg-gradient-to-br ${
-          isDarkMode 
-            ? 'from-violet-600/10 via-transparent to-indigo-600/10'
-            : 'from-violet-600/5 via-transparent to-indigo-600/5'
-        }`} />
-        <div className={`absolute top-0 right-0 w-96 h-96 ${
-          isDarkMode ? 'bg-violet-500/10' : 'bg-violet-500/5'
-        } rounded-full filter blur-3xl animate-blob`} />
-        <div className={`absolute bottom-0 left-0 w-96 h-96 ${
-          isDarkMode ? 'bg-indigo-500/10' : 'bg-indigo-500/5'
-        } rounded-full filter blur-3xl animate-blob animation-delay-2000`} />
+    <div className={`min-h-screen relative flex items-center justify-center pt-28 pb-12 px-4 sm:px-6 lg:px-8 ${
+      isDarkMode ? 'bg-[#0A0F1C]' : 'bg-white'
+    }`}>
+      {/* Fixed background gradients */}
+      <div className="fixed inset-0">
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-violet-600/10 via-transparent to-indigo-600/10" />
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-violet-500/10 rounded-full filter blur-3xl" />
+        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-500/10 rounded-full filter blur-3xl" />
       </div>
 
-      {/* Add z-index to ensure form appears above background */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
-        className="max-w-md w-full space-y-8 relative z-10"
+        className="w-full max-w-md relative z-10 mt-4"
       >
-        <div className="text-center">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.5 }}
-            className="flex justify-center"
-          >
-            <div className="p-3 rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-600 shadow-lg">
-              <FaBrain className="h-8 w-8 text-white" />
-            </div>
-          </motion.div>
-          <h2 className={`mt-6 text-3xl font-bold ${
+        {/* Title Section - Removed logo */}
+        <div className="text-center mb-8">
+          <h2 className={`text-3xl font-bold ${
             isDarkMode ? 'text-white' : 'text-gray-900'
           }`}>
             Create Account
@@ -181,7 +163,8 @@ const RegisterScreen = () => {
           </p>
         </div>
 
-        <div className="relative">
+        <div className="mt-6 relative">
+          {/* Background blur effect */}
           <div className={`absolute inset-0 bg-gradient-to-r ${
             isDarkMode 
               ? 'from-violet-600/20 to-indigo-600/20'
@@ -189,7 +172,7 @@ const RegisterScreen = () => {
           } rounded-lg blur`} />
           
           {/* Google Sign In Button */}
-          <div className="relative mb-6">
+          <div className="relative">
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -227,11 +210,11 @@ const RegisterScreen = () => {
 
           <form 
             onSubmit={submitHandler} 
-            className={`relative ${
+            className={`relative space-y-6 ${
               isDarkMode 
                 ? 'bg-gray-900/50 border-gray-800' 
                 : 'bg-white/50 border-gray-200'
-            } backdrop-blur-xl p-8 rounded-lg shadow-xl space-y-6 border`}
+            } backdrop-blur-xl p-6 sm:p-8 rounded-lg shadow-xl border`}
           >
             <div className="space-y-5">
               <div>
@@ -399,7 +382,7 @@ const RegisterScreen = () => {
 
         {isLoading && <Loader />}
 
-        <div className="text-center">
+        <div className="text-center mt-6">
           <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
             Already have an account?{' '}
             <Link to="/login" className="font-medium text-violet-600 hover:text-violet-500 transition-colors">
