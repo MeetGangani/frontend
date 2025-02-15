@@ -247,6 +247,19 @@ const AdminDashboard = () => {
     }
   };
 
+  // Add this function near your other handlers
+  const handleUserListRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await fetchUsers();
+      showToast.success('User list refreshed successfully');
+    } catch (error) {
+      showToast.error('Failed to refresh user list');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -479,9 +492,25 @@ const AdminDashboard = () => {
             }`}>
               <div className="p-4 lg:p-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                  <h2 className={`text-xl font-semibold ${
-                    isDarkMode ? 'text-white' : 'text-gray-900'
-                  }`}>User List</h2>
+                  <div className="flex items-center gap-3">
+                    <h2 className={`text-xl font-semibold ${
+                      isDarkMode ? 'text-white' : 'text-gray-900'
+                    }`}>
+                      User List
+                    </h2>
+                    <button
+                      onClick={handleUserListRefresh}
+                      disabled={isRefreshing}
+                      className={`p-2 rounded-lg transition-all duration-200 ${
+                        isDarkMode 
+                          ? 'bg-[#2a2f3e] hover:bg-[#3a3f4e] text-gray-300' 
+                          : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                      } ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      title="Refresh user list"
+                    >
+                      <FaSync className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    </button>
+                  </div>
                   <div className="relative w-full sm:w-auto">
                     <input
                       type="text"
