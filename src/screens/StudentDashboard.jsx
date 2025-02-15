@@ -618,7 +618,7 @@ const StudentDashboard = () => {
           </div>
 
           {/* Main Content Area with proper spacing */}
-          <div className="md:w-3/4 md:ml-auto pl-[10%]">
+          <div className="md:w-3/4 md:ml-auto pl-[5%]">
             <div className={`${
               isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
             } rounded-xl shadow-lg p-6`}>
