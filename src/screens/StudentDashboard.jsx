@@ -566,7 +566,7 @@ const StudentDashboard = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <img src="/logo.png" alt="NexusEdu" className="h-10 w-10" />
+              {/* <img src="/logo.png" alt="NexusEdu" className="h-10 w-10" /> */}
               <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 NexusEdu
               </h1>
