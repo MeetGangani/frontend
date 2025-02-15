@@ -353,55 +353,63 @@ const StudentDashboard = () => {
     }
   };
 
-  const handleSubmitExam = async (isAutoSubmit = false) => {
-    if (examSubmitting) return;
+ // ... (previous imports and code remain the same until handleSubmitExam function)
+
+ const handleSubmitExam = async (isAutoSubmit = false) => {
+  if (examSubmitting) return;
+  
+  try {
+    setExamSubmitting(true);
     
-    try {
-      setExamSubmitting(true);
-      
-      // Filter out only attempted questions
-      const attemptedAnswers = Object.keys(answers).reduce((acc, key) => {
-        if (answers[key] !== null && answers[key] !== undefined) {
-          acc[key] = answers[key];
-        }
-        return acc;
-      }, {});
-
-      const response = await axios.post(
-        `${config.API_BASE_URL}/api/exams/submit`,
-        {
-          examId: currentExam._id,
-          answers: attemptedAnswers, // Send only attempted answers
-          isAutoSubmit: isAutoSubmit,
-          totalQuestions: currentExam.questions.length,
-          attemptedCount: Object.keys(attemptedAnswers).length
-        },
-        {
-          withCredentials: true
-        }
-      );
-
-      if (response.data) {
-        localStorage.removeItem('examState');
-        
-        const message = isAutoSubmit 
-          ? `Exam auto-submitted. ${Object.keys(attemptedAnswers).length} questions attempted`
-          : `Exam submitted successfully! ${Object.keys(attemptedAnswers).length} questions attempted`;
-        
-        showToast.success(message);
-        handleExamCompletion();
+    // Filter out only attempted questions and ensure we're sending a clean object
+    const attemptedAnswers = Object.keys(answers).reduce((acc, key) => {
+      if (answers[key] !== null && answers[key] !== undefined) {
+        acc[key] = answers[key];
       }
-    } catch (error) {
-      console.error('Error submitting exam:', error);
-      showToast.error(error.response?.data?.message || 'Failed to submit exam');
-    } finally {
-      setExamSubmitting(false);
-      setCurrentExam(null);
-      setAnswers({});
-      setTimeLeft(null);
-      setActiveTab('results');
+      return acc;
+    }, {});
+
+    // Create a clean exam submission object
+    const submissionData = {
+      examId: currentExam._id,
+      answers: attemptedAnswers,
+      isAutoSubmit: isAutoSubmit,
+      totalQuestions: currentExam.questions.length,
+      attemptedCount: Object.keys(attemptedAnswers).length
+    };
+
+    const response = await axios.post(
+      `${config.API_BASE_URL}/api/exams/submit`,
+      submissionData,
+      {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    if (response.data) {
+      localStorage.removeItem('examState');
+      
+      const message = isAutoSubmit 
+        ? `Exam auto-submitted. ${Object.keys(attemptedAnswers).length} questions attempted`
+        : `Exam submitted successfully! ${Object.keys(attemptedAnswers).length} questions attempted`;
+      
+      showToast.success(message);
+      await handleExamCompletion();
     }
-  };
+  } catch (error) {
+    console.error('Error submitting exam:', error);
+    showToast.error(error.response?.data?.message || 'Failed to submit exam');
+  } finally {
+    setExamSubmitting(false);
+    setCurrentExam(null);
+    setAnswers({});
+    setTimeLeft(null);
+    setActiveTab('results');
+  }
+};
 
   // Add this function to check if all questions are answered
   const areAllQuestionsAnswered = () => {
