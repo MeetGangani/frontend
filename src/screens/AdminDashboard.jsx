@@ -64,28 +64,34 @@ const AdminDashboard = () => {
   const submitHandler = async (e) => {
     e.preventDefault();
     try {
-      await register({ 
-        name, 
-        email, 
-        password,
-        userType
-      }).unwrap();
-      
-      // Show success message
-      toast.success(`Successfully created ${userType} account`);
-      
-      // Reset form
-      setName('');
-      setEmail('');
-      setPassword('');
-      setUserType('student');
-      
-      // Refresh user list if on users tab
-      if (activeTab === 'users') {
+      // Use axios instead of the register mutation to avoid automatic login
+      const response = await axios.post(
+        `${BACKEND_URL}/api/admin/users`,
+        {
+          name,
+          email,
+          password,
+          userType
+        },
+        {
+          withCredentials: true
+        }
+      );
+
+      if (response.data) {
+        toast.success(`Successfully created ${userType} account`);
+        
+        // Reset form
+        setName('');
+        setEmail('');
+        setPassword('');
+        setUserType('student');
+        
+        // Refresh user list
         fetchUsers();
       }
     } catch (err) {
-      toast.error(err?.data?.message || err.error);
+      toast.error(err?.response?.data?.message || 'Failed to create user');
     }
   };
 
