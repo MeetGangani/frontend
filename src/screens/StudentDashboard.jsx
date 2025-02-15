@@ -35,8 +35,13 @@ const StudentDashboard = () => {
         setTimeLeft((prevTime) => {
           if (prevTime <= 1) {
             clearInterval(timer);
-            submitExam(); // Auto-submit when time runs out
+            handleSubmitExam(true); // Auto-submit when time runs out
+            localStorage.removeItem('examState'); // Clear saved state
             return 0;
+          }
+          // Save state every 30 seconds
+          if (prevTime % 30 === 0) {
+            saveExamState();
           }
           return prevTime - 1;
         });
@@ -300,17 +305,15 @@ const StudentDashboard = () => {
       );
 
       if (response.data) {
-        setCurrentExam(response.data);
-        setTimeLeft(response.data.timeLimit * 60);
+        const examData = response.data;
+        setCurrentExam(examData);
+        setTimeLeft(examData.timeLimit * 60);
         setAnswers({});
         setCurrentQuestionIndex(0);
         setActiveTab('exam');
         
-        localStorage.setItem('currentExam', JSON.stringify({
-          ...response.data,
-          startTime: new Date().toISOString(),
-          timeLeft: response.data.timeLimit * 60
-        }));
+        // Initialize exam state in localStorage
+        saveExamState({});
       }
     } catch (error) {
       await exitFullscreen();
@@ -334,22 +337,15 @@ const StudentDashboard = () => {
     fetchResults();
   };
 
-  const handleAnswerSelect = (questionIndex, optionIndex) => {
-    setAnswers(prev => {
-      const newAnswers = {
-        ...prev,
-        [questionIndex]: optionIndex // Store the actual option index
-      };
-      
-      // Log the answer selection for debugging
-      console.log('Answer selected:', {
-        questionIndex,
-        selectedOption: optionIndex,
-        allAnswers: newAnswers
-      });
-      
-      return newAnswers;
-    });
+  const handleAnswerSelect = (questionIndex, answerIndex) => {
+    const updatedAnswers = {
+      ...answers,
+      [questionIndex]: answerIndex
+    };
+    setAnswers(updatedAnswers);
+    
+    // Save current state to localStorage
+    saveExamState(updatedAnswers);
   };
 
   const handleSubmitExam = async (isAutoSubmit = false) => {
@@ -371,13 +367,14 @@ const StudentDashboard = () => {
       );
 
       if (response.data) {
+        // Clear saved state after successful submission
+        localStorage.removeItem('examState');
+        
         const message = isAutoSubmit 
-          ? 'Exam auto-submitted due to tab/window switch'
-          : `Exam submitted successfully! Score: ${response.data.score}%`;
+          ? 'Exam auto-submitted due to tab/window switch or time expiry'
+          : 'Exam submitted successfully!';
         
         showToast.success(message);
-        
-        // Update results and cleanup
         handleExamCompletion();
       }
     } catch (error) {
@@ -385,9 +382,6 @@ const StudentDashboard = () => {
       showToast.error(error.response?.data?.message || 'Failed to submit exam');
     } finally {
       setExamSubmitting(false);
-      setCurrentExam(null);
-      setAnswers({});
-      setTimeLeft(null);
     }
   };
 
@@ -666,6 +660,59 @@ const StudentDashboard = () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [isExamMode, currentExam]);
+
+  // Add these state updates to handle persisted data
+  useEffect(() => {
+    // Check for saved exam state on component mount
+    const savedExamState = localStorage.getItem('examState');
+    if (savedExamState) {
+      try {
+        const { 
+          exam, 
+          answers, 
+          timeLeft: savedTimeLeft, 
+          startTime,
+          currentQuestionIndex: savedIndex 
+        } = JSON.parse(savedExamState);
+        
+        // Calculate remaining time
+        const elapsedSeconds = Math.floor((new Date() - new Date(startTime)) / 1000);
+        const remainingTime = Math.max(savedTimeLeft - elapsedSeconds, 0);
+        
+        if (remainingTime > 0) {
+          setCurrentExam(exam);
+          setAnswers(answers);
+          setTimeLeft(remainingTime);
+          setCurrentQuestionIndex(savedIndex);
+          setIsExamMode(true);
+          setActiveTab('exam');
+          enterFullscreen(); // Re-enter fullscreen mode
+        } else {
+          // Time has expired, auto-submit
+          handleSubmitExam(true);
+          localStorage.removeItem('examState');
+        }
+      } catch (error) {
+        console.error('Error restoring exam state:', error);
+        showToast.error('Failed to restore exam state');
+        localStorage.removeItem('examState');
+      }
+    }
+  }, []);
+
+  // Add function to save exam state
+  const saveExamState = (updatedAnswers = answers) => {
+    if (currentExam && isExamMode) {
+      const stateToSave = {
+        exam: currentExam,
+        answers: updatedAnswers,
+        timeLeft,
+        startTime: new Date().toISOString(),
+        currentQuestionIndex
+      };
+      localStorage.setItem('examState', JSON.stringify(stateToSave));
+    }
+  };
 
   return (
     <div className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-100'} min-h-screen pt-24`}>
