@@ -107,7 +107,7 @@ const Hero = () => {
                 transition={{ duration: 0.8 }}
                 className="text-center"
               >
-                <motion.div
+                {/* <motion.div
                   initial={{ scale: 0.5, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
@@ -123,7 +123,7 @@ const Hero = () => {
                   >
                     Online Examination Platform
                   </motion.span>
-                </motion.div>
+                </motion.div> */}
 
                 <motion.h1 
                   initial={{ y: 20, opacity: 0 }}
