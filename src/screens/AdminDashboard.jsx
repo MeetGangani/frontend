@@ -71,11 +71,19 @@ const AdminDashboard = () => {
         userType
       }).unwrap();
       
-      setSuccess(`Successfully created ${userType} account`);
+      // Show success message
+      toast.success(`Successfully created ${userType} account`);
+      
+      // Reset form
       setName('');
       setEmail('');
       setPassword('');
       setUserType('student');
+      
+      // Refresh user list if on users tab
+      if (activeTab === 'users') {
+        fetchUsers();
+      }
     } catch (err) {
       toast.error(err?.data?.message || err.error);
     }
