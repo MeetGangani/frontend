@@ -63,8 +63,14 @@ const AdminDashboard = () => {
 
   const submitHandler = async (e) => {
     e.preventDefault();
+
+    // Validate password length
+    if (password.length < 6) {
+      toast.error('Password must be at least 6 characters long');
+      return;
+    }
+
     try {
-      // Use axios instead of the register mutation to avoid automatic login
       const response = await axios.post(
         `${BACKEND_URL}/api/admin/users`,
         {
@@ -74,7 +80,10 @@ const AdminDashboard = () => {
           userType
         },
         {
-          withCredentials: true
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+          }
         }
       );
 
@@ -87,10 +96,16 @@ const AdminDashboard = () => {
         setPassword('');
         setUserType('student');
         
-        // Refresh user list
-        fetchUsers();
+        // Fetch updated user list immediately
+        await fetchUsers();
+
+        // Switch to users tab if not already there
+        if (activeTab !== 'users') {
+          setActiveTab('users');
+        }
       }
     } catch (err) {
+      console.error('Error creating user:', err);
       toast.error(err?.response?.data?.message || 'Failed to create user');
     }
   };
@@ -173,11 +188,15 @@ const AdminDashboard = () => {
       const response = await axios.get(`${BACKEND_URL}/api/admin/users`, {
         withCredentials: true
       });
-      setUsers(response.data);
-      setUserError(null);
+      
+      if (response.data) {
+        setUsers(response.data);
+        setFilteredUsers(response.data);
+      }
     } catch (error) {
-      setUserError('Failed to fetch users');
       console.error('Error fetching users:', error);
+      toast.error('Failed to fetch users');
+      setUserError('Failed to fetch users');
     } finally {
       setUserLoading(false);
     }
