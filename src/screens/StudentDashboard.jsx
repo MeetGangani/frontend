@@ -560,12 +560,12 @@ const StudentDashboard = () => {
   };
 
   return (
-    <div className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-100'} min-h-screen pt-[150px] p-4 md:p-8`}>
+    <div className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-100'} min-h-screen pt-[180px] p-4 md:p-8`}>
       <div className="container mx-auto">
         <div className="flex flex-col md:flex-row gap-4 md:gap-8">
           {/* Navigation Sidebar - Hidden during exam mode on mobile */}
           <div className={`w-full md:w-1/4 ${isExamMode ? 'hidden md:block' : ''}`}>
-            <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-lg p-4 md:p-6 shadow-lg`}>
+            <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-lg p-4 md:p-6 shadow-lg sticky top-[200px]`}>
               <h2 className={`text-xl md:text-2xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 Navigation
               </h2>
