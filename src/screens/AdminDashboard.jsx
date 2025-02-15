@@ -266,8 +266,8 @@ const AdminDashboard = () => {
 
   return (
     <div className={`min-h-screen p-4 transition-none ${isDarkMode ? 'bg-[#0A0F1C] text-white' : 'bg-gray-50 text-gray-900'}`}>
-      {/* Stats Cards - Added z-index and relative positioning */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 relative z-10">
+      {/* Stats Cards - Adjusted z-index */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 relative z-0">
         <div className={`p-4 rounded-lg shadow-md transition-none ${
           isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
         }`}>
@@ -322,9 +322,9 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Content Area - Adjusted z-index */}
+      {/* Content Area - Adjusted z-index and margin */}
       {activeTab === 'dashboard' ? (
-        <div className={`rounded-lg shadow-md overflow-hidden relative z-0 ${
+        <div className={`rounded-lg shadow-md overflow-hidden relative z-0 mt-4 ${
           isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
         }`}>
           <div className="flex justify-between items-center p-6 border-b">
@@ -538,7 +538,7 @@ const AdminDashboard = () => {
       )}
 
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 z-50 overflow-y-auto">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
