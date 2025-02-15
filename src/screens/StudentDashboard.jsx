@@ -806,7 +806,7 @@ const StudentDashboard = () => {
                     <button
                       onClick={isFullscreen ? exitFullscreen : enterFullscreen}
                       className="p-2 hover:bg-yellow-200 rounded-lg transition-colors"
-                      title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                       title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
                     >
                       {isFullscreen ? <FaCompress size={20} /> : <FaExpand size={20} />}
                     </button>
