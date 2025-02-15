@@ -265,7 +265,7 @@ const AdminDashboard = () => {
   console.log('Current stats:', stats);
 
   return (
-    <div className={`min-h-screen pt-20 p-4 transition-none ${isDarkMode ? 'bg-[#0A0F1C] text-white' : 'bg-gray-50 text-gray-900'}`}>
+    <div className={`min-h-screen pt-28 p-4 transition-none ${isDarkMode ? 'bg-[#0A0F1C] text-white' : 'bg-gray-50 text-gray-900'}`}>
       {/* Stats Cards - Adjusted z-index */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 relative z-0">
         <div className={`p-4 rounded-lg shadow-md transition-none ${
