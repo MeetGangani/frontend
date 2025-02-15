@@ -502,18 +502,18 @@ const StudentDashboard = () => {
 
   const renderResultsTab = () => {
     return (
-      <div>
-        <h2 className={`text-2xl font-bold mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+      <div className="mt-8">
+        <h2 className={`text-2xl font-bold mb-8 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
           My Results
         </h2>
         
         <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-lg shadow-lg`}>
           {examResults && examResults.length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-6 p-6">
               {examResults.map((result) => (
                 <div
                   key={result._id}
-                  className={`p-4 rounded-lg ${
+                  className={`p-6 rounded-lg ${
                     isDarkMode ? 'bg-gray-800' : 'bg-white'
                   } shadow`}
                 >
@@ -545,7 +545,7 @@ const StudentDashboard = () => {
               ))}
             </div>
           ) : (
-            <div className={`p-6 text-center ${
+            <div className={`p-8 text-center ${
               isDarkMode ? 'text-gray-400' : 'text-gray-500'
             }`}>
               {loading ? (
@@ -566,20 +566,20 @@ const StudentDashboard = () => {
     <div className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-100'} min-h-screen pt-20`}>
       {/* Main Content */}
       <div className="container mx-auto px-4 pb-8">
-        <div className="flex flex-col md:flex-row gap-6">
+        <div className="flex flex-col md:flex-row gap-8">
           {/* Sidebar Navigation */}
           <div className={`md:w-1/4 ${isExamMode ? 'hidden md:block' : ''}`}>
             <div className={`${
               isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
-            } rounded-xl shadow-lg p-5 sticky top-24`}>
-              <h2 className={`text-xl font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            } rounded-xl shadow-lg p-6 sticky top-24`}>
+              <h2 className={`text-xl font-semibold mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 Navigation
               </h2>
-              <nav className="space-y-2">
+              <nav className="space-y-3">
                 <button
                   onClick={() => handleTabSwitch('start')}
                   disabled={isExamMode}
-                  className={`w-full px-4 py-3 rounded-lg transition-all duration-200 text-left ${
+                  className={`w-full px-5 py-4 rounded-lg transition-all duration-200 text-left ${
                     activeTab === 'start'
                       ? 'bg-violet-600 text-white font-medium'
                       : isDarkMode
@@ -591,7 +591,7 @@ const StudentDashboard = () => {
                 </button>
                 <button
                   onClick={() => handleTabSwitch('exam')}
-                  className={`w-full px-4 py-3 rounded-lg transition-all duration-200 text-left ${
+                  className={`w-full px-5 py-4 rounded-lg transition-all duration-200 text-left ${
                     activeTab === 'exam'
                       ? 'bg-violet-600 text-white font-medium'
                       : isDarkMode
@@ -604,7 +604,7 @@ const StudentDashboard = () => {
                 <button
                   onClick={() => handleTabSwitch('results')}
                   disabled={isExamMode}
-                  className={`w-full px-4 py-3 rounded-lg transition-all duration-200 text-left ${
+                  className={`w-full px-5 py-4 rounded-lg transition-all duration-200 text-left ${
                     activeTab === 'results'
                       ? 'bg-violet-600 text-white font-medium'
                       : isDarkMode
@@ -622,19 +622,21 @@ const StudentDashboard = () => {
           <div className="md:w-3/4">
             <div className={`${
               isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
-            } rounded-xl shadow-lg p-6`}>
+            } rounded-xl shadow-lg p-8`}>
               {/* Exam Mode Warning */}
               {isExamMode && (
-                <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded-lg">
+                <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-5 mb-8 rounded-lg">
                   <p className="font-semibold">Exam in Progress</p>
-                  <p className="text-sm mt-1">Please do not leave this page or switch tabs.</p>
+                  <p className="text-sm mt-2">Please do not leave this page or switch tabs.</p>
                 </div>
               )}
 
               {/* Dynamic Content */}
-              {activeTab === 'start' && !isExamMode && renderStartExam()}
-              {activeTab === 'exam' && renderExam()}
-              {activeTab === 'results' && !isExamMode && renderResultsTab()}
+              <div className="mt-4">
+                {activeTab === 'start' && !isExamMode && renderStartExam()}
+                {activeTab === 'exam' && renderExam()}
+                {activeTab === 'results' && !isExamMode && renderResultsTab()}
+              </div>
             </div>
           </div>
         </div>
@@ -642,7 +644,7 @@ const StudentDashboard = () => {
 
       {/* Fixed Warning Banner during Exam */}
       {isExamMode && (
-        <div className="fixed bottom-0 left-0 right-0 bg-red-600 text-white py-3 px-4 text-center z-50">
+        <div className="fixed bottom-0 left-0 right-0 bg-red-600 text-white py-4 px-6 text-center z-50">
           <p className="text-sm font-medium">
             Warning: Leaving this page will automatically submit your exam
           </p>
