@@ -93,43 +93,39 @@ const Header = () => {
       <motion.header
         initial={{ y: -100 }}
         animate={{ y: 0 }}
-        className={`fixed top-0 left-0 right-0 z-50 ${
+        className={`fixed top-0 left-0 right-0 z-40 ${
           scrolled 
-            ? isDarkMode 
-              ? 'bg-[#0A0F1C]/90 backdrop-blur-xl border-b border-gray-800'
-              : 'bg-[#0A0F1C]/90 backdrop-blur-xl border-b border-gray-800'
-            : isDarkMode
-              ? 'bg-[#0A0F1C]/50 backdrop-blur-sm'
-              : 'bg-[#0A0F1C]/50 backdrop-blur-sm'
+            ? 'bg-[#0A0F1C]/90 backdrop-blur-xl border-b border-gray-800'
+            : 'bg-[#0A0F1C]/50 backdrop-blur-sm'
         }`}
       >
         <nav className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <Link to="/" className="flex items-center space-x-3">
-              <motion.div
-                whileHover={{ scale: 1.1, rotate: 360 }}
-                transition={{ duration: 0.5 }}
-                className="p-2 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-600"
-              >
-                <FaBrain className="text-2xl text-white" />
-              </motion.div>
-              <span className={`text-xl font-bold ${
-                isDarkMode ? 'text-white' : 'text-white'
-              }`}>
-                NexusEdu
-              </span>
-            </Link>
-
-            <div className="hidden md:flex items-center space-x-8">
-              {navigationItems.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.path}
-                  className="text-gray-300 hover:text-white transition-colors duration-300"
+            <div className="flex items-center space-x-8">
+              <Link to="/" className="flex items-center space-x-3">
+                <motion.div
+                  whileHover={{ scale: 1.1, rotate: 360 }}
+                  transition={{ duration: 0.5 }}
+                  className="p-2 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-600"
                 >
-                  {item.name}
-                </Link>
-              ))}
+                  <FaBrain className="text-2xl text-white" />
+                </motion.div>
+                <span className="text-xl font-bold text-white">
+                  NexusEdu
+                </span>
+              </Link>
+              
+              <div className="hidden md:flex items-center space-x-8">
+                {navigationItems.map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.path}
+                    className="text-gray-300 hover:text-white transition-colors duration-300"
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+              </div>
             </div>
 
             <div className="hidden md:flex items-center space-x-4">

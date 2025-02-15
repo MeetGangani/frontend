@@ -52,9 +52,21 @@ const Hero = () => {
       <div 
         ref={ref}
         className={`relative min-h-screen overflow-hidden -mx-4 sm:-mx-6 lg:-mx-8 ${
-          isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'
-        } scroll-smooth pt-24`}
+          isDarkMode ? 'bg-[#0A0F1C]' : 'bg-[#0A0F1C]'
+        } scroll-smooth pt-28`}
       >
+        {/* Platform Label */}
+        <div className="relative z-50 text-center mb-4">
+          <motion.span 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="inline-block px-4 py-2 rounded-full bg-violet-500/10 text-violet-400 text-sm font-medium"
+          >
+            Online Examination Platform
+          </motion.span>
+        </div>
+
         {/* Optimize background elements */}
         <motion.div 
           style={{ y, opacity }} 
