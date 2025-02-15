@@ -480,7 +480,7 @@ const InstituteDashboard = () => {
               animate={{ opacity: 1, scale: 1 }}
               className={`${
                 isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
-              } rounded-xl shadow-lg max-w-4xl w-full`}
+              } rounded-xl shadow-lg max-w-4xl w-full max-h-[90vh] flex flex-col`}
             >
               <div className={`p-6 border-b ${
                 isDarkMode ? 'border-gray-700' : 'border-gray-200'
@@ -516,7 +516,7 @@ const InstituteDashboard = () => {
                   </svg>
                 </button>
               </div>
-              <div className="p-6">
+              <div className="flex-1 overflow-y-auto p-6">
                 {examResults.length === 0 ? (
                   <div className={`p-4 rounded-lg ${
                     isDarkMode 
@@ -530,7 +530,7 @@ const InstituteDashboard = () => {
                     <table className={`min-w-full divide-y ${
                       isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
                     }`}>
-                      <thead className={isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'}>
+                      <thead className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'} sticky top-0`}>
                         <tr>
                           {['Student Name', 'Score', 'Correct Answers', 'Submission Date'].map((header) => (
                             <th key={header} className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
