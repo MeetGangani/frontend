@@ -52,21 +52,9 @@ const Hero = () => {
       <div 
         ref={ref}
         className={`relative min-h-screen overflow-hidden -mx-4 sm:-mx-6 lg:-mx-8 ${
-          isDarkMode ? 'bg-[#0A0F1C]' : 'bg-[#0A0F1C]'
-        } scroll-smooth pt-28`}
+          isDarkMode ? 'bg-[#0A0F1C]' : 'bg-white'
+        } scroll-smooth pt-24`}
       >
-        {/* Platform Label */}
-        {/* <div className="relative z-50 text-center mb-4">
-          <motion.span 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="inline-block px-4 py-2 rounded-full bg-violet-500/10 text-violet-400 text-sm font-medium"
-          >
-            Online Examination Platform
-          </motion.span>
-        </div> */}
-
         {/* Optimize background elements */}
         <motion.div 
           style={{ y, opacity }} 
@@ -97,132 +85,127 @@ const Hero = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="relative min-h-screen"
+          className="relative min-h-[85vh] flex flex-col justify-center px-4 sm:px-6 lg:px-8"
         >
-          <div className="relative min-h-[85vh] flex flex-col justify-center px-4 sm:px-6 lg:px-8 -mt-20">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="text-center"
+            >
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8 }}
-                className="text-center"
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
+                className="inline-block"
               >
-                <motion.div
-                  initial={{ scale: 0.5, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
-                  className="inline-block"
+                <motion.span 
+                  whileHover={{ scale: 1.05 }}
+                  className={`inline-block px-5 py-2 rounded-full ${
+                    isDarkMode 
+                      ? 'bg-violet-500/10 text-violet-400'
+                      : 'bg-violet-100 text-violet-600'
+                  } text-sm font-medium mb-6`}
                 >
-                  <motion.span 
-                    whileHover={{ scale: 1.05 }}
-                    className={`inline-block px-4 py-2 rounded-full ${
+                  Online Examination Platform
+                </motion.span>
+              </motion.div>
+
+              <motion.h1 
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2, duration: 0.8 }}
+                className={`text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight ${
+                  isDarkMode ? 'text-white' : 'text-gray-900'
+                } mb-8`}
+              >
+                Take Your Exams
+                <motion.span 
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.5, duration: 0.8 }}
+                  className="block mt-2 bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent"
+                >
+                  Anytime, Anywhere
+                </motion.span>
+              </motion.h1>
+
+              <p className={`mt-6 text-lg md:text-xl ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-600'
+              } max-w-3xl mx-auto`}>
+                A secure and reliable platform for conducting online examinations. 
+                Easy to use for both institutions and students.
+              </p>
+
+              {/* CTA Section */}
+              <div className="mt-10 flex flex-col sm:flex-row justify-center items-center gap-4">
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Link
+                    to="/register"
+                    className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-medium rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg hover:shadow-violet-500/25 transition-all duration-300"
+                  >
+                    Get Started
+                    <FaArrowRight className="ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+                  </Link>
+                </motion.div>
+              </div>
+
+              {/* Features Grid with theme support */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-20">
+                {[
+                  {
+                    icon: <FaShieldAlt className="h-6 w-6" />,
+                    title: 'Secure Exams',
+                    description: 'Robust security measures to maintain exam integrity.'
+                  },
+                  {
+                    icon: <FaBrain className="h-6 w-6" />,
+                    title: 'Easy Management',
+                    description: 'Simple tools for creating and managing examinations.'
+                  },
+                  {
+                    icon: <FaRocket className="h-6 w-6" />,
+                    title: 'Instant Results',
+                    description: 'Quick evaluation and result declaration.'
+                  }
+                ].map((feature, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 50 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: index * 0.2 }}
+                    whileHover={{ y: -8, transition: { duration: 0.2 }}}
+                    className={`relative group p-8 ${
+                      isDarkMode 
+                        ? 'bg-gray-800/50 hover:bg-gray-800/70'
+                        : 'bg-white hover:bg-gray-50'
+                    } rounded-xl shadow-lg transition-all duration-300`}
+                  >
+                    <div className={`flex items-center justify-center w-12 h-12 rounded-2xl ${
                       isDarkMode 
                         ? 'bg-violet-500/10 text-violet-400' 
                         : 'bg-violet-100 text-violet-600'
-                    } text-sm font-medium mb-6`}
-                  >
-                    Online Examination Platform
-                  </motion.span>
-                </motion.div>
-
-                <motion.h1 
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.2, duration: 0.8 }}
-                  className={`text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight ${
-                    isDarkMode ? 'text-white' : 'text-gray-900'
-                  } mb-8`}
-                >
-                  Take Your Exams
-                  <motion.span 
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.5, duration: 0.8 }}
-                    className="block mt-2 bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent"
-                  >
-                    Anytime, Anywhere
-                  </motion.span>
-                </motion.h1>
-
-                <p className={`mt-6 text-lg md:text-xl ${
-                  isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                } max-w-3xl mx-auto`}>
-                  A secure and reliable platform for conducting online examinations. 
-                  Easy to use for both institutions and students.
-                </p>
-
-                {/* CTA Section */}
-                <div className="mt-10 flex flex-col sm:flex-row justify-center items-center gap-4">
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Link
-                      to="/register"
-                      className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-medium rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg hover:shadow-violet-500/25 transition-all duration-300"
-                    >
-                      Get Started
-                      <FaArrowRight className="ml-2 group-hover:translate-x-1 transition-transform duration-300" />
-                    </Link>
+                    } mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                      {feature.icon}
+                    </div>
+                    <h3 className={`text-xl font-semibold ${
+                      isDarkMode ? 'text-white' : 'text-gray-900'
+                    } mb-4`}>
+                      {feature.title}
+                    </h3>
+                    <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                      {feature.description}
+                    </p>
                   </motion.div>
-                </div>
+                ))}
+              </div>
 
-                {/* Features Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-20">
-                  {[
-                    {
-                      icon: <FaShieldAlt className="h-6 w-6" />,
-                      title: 'Secure Exams',
-                      description: 'Robust security measures to maintain exam integrity.'
-                    },
-                    {
-                      icon: <FaBrain className="h-6 w-6" />,
-                      title: 'Easy Management',
-                      description: 'Simple tools for creating and managing examinations.'
-                    },
-                    {
-                      icon: <FaRocket className="h-6 w-6" />,
-                      title: 'Instant Results',
-                      description: 'Quick evaluation and result declaration.'
-                    }
-                  ].map((feature, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, y: 50 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.5, delay: index * 0.2 }}
-                      whileHover={{ y: -8, transition: { duration: 0.2 }}}
-                      className="relative group p-8"
-                    >
-                      <div className={`absolute inset-0 bg-gradient-to-b ${
-                        isDarkMode 
-                          ? 'from-violet-500/5 to-transparent' 
-                          : 'from-violet-500/10 to-transparent'
-                      } rounded-3xl transform transition-transform group-hover:scale-105`} />
-                      <div className="relative">
-                        <div className={`flex items-center justify-center w-12 h-12 rounded-2xl ${
-                          isDarkMode 
-                            ? 'bg-violet-500/10 text-violet-400' 
-                            : 'bg-violet-100 text-violet-600'
-                        } mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                          {feature.icon}
-                        </div>
-                        <h3 className={`text-xl font-semibold ${
-                          isDarkMode ? 'text-white' : 'text-gray-900'
-                        } mb-4`}>
-                          {feature.title}
-                        </h3>
-                        <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-                          {feature.description}
-                        </p>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-
-              </motion.div>
-            </div>
+            </motion.div>
           </div>
         </motion.div>
 

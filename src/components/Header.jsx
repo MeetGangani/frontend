@@ -95,8 +95,12 @@ const Header = () => {
         animate={{ y: 0 }}
         className={`fixed top-0 left-0 right-0 z-40 ${
           scrolled 
-            ? 'bg-[#0A0F1C]/90 backdrop-blur-xl border-b border-gray-800'
-            : 'bg-[#0A0F1C]/50 backdrop-blur-sm'
+            ? isDarkMode 
+              ? 'bg-[#0A0F1C]/90 backdrop-blur-xl border-b border-gray-800'
+              : 'bg-white/90 backdrop-blur-xl border-b border-gray-200'
+            : isDarkMode
+              ? 'bg-[#0A0F1C]/50 backdrop-blur-sm'
+              : 'bg-white/50 backdrop-blur-sm'
         }`}
       >
         <nav className="max-w-7xl mx-auto px-6 py-4">
@@ -110,7 +114,9 @@ const Header = () => {
                 >
                   <FaBrain className="text-2xl text-white" />
                 </motion.div>
-                <span className="text-xl font-bold text-white">
+                <span className={`text-xl font-bold ${
+                  isDarkMode ? 'text-white' : 'text-gray-900'
+                }`}>
                   NexusEdu
                 </span>
               </Link>
@@ -120,7 +126,11 @@ const Header = () => {
                   <Link
                     key={item.name}
                     to={item.path}
-                    className="text-gray-300 hover:text-white transition-colors duration-300"
+                    className={`transition-colors duration-300 ${
+                      isDarkMode 
+                        ? 'text-gray-300 hover:text-white'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
                   >
                     {item.name}
                   </Link>
@@ -197,7 +207,11 @@ const Header = () => {
                 <div className="flex items-center space-x-4">
                   <Link
                     to="/login"
-                    className="px-6 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300"
+                    className={`px-6 py-2 rounded-lg transition-all duration-300 ${
+                      isDarkMode 
+                        ? 'text-gray-300 hover:text-white hover:bg-white/10'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    }`}
                   >
                     Sign In
                   </Link>
@@ -217,15 +231,15 @@ const Header = () => {
               className="md:hidden p-2 rounded-lg"
             >
               <div className="w-6 h-5 flex flex-col justify-between">
-                <span className={`w-full h-0.5 bg-white transform transition-all duration-300 ${
-                  isOpen ? 'rotate-45 translate-y-2' : ''
-                }`} />
-                <span className={`w-full h-0.5 bg-white transition-all duration-300 ${
-                  isOpen ? 'opacity-0' : 'opacity-100'
-                }`} />
-                <span className={`w-full h-0.5 bg-white transform transition-all duration-300 ${
-                  isOpen ? '-rotate-45 -translate-y-2' : ''
-                }`} />
+                <span className={`w-full h-0.5 transform transition-all duration-300 ${
+                  isDarkMode ? 'bg-white' : 'bg-gray-900'
+                } ${isOpen ? 'rotate-45 translate-y-2' : ''}`} />
+                <span className={`w-full h-0.5 transition-all duration-300 ${
+                  isDarkMode ? 'bg-white' : 'bg-gray-900'
+                } ${isOpen ? 'opacity-0' : 'opacity-100'}`} />
+                <span className={`w-full h-0.5 transform transition-all duration-300 ${
+                  isDarkMode ? 'bg-white' : 'bg-gray-900'
+                } ${isOpen ? '-rotate-45 -translate-y-2' : ''}`} />
               </div>
             </motion.button>
           </div>
@@ -237,7 +251,11 @@ const Header = () => {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="md:hidden bg-[#0A0F1C] border-t border-gray-800"
+              className={`md:hidden ${
+                isDarkMode 
+                  ? 'bg-[#0A0F1C] border-t border-gray-800'
+                  : 'bg-white border-t border-gray-200'
+              }`}
             >
               <div className="px-4 py-6 space-y-4">
                 <div className="flex items-center justify-between px-4 py-2 rounded-lg">
