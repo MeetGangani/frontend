@@ -64,15 +64,15 @@ const AdminDashboard = () => {
   const submitHandler = async (e) => {
     e.preventDefault();
 
-    // Validate password length
     if (password.length < 6) {
       toast.error('Password must be at least 6 characters long');
       return;
     }
 
     try {
+      setLoading(true);
       const response = await axios.post(
-        `${BACKEND_URL}/api/admin/users`,
+        `${BACKEND_URL}/api/admin/users/create`,
         {
           name,
           email,
@@ -87,7 +87,7 @@ const AdminDashboard = () => {
         }
       );
 
-      if (response.data) {
+      if (response.data.success) {
         toast.success(`Successfully created ${userType} account`);
         
         // Reset form
@@ -96,17 +96,17 @@ const AdminDashboard = () => {
         setPassword('');
         setUserType('student');
         
-        // Fetch updated user list immediately
+        // Fetch updated user list
         await fetchUsers();
 
-        // Switch to users tab if not already there
-        if (activeTab !== 'users') {
-          setActiveTab('users');
-        }
+        // Switch to users tab
+        setActiveTab('users');
       }
     } catch (err) {
       console.error('Error creating user:', err);
       toast.error(err?.response?.data?.message || 'Failed to create user');
+    } finally {
+      setLoading(false);
     }
   };
 
