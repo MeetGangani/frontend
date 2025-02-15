@@ -88,6 +88,12 @@ const Header = () => {
     );
   };
 
+  // Add this handler to close mobile menu when navigation occurs
+  const handleNavigation = () => {
+    setIsOpen(false); // Close mobile menu
+    setDropdownOpen(false); // Close dropdown if open
+  };
+
   return (
     <>
       <motion.header
@@ -126,6 +132,7 @@ const Header = () => {
                   <Link
                     key={item.name}
                     to={item.path}
+                    onClick={handleNavigation}
                     className={`transition-colors duration-300 ${
                       isDarkMode 
                         ? 'text-gray-300 hover:text-white'
@@ -183,6 +190,7 @@ const Header = () => {
                         <div className={`border-t ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`} />
                         <Link
                           to="/profile"
+                          onClick={handleNavigation}
                           className={`flex items-center space-x-3 p-3 rounded-xl ${
                             isDarkMode 
                               ? 'hover:bg-white/5 text-white' 
@@ -193,7 +201,10 @@ const Header = () => {
                           <span>Profile</span>
                         </Link>
                         <button
-                          onClick={logoutHandler}
+                          onClick={() => {
+                            handleNavigation();
+                            logoutHandler();
+                          }}
                           className="w-full flex items-center space-x-3 p-3 rounded-xl hover:bg-red-500/10 text-red-500"
                         >
                           <FaSignOutAlt />
@@ -207,6 +218,7 @@ const Header = () => {
                 <div className="flex items-center space-x-4">
                   <Link
                     to="/login"
+                    onClick={handleNavigation}
                     className={`px-6 py-2 rounded-lg transition-all duration-300 ${
                       isDarkMode 
                         ? 'text-gray-300 hover:text-white hover:bg-white/10'
@@ -217,6 +229,7 @@ const Header = () => {
                   </Link>
                   <Link
                     to="/register"
+                    onClick={handleNavigation}
                     className="px-6 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg hover:shadow-violet-500/30 transition-all duration-300 hover:scale-105"
                   >
                     Join Now
@@ -271,6 +284,7 @@ const Header = () => {
                   <Link
                     key={item.name}
                     to={item.path}
+                    onClick={handleNavigation}
                     className={`block px-4 py-2 rounded-lg ${
                       isDarkMode 
                         ? 'text-gray-300 hover:bg-white/10' 
@@ -283,13 +297,20 @@ const Header = () => {
 
                 {userInfo ? (
                   <>
-                    <Link to="/profile" className={`block px-4 py-2 rounded-lg ${
-                      isDarkMode ? 'text-white hover:bg-white/10' : 'text-gray-700 hover:bg-gray-50'
-                    }`}>
+                    <Link 
+                      to="/profile" 
+                      onClick={handleNavigation}
+                      className={`block px-4 py-2 rounded-lg ${
+                        isDarkMode ? 'text-white hover:bg-white/10' : 'text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
                       Profile
                     </Link>
                     <button
-                      onClick={logoutHandler}
+                      onClick={() => {
+                        handleNavigation();
+                        logoutHandler();
+                      }}
                       className="w-full text-left px-4 py-2 rounded-lg text-red-500 hover:bg-red-500/10"
                     >
                       Logout
@@ -297,12 +318,20 @@ const Header = () => {
                   </>
                 ) : (
                   <>
-                    <Link to="/login" className={`block px-4 py-2 rounded-lg ${
-                      isDarkMode ? 'text-white hover:bg-white/10' : 'text-gray-700 hover:bg-gray-50'
-                    }`}>
+                    <Link 
+                      to="/login" 
+                      onClick={handleNavigation}
+                      className={`block px-4 py-2 rounded-lg ${
+                        isDarkMode ? 'text-white hover:bg-white/10' : 'text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
                       Sign In
                     </Link>
-                    <Link to="/register" className="block px-4 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-white">
+                    <Link 
+                      to="/register"
+                      onClick={handleNavigation}
+                      className="block px-4 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-white"
+                    >
                       Join Now
                     </Link>
                   </>
