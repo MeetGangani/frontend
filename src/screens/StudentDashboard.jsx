@@ -563,14 +563,14 @@ const StudentDashboard = () => {
   };
 
   return (
-    <div className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-100'} min-h-screen pt-24`}>
-      <div className="container mx-auto px-6">
-        <div className="flex flex-col md:flex-row gap-8">
+    <div className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-100'} min-h-screen pt-20`}>
+      <div className="container mx-auto px-4">
+        <div className="flex flex-col md:flex-row gap-4">
           {/* Fixed position Sidebar Navigation */}
           <div className={`md:w-1/4 ${isExamMode ? 'hidden md:block' : ''}`}>
             <div className={`${
               isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
-            } rounded-xl shadow-lg p-5 fixed w-[22%]`}>
+            } rounded-xl shadow-lg p-5 fixed w-[20%]`}>
               <h2 className={`text-xl font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 Navigation
               </h2>
@@ -617,8 +617,8 @@ const StudentDashboard = () => {
             </div>
           </div>
 
-          {/* Main Content Area with proper spacing */}
-          <div className="md:w-3/4 md:ml-auto pl-[25%]">
+          {/* Main Content Area with reduced spacing */}
+          <div className="md:w-3/4 md:ml-auto pl-[22%]">
             <div className={`${
               isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
             } rounded-xl shadow-lg p-6`}>
