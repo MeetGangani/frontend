@@ -90,18 +90,17 @@ const Header = () => {
 
   return (
     <>
-      <div className="h-20"></div>
       <motion.header
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         className={`fixed top-0 left-0 right-0 z-50 ${
           scrolled 
             ? isDarkMode 
-              ? 'bg-[#0A0F1C]/90 backdrop-blur-xl shadow-lg'
-              : 'bg-white/90 backdrop-blur-xl shadow-lg'
+              ? 'bg-[#0A0F1C]/90 backdrop-blur-xl border-b border-gray-800'
+              : 'bg-[#0A0F1C]/90 backdrop-blur-xl border-b border-gray-800'
             : isDarkMode
               ? 'bg-[#0A0F1C]/50 backdrop-blur-sm'
-              : 'bg-white/50 backdrop-blur-sm'
+              : 'bg-[#0A0F1C]/50 backdrop-blur-sm'
         }`}
       >
         <nav className="max-w-7xl mx-auto px-6 py-4">
@@ -114,29 +113,27 @@ const Header = () => {
               >
                 <FaBrain className="text-2xl text-white" />
               </motion.div>
-              <span className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              <span className={`text-xl font-bold ${
+                isDarkMode ? 'text-white' : 'text-white'
+              }`}>
                 NexusEdu
               </span>
             </Link>
 
             <div className="hidden md:flex items-center space-x-8">
-              <div className="flex items-center space-x-6">
-                {navigationItems.map((item) => (
-                  <Link
-                    key={item.name}
-                    to={item.path}
-                    className={`relative group ${
-                      isDarkMode ? 'text-gray-300' : 'text-gray-600'
-                    } hover:text-violet-500 transition-colors duration-300`}
-                  >
-                    <span>{item.name}</span>
-                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-violet-500 group-hover:w-full transition-all duration-300"></span>
-                  </Link>
-                ))}
-              </div>
+              {navigationItems.map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.path}
+                  className="text-gray-300 hover:text-white transition-colors duration-300"
+                >
+                  {item.name}
+                </Link>
+              ))}
+            </div>
 
+            <div className="hidden md:flex items-center space-x-4">
               <ThemeToggle />
-
               {userInfo ? (
                 <div className="relative">
                   <motion.button
@@ -204,11 +201,7 @@ const Header = () => {
                 <div className="flex items-center space-x-4">
                   <Link
                     to="/login"
-                    className={`px-6 py-2 rounded-lg ${
-                      isDarkMode 
-                        ? 'text-white hover:bg-white/10' 
-                        : 'text-gray-700 hover:bg-gray-100'
-                    } transition-all duration-300`}
+                    className="px-6 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300"
                   >
                     Sign In
                   </Link>
@@ -228,13 +221,13 @@ const Header = () => {
               className="md:hidden p-2 rounded-lg"
             >
               <div className="w-6 h-5 flex flex-col justify-between">
-                <span className={`w-full h-0.5 ${isDarkMode ? 'bg-white' : 'bg-gray-900'} transform transition-all duration-300 ${
+                <span className={`w-full h-0.5 bg-white transform transition-all duration-300 ${
                   isOpen ? 'rotate-45 translate-y-2' : ''
                 }`} />
-                <span className={`w-full h-0.5 ${isDarkMode ? 'bg-white' : 'bg-gray-900'} transition-all duration-300 ${
+                <span className={`w-full h-0.5 bg-white transition-all duration-300 ${
                   isOpen ? 'opacity-0' : 'opacity-100'
                 }`} />
-                <span className={`w-full h-0.5 ${isDarkMode ? 'bg-white' : 'bg-gray-900'} transform transition-all duration-300 ${
+                <span className={`w-full h-0.5 bg-white transform transition-all duration-300 ${
                   isOpen ? '-rotate-45 -translate-y-2' : ''
                 }`} />
               </div>
@@ -248,11 +241,7 @@ const Header = () => {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className={`md:hidden ${
-                isDarkMode 
-                  ? 'bg-[#0A0F1C] border-gray-800' 
-                  : 'bg-white border-gray-200'
-              } border-t`}
+              className="md:hidden bg-[#0A0F1C] border-t border-gray-800"
             >
               <div className="px-4 py-6 space-y-4">
                 <div className="flex items-center justify-between px-4 py-2 rounded-lg">
