@@ -5,17 +5,34 @@ import { useTheme } from '../context/ThemeContext';
 const Footer = () => {
   const { isDarkMode } = useTheme();
 
+  const socialLinks = [
+    { icon: FaTwitter, url: 'https://twitter.com/nexusedu' },
+    { icon: FaGithub, url: 'https://github.com/nexusedu' },
+    { icon: FaLinkedin, url: 'https://linkedin.com/company/nexusedu' }
+  ];
+
+  const quickLinks = [
+    { name: 'About', path: '/about' },
+    { name: 'Contact', path: '/contact' }
+  ];
+
+  const legalLinks = [
+    { name: 'Privacy Policy', path: '/privacy-policy' },
+    { name: 'Terms of Service', path: '/terms-of-service' }
+  ];
+
   return (
     <footer className={`w-full ${
-      isDarkMode 
-        ? 'bg-[#0A0F1C] border-gray-800' 
-        : 'bg-white border-gray-200'
+      isDarkMode ? 'bg-[#0A0F1C] border-gray-800' : 'bg-white border-gray-200'
     } border-t`}>
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand Section */}
           <div className="col-span-1 md:col-span-2">
-            <Link to="/" className="flex items-center space-x-3 mb-6">
+            <Link 
+              to="/" 
+              className="flex items-center space-x-3 mb-6 hover:opacity-80 transition-opacity"
+            >
               <div className="p-2 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-600">
                 <FaBrain className="text-2xl text-white" />
               </div>
@@ -26,21 +43,23 @@ const Footer = () => {
               </span>
             </Link>
             <p className={`mb-6 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              A secure online examination platform designed to simplify assessment processes
-              for educational institutions and students.
+              Empowering education through secure and efficient online examination solutions.
+              Making assessment simple, reliable, and accessible for everyone.
             </p>
             <div className="flex space-x-4">
-              {[FaTwitter, FaGithub, FaLinkedin].map((Icon, index) => (
+              {socialLinks.map((social, index) => (
                 <a
                   key={index}
-                  href="#"
-                  className={`${
+                  href={social.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`transform transition-all duration-200 hover:scale-110 ${
                     isDarkMode 
                       ? 'text-gray-400 hover:text-violet-400' 
                       : 'text-gray-600 hover:text-violet-600'
-                  } transition-colors duration-300`}
+                  }`}
                 >
-                  <Icon className="h-6 w-6" />
+                  <social.icon className="h-6 w-6" />
                 </a>
               ))}
             </div>
@@ -54,17 +73,17 @@ const Footer = () => {
               Quick Links
             </h3>
             <ul className="space-y-4">
-              {['About', 'Contact'].map((item, index) => (
+              {quickLinks.map((link, index) => (
                 <li key={index}>
                   <Link
-                    to={`/${item.toLowerCase()}`}
-                    className={`${
+                    to={link.path}
+                    className={`inline-block transform transition-all duration-200 hover:-translate-y-1 ${
                       isDarkMode 
                         ? 'text-gray-400 hover:text-violet-400' 
                         : 'text-gray-600 hover:text-violet-600'
-                    } transition-colors duration-300`}
+                    }`}
                   >
-                    {item}
+                    {link.name}
                   </Link>
                 </li>
               ))}
@@ -79,17 +98,17 @@ const Footer = () => {
               Legal
             </h3>
             <ul className="space-y-4">
-              {['Privacy Policy', 'Terms of Service'].map((item, index) => (
+              {legalLinks.map((link, index) => (
                 <li key={index}>
                   <Link
-                    to={`/${item.toLowerCase().replace(/\s+/g, '-')}`}
-                    className={`${
+                    to={link.path}
+                    className={`inline-block transform transition-all duration-200 hover:-translate-y-1 ${
                       isDarkMode 
                         ? 'text-gray-400 hover:text-violet-400' 
                         : 'text-gray-600 hover:text-violet-600'
-                    } transition-colors duration-300`}
+                    }`}
                   >
-                    {item}
+                    {link.name}
                   </Link>
                 </li>
               ))}
@@ -108,7 +127,7 @@ const Footer = () => {
             <p className={`${
               isDarkMode ? 'text-gray-400' : 'text-gray-600'
             } flex items-center mt-4 md:mt-0`}>
-              Made with <FaHeart className="text-violet-500 mx-1" /> by NexusEdu Team
+              Made by <FaHeart className="text-violet-500 mx-1 animate-pulse" /> NexusEdu Team
             </p>
           </div>
         </div>

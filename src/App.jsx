@@ -13,6 +13,8 @@ import InstituteDashboard from './screens/InstituteDashboard';
 import StudentDashboard from './screens/StudentDashboard';
 import ContactScreen from './screens/ContactScreen';
 import AboutScreen from './screens/AboutScreen';
+import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen';
+import TermsScreen from './screens/TermsScreen';
 import { useTheme } from './context/ThemeContext';
 import { Toaster } from 'react-hot-toast';
 
@@ -118,6 +120,10 @@ const App = () => {
             <Route path="/admin/dashboard" element={<AdminRouteWrapper />} />
             <Route path="/institute/dashboard" element={<InstituteRouteWrapper />} />
             <Route path="/student/dashboard" element={<StudentRouteWrapper />} />
+
+            {/* Add these new routes */}
+            <Route path="/privacy-policy" element={<PrivacyPolicyScreen />} />
+            <Route path="/terms-of-service" element={<TermsScreen />} />
 
             {/* Catch all */}
             <Route path="*" element={<Navigate to="/" replace />} />

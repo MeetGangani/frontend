@@ -181,22 +181,22 @@ const Hero = () => {
                       viewport={{ once: true }}
                       transition={{ duration: 0.5, delay: index * 0.2 }}
                       whileHover={{ y: -8, transition: { duration: 0.2 }}}
-                      className={`relative group p-8 ${
+                      className={`relative group p-8 text-center ${
                         isDarkMode 
                           ? 'bg-gray-800/50 hover:bg-gray-800/70'
                           : 'bg-white hover:bg-gray-50'
                       } rounded-xl shadow-lg transition-all duration-300`}
                     >
-                      <div className={`flex items-center justify-center w-12 h-12 rounded-2xl ${
+                      <div className={`mx-auto flex items-center justify-center w-12 h-12 rounded-2xl ${
                         isDarkMode 
                           ? 'bg-violet-500/10 text-violet-400' 
                           : 'bg-violet-100 text-violet-600'
                       } mb-6 group-hover:scale-110 transition-transform duration-300`}>
                         {feature.icon}
                       </div>
-                      <h3 className={`text-xl font-semibold ${
+                      <h3 className={`text-xl font-semibold mb-4 ${
                         isDarkMode ? 'text-white' : 'text-gray-900'
-                      } mb-4`}>
+                      }`}>
                         {feature.title}
                       </h3>
                       <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
