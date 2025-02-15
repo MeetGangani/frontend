@@ -29,12 +29,13 @@ const PrivacyPolicyScreen = () => {
                 }`}>
                   1. Information We Collect
                 </h2>
-                <p>We collect information that you provide directly to us, including:</p>
-                <ul className="list-disc pl-6 mt-2">
-                  <li>Name and contact information</li>
-                  <li>Educational institution details</li>
-                  <li>Examination responses and results</li>
-                  <li>Account credentials</li>
+                <p className="mb-4">We collect information that you provide directly to us, including:</p>
+                <ul className="list-disc pl-6 mt-2 space-y-2">
+                  <li>Personal Information: Name, email address, contact details</li>
+                  <li>Academic Information: Institution details, course enrollments</li>
+                  <li>Examination Data: Responses, results, and performance metrics</li>
+                  <li>Technical Data: Device information, IP address, browser type</li>
+                  <li>Usage Data: How you interact with our platform</li>
                 </ul>
               </section>
 
@@ -44,16 +45,45 @@ const PrivacyPolicyScreen = () => {
                 }`}>
                   2. How We Use Your Information
                 </h2>
-                <p>We use the collected information for:</p>
-                <ul className="list-disc pl-6 mt-2">
-                  <li>Providing examination services</li>
-                  <li>Improving our platform</li>
-                  <li>Communication about services</li>
-                  <li>Security and fraud prevention</li>
+                <p className="mb-4">We use the collected information for:</p>
+                <ul className="list-disc pl-6 mt-2 space-y-2">
+                  <li>Providing and improving our examination services</li>
+                  <li>Personalizing your learning experience</li>
+                  <li>Analyzing platform usage and trends</li>
+                  <li>Communicating updates and important notices</li>
+                  <li>Preventing fraud and ensuring platform security</li>
                 </ul>
               </section>
 
-              {/* Add more sections as needed */}
+              <section className="mb-8">
+                <h2 className={`text-2xl font-semibold mb-4 ${
+                  isDarkMode ? 'text-white' : 'text-gray-900'
+                }`}>
+                  3. Data Security
+                </h2>
+                <p className="mb-4">We implement robust security measures to protect your data:</p>
+                <ul className="list-disc pl-6 mt-2 space-y-2">
+                  <li>Encryption of sensitive information</li>
+                  <li>Regular security audits and updates</li>
+                  <li>Secure data storage and transmission</li>
+                  <li>Access controls and authentication</li>
+                </ul>
+              </section>
+
+              <section className="mb-8">
+                <h2 className={`text-2xl font-semibold mb-4 ${
+                  isDarkMode ? 'text-white' : 'text-gray-900'
+                }`}>
+                  4. Your Rights
+                </h2>
+                <p className="mb-4">You have the right to:</p>
+                <ul className="list-disc pl-6 mt-2 space-y-2">
+                  <li>Access your personal data</li>
+                  <li>Request corrections to your information</li>
+                  <li>Delete your account and associated data</li>
+                  <li>Opt-out of marketing communications</li>
+                </ul>
+              </section>
             </div>
           </motion.div>
         </div>
