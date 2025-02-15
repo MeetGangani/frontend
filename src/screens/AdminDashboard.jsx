@@ -266,8 +266,8 @@ const AdminDashboard = () => {
 
   return (
     <div className={`min-h-screen p-4 transition-none ${isDarkMode ? 'bg-[#0A0F1C] text-white' : 'bg-gray-50 text-gray-900'}`}>
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      {/* Stats Cards - Added z-index and relative positioning */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 relative z-10">
         <div className={`p-4 rounded-lg shadow-md transition-none ${
           isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
         }`}>
@@ -288,8 +288,8 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="mb-6">
+      {/* Tab Navigation - Adjusted z-index */}
+      <div className="mb-6 relative z-0">
         <div className={`flex space-x-4 border-b transition-none ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
           <button
             onClick={() => setActiveTab('dashboard')}
@@ -322,9 +322,9 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Content Area */}
+      {/* Content Area - Adjusted z-index */}
       {activeTab === 'dashboard' ? (
-        <div className={`rounded-lg shadow-md overflow-hidden ${
+        <div className={`rounded-lg shadow-md overflow-hidden relative z-0 ${
           isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
         }`}>
           <div className="flex justify-between items-center p-6 border-b">
