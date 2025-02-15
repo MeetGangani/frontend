@@ -5,7 +5,7 @@ import { useLoginMutation } from '../slices/usersApiSlice';
 import { setCredentials } from '../slices/authSlice';
 import { toast } from 'react-toastify';
 import { motion } from 'framer-motion';
-import { FaBrain, FaEnvelope, FaLock } from 'react-icons/fa';
+import { FaBrain, FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
 import Loader from '../components/Loader';
 import { useTheme } from '../context/ThemeContext';
 import { FcGoogle } from 'react-icons/fc';
@@ -16,6 +16,7 @@ const LoginScreen = () => {
   const { isDarkMode } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -192,9 +193,9 @@ const LoginScreen = () => {
                     <input
                       id="password"
                       name="password"
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       required
-                      className={`block w-full pl-10 pr-3 py-2 border ${
+                      className={`block w-full pl-10 pr-12 py-2 border ${
                         isDarkMode 
                           ? 'border-gray-700 bg-gray-800/50 text-white placeholder-gray-500' 
                           : 'border-gray-300 bg-white/50 text-gray-900 placeholder-gray-400'
@@ -203,6 +204,21 @@ const LoginScreen = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    >
+                      {showPassword ? (
+                        <FaEye className={`h-5 w-5 ${
+                          isDarkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+                        } cursor-pointer transition-colors`} />
+                      ) : (
+                        <FaEyeSlash className={`h-5 w-5 ${
+                          isDarkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+                        } cursor-pointer transition-colors`} />
+                      )}
+                    </button>
                   </div>
                 </div>
               </div>

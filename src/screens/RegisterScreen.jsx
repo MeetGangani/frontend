@@ -5,7 +5,7 @@ import { useRegisterMutation } from '../slices/usersApiSlice';
 import { setCredentials } from '../slices/authSlice';
 import { toast } from 'react-toastify';
 import { motion } from 'framer-motion';
-import { FaBrain, FaEnvelope, FaLock, FaUser, FaGithub } from 'react-icons/fa';
+import { FaBrain, FaEnvelope, FaLock, FaUser, FaGithub, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
 import Loader from '../components/Loader';
 import { useTheme } from '../context/ThemeContext';
@@ -27,6 +27,8 @@ const RegisterScreen = () => {
       special: false
     }
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -288,9 +290,9 @@ const RegisterScreen = () => {
                     </div>
                     <input
                       id="password"
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       required
-                      className={`block w-full pl-10 pr-3 py-2 border ${
+                      className={`block w-full pl-10 pr-12 py-2 border ${
                         isDarkMode 
                           ? 'border-gray-700 bg-gray-800/50 text-white placeholder-gray-500' 
                           : 'border-gray-300 bg-white/50 text-gray-900 placeholder-gray-400'
@@ -302,6 +304,21 @@ const RegisterScreen = () => {
                         checkPasswordStrength(e.target.value);
                       }}
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    >
+                      {showPassword ? (
+                        <FaEye className={`h-5 w-5 ${
+                          isDarkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+                        } cursor-pointer transition-colors`} />
+                      ) : (
+                        <FaEyeSlash className={`h-5 w-5 ${
+                          isDarkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+                        } cursor-pointer transition-colors`} />
+                      )}
+                    </button>
                   </div>
 
                   {/* Password Strength Indicator */}
@@ -353,9 +370,9 @@ const RegisterScreen = () => {
                   </div>
                   <input
                     id="confirmPassword"
-                    type="password"
+                    type={showConfirmPassword ? "text" : "password"}
                     required
-                    className={`block w-full pl-10 pr-3 py-2 border ${
+                    className={`block w-full pl-10 pr-12 py-2 border ${
                       isDarkMode 
                         ? 'border-gray-700 bg-gray-800/50 text-white placeholder-gray-500' 
                         : 'border-gray-300 bg-white/50 text-gray-900 placeholder-gray-400'
@@ -364,6 +381,21 @@ const RegisterScreen = () => {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  >
+                    {showConfirmPassword ? (
+                      <FaEye className={`h-5 w-5 ${
+                        isDarkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+                      } cursor-pointer transition-colors`} />
+                    ) : (
+                      <FaEyeSlash className={`h-5 w-5 ${
+                        isDarkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+                      } cursor-pointer transition-colors`} />
+                    )}
+                  </button>
                 </div>
               </div>
             </div>
