@@ -263,7 +263,8 @@ const StudentDashboard = () => {
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
-      if (!document.fullscreenElement && isExamMode) {
+      // Only force fullscreen and auto-submit if it's not a manual submission
+      if (!document.fullscreenElement && isExamMode && !examSubmitting) {
         showToast.error('Fullscreen mode is required during the exam');
         enterFullscreen();
       }
@@ -280,7 +281,7 @@ const StudentDashboard = () => {
       document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
       document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
     };
-  }, [isExamMode, enterFullscreen]);
+  }, [isExamMode, enterFullscreen, examSubmitting]);
 
   const handleStartExam = async (e) => {
     e.preventDefault();
