@@ -94,13 +94,13 @@ const Header = () => {
       <motion.header
         initial={{ y: -100 }}
         animate={{ y: 0 }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        className={`fixed top-0 left-0 right-0 z-50 ${
           scrolled 
             ? isDarkMode 
-              ? 'bg-[#0A0F1C]/90 backdrop-blur-xl shadow-lg'
+              ? 'bg-[#1a1f2e]/90 backdrop-blur-xl shadow-lg'
               : 'bg-white/90 backdrop-blur-xl shadow-lg'
             : isDarkMode
-              ? 'bg-[#0A0F1C]/50 backdrop-blur-sm'
+              ? 'bg-[#1a1f2e]/50 backdrop-blur-sm'
               : 'bg-white/50 backdrop-blur-sm'
         }`}
       >
@@ -250,11 +250,20 @@ const Header = () => {
               exit={{ opacity: 0, height: 0 }}
               className={`md:hidden ${
                 isDarkMode 
-                  ? 'bg-[#0A0F1C] border-gray-800' 
+                  ? 'bg-[#1a1f2e] border-gray-800' 
                   : 'bg-white border-gray-200'
               } border-t`}
             >
               <div className="px-4 py-6 space-y-4">
+                <div className="flex items-center justify-between px-4 py-2 rounded-lg">
+                  <span className={`${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                  }`}>
+                    Theme
+                  </span>
+                  <ThemeToggle />
+                </div>
+
                 {navigationItems.map((item) => (
                   <Link
                     key={item.name}
