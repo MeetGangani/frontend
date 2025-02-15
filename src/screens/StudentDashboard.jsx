@@ -68,7 +68,8 @@ const StudentDashboard = () => {
       const handleVisibilityChange = () => {
         if (document.hidden && !isSubmitting) {
           isSubmitting = true;
-          showToast.error('Tab switched! Submitting exam automatically...');
+          const attemptedCount = Object.keys(answers).length;
+          showToast.error(`Tab switched! Submitting exam with ${attemptedCount} attempted questions...`);
           handleSubmitExam(true);
         }
       };
@@ -76,7 +77,8 @@ const StudentDashboard = () => {
       const handleWindowBlur = () => {
         if (!isSubmitting) {
           isSubmitting = true;
-          showToast.error('Window switched! Submitting exam automatically...');
+          const attemptedCount = Object.keys(answers).length;
+          showToast.error(`Window switched! Submitting exam with ${attemptedCount} attempted questions...`);
           handleSubmitExam(true);
         }
       };
@@ -90,7 +92,7 @@ const StudentDashboard = () => {
         isSubmitting = false;
       };
     }
-  }, [isExamMode, currentExam]);
+  }, [isExamMode, currentExam, answers]);
 
   const fetchExams = async () => {
     try {
@@ -357,12 +359,22 @@ const StudentDashboard = () => {
     try {
       setExamSubmitting(true);
       
+      // Filter out only attempted questions
+      const attemptedAnswers = Object.keys(answers).reduce((acc, key) => {
+        if (answers[key] !== null && answers[key] !== undefined) {
+          acc[key] = answers[key];
+        }
+        return acc;
+      }, {});
+
       const response = await axios.post(
         `${config.API_BASE_URL}/api/exams/submit`,
         {
           examId: currentExam._id,
-          answers: answers,
-          isAutoSubmit: isAutoSubmit
+          answers: attemptedAnswers, // Send only attempted answers
+          isAutoSubmit: isAutoSubmit,
+          totalQuestions: currentExam.questions.length,
+          attemptedCount: Object.keys(attemptedAnswers).length
         },
         {
           withCredentials: true
@@ -370,12 +382,11 @@ const StudentDashboard = () => {
       );
 
       if (response.data) {
-        // Clear saved state after successful submission
         localStorage.removeItem('examState');
         
         const message = isAutoSubmit 
-          ? 'Exam auto-submitted due to tab/window switch or time expiry'
-          : 'Exam submitted successfully!';
+          ? `Exam auto-submitted. ${Object.keys(attemptedAnswers).length} questions attempted`
+          : `Exam submitted successfully! ${Object.keys(attemptedAnswers).length} questions attempted`;
         
         showToast.success(message);
         handleExamCompletion();
@@ -385,6 +396,10 @@ const StudentDashboard = () => {
       showToast.error(error.response?.data?.message || 'Failed to submit exam');
     } finally {
       setExamSubmitting(false);
+      setCurrentExam(null);
+      setAnswers({});
+      setTimeLeft(null);
+      setActiveTab('results');
     }
   };
 
