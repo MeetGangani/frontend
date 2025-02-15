@@ -3,6 +3,7 @@ import { useTheme } from '../context/ThemeContext';
 import { motion } from 'framer-motion';
 import { showToast } from '../utils/toast';
 import axiosInstance from '../utils/axiosConfig';
+import { FaSync } from 'react-icons/fa';
 
 const InstituteDashboard = () => {
   const { isDarkMode } = useTheme();
@@ -17,6 +18,7 @@ const InstituteDashboard = () => {
   const [selectedExam, setSelectedExam] = useState(null);
   const [examResults, setExamResults] = useState([]);
   const [activeTab, setActiveTab] = useState('upload');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     fetchUploads();
@@ -184,6 +186,33 @@ const InstituteDashboard = () => {
     }
   };
 
+  const handleUploadsRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await fetchUploads();
+      showToast.success('Upload list refreshed successfully');
+    } catch (error) {
+      showToast.error('Failed to refresh upload list');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleResultsRefresh = async () => {
+    if (!selectedExam) return;
+    
+    setIsRefreshing(true);
+    try {
+      const response = await axiosInstance.get(`/api/exams/results/${selectedExam._id}`);
+      setExamResults(response.data);
+      showToast.success('Results refreshed successfully');
+    } catch (error) {
+      showToast.error('Failed to refresh results');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   return (
     <div className={`min-h-screen pt-20 ${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -334,11 +363,25 @@ const InstituteDashboard = () => {
               isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
             } rounded-lg shadow-md p-6`}
           >
-            <h2 className={`text-2xl font-bold mb-6 ${
-              isDarkMode ? 'text-white' : 'text-gray-900'
-            }`}>
-              My Uploads
-            </h2>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className={`text-2xl font-bold ${
+                isDarkMode ? 'text-white' : 'text-gray-900'
+              }`}>
+                My Uploads
+              </h2>
+              <button
+                onClick={handleUploadsRefresh}
+                disabled={isRefreshing}
+                className={`p-2 rounded-lg transition-all duration-200 ${
+                  isDarkMode 
+                    ? 'bg-[#2a2f3e] hover:bg-[#3a3f4e] text-gray-300' 
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                } ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title="Refresh uploads"
+              >
+                <FaSync className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
             <div className="overflow-x-auto rounded-lg">
               <table className={`min-w-full divide-y ${
                 isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
@@ -442,11 +485,25 @@ const InstituteDashboard = () => {
               <div className={`p-6 border-b ${
                 isDarkMode ? 'border-gray-700' : 'border-gray-200'
               } flex justify-between items-center`}>
-                <h3 className={`text-lg font-semibold ${
-                  isDarkMode ? 'text-white' : 'text-gray-900'
-                }`}>
-                  {selectedExam?.examName} - Results
-                </h3>
+                <div className="flex items-center gap-4">
+                  <h3 className={`text-lg font-semibold ${
+                    isDarkMode ? 'text-white' : 'text-gray-900'
+                  }`}>
+                    {selectedExam?.examName} - Results
+                  </h3>
+                  <button
+                    onClick={handleResultsRefresh}
+                    disabled={isRefreshing}
+                    className={`p-2 rounded-lg transition-all duration-200 ${
+                      isDarkMode 
+                        ? 'bg-[#2a2f3e] hover:bg-[#3a3f4e] text-gray-300' 
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                    } ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    title="Refresh results"
+                  >
+                    <FaSync className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  </button>
+                </div>
                 <button
                   onClick={() => setShowResultsModal(false)}
                   className={`${
