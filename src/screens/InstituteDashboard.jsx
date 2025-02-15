@@ -186,7 +186,7 @@ const InstituteDashboard = () => {
   };
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'}`}>
+    <div className={`min-h-screen pt-28 ${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <nav className="flex space-x-8">
