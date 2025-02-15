@@ -96,15 +96,14 @@ const AdminDashboard = () => {
         setPassword('');
         setUserType('student');
         
-        // Fetch updated user list
+        // Refresh users list
         await fetchUsers();
-
-        // Switch to users tab
         setActiveTab('users');
       }
     } catch (err) {
+      const errorMessage = err?.response?.data?.message || 'Failed to create user';
+      toast.error(errorMessage);
       console.error('Error creating user:', err);
-      toast.error(err?.response?.data?.message || 'Failed to create user');
     } finally {
       setLoading(false);
     }
