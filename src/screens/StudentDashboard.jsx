@@ -560,26 +560,9 @@ const StudentDashboard = () => {
   };
 
   return (
-    <div className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-100'} min-h-screen`}>
-      {/* Header Section */}
-      <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} shadow-lg fixed top-0 left-0 right-0 z-10`}>
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              {/* <img src="/logo.png" alt="NexusEdu" className="h-10 w-10" /> */}
-              <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                NexusEdu
-              </h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              {/* User info and theme toggle can go here */}
-            </div>
-          </div>
-        </div>
-      </div>
-
+    <div className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-100'} min-h-screen pt-20`}>
       {/* Main Content */}
-      <div className="container mx-auto px-4 pt-24 pb-8">
+      <div className="container mx-auto px-4 pb-8">
         <div className="flex flex-col md:flex-row gap-6">
           {/* Sidebar Navigation */}
           <div className={`md:w-1/4 ${isExamMode ? 'hidden md:block' : ''}`}>
