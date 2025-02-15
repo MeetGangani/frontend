@@ -56,35 +56,34 @@ const StudentDashboard = () => {
 
   useEffect(() => {
     if (isExamMode && currentExam) {
-      // Handle tab visibility change
+      let isSubmitting = false;
+
       const handleVisibilityChange = () => {
-        if (document.hidden && !examSubmitting) {
-          examSubmitting = true;
+        if (document.hidden && !isSubmitting) {
+          isSubmitting = true;
           showToast.error('Tab switched! Submitting exam automatically...');
           handleSubmitExam(true);
         }
       };
 
-      // Handle window blur (switching windows)
       const handleWindowBlur = () => {
-        if (!examSubmitting) {
-          examSubmitting = true;
+        if (!isSubmitting) {
+          isSubmitting = true;
           showToast.error('Window switched! Submitting exam automatically...');
           handleSubmitExam(true);
         }
       };
 
-      // Add event listeners
       document.addEventListener('visibilitychange', handleVisibilityChange);
       window.addEventListener('blur', handleWindowBlur);
 
-      // Cleanup event listeners
       return () => {
         document.removeEventListener('visibilitychange', handleVisibilityChange);
         window.removeEventListener('blur', handleWindowBlur);
+        isSubmitting = false;
       };
     }
-  }, [isExamMode, currentExam]); // Dependencies
+  }, [isExamMode, currentExam]);
 
   const fetchExams = async () => {
     try {
@@ -296,20 +295,17 @@ const StudentDashboard = () => {
   };
 
   const handleSubmitExam = async (isAutoSubmit = false) => {
-    if (examSubmitting) return; // Prevent multiple submissions
-
+    if (examSubmitting) return;
+    
     try {
       setExamSubmitting(true);
-      
-      // Log the answers being submitted
-      console.log('Submitting answers:', answers);
       
       const response = await axios.post(
         `${config.API_BASE_URL}/api/exams/submit`,
         {
           examId: currentExam._id,
           answers: answers,
-          isAutoSubmit: isAutoSubmit // Add this flag to indicate auto-submission
+          isAutoSubmit: isAutoSubmit
         },
         {
           withCredentials: true
@@ -317,30 +313,13 @@ const StudentDashboard = () => {
       );
 
       if (response.data) {
-        console.log('Submission response:', response.data);
-        
         const message = isAutoSubmit 
           ? 'Exam auto-submitted due to tab/window switch'
           : `Exam submitted successfully! Score: ${response.data.score}%`;
         
         showToast.success(message);
         
-        // Update the results immediately with the correct score
-        const newResult = {
-          _id: Date.now(),
-          exam: {
-            examName: currentExam.examName,
-            resultsReleased: true
-          },
-          score: Number(response.data.score),
-          correctAnswers: response.data.correctAnswers,
-          totalQuestions: response.data.totalQuestions,
-          submittedAt: new Date(),
-          resultsAvailable: true,
-          autoSubmitted: isAutoSubmit
-        };
-
-        setExamResults(prev => [newResult, ...prev]);
+        // Update results and cleanup
         handleExamCompletion();
       }
     } catch (error) {
