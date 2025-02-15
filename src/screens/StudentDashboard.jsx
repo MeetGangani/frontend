@@ -453,7 +453,7 @@ const StudentDashboard = () => {
     return (
       <div className="relative">
         {/* Exam Content */}
-        <div className="space-y-6 pb-16">
+        <div className="space-y-4 md:space-y-6 pb-16">
           {/* Timer and Progress */}
           <div className="sticky top-0 z-10 bg-inherit py-2 space-y-2">
             <div className={`text-lg font-semibold ${
@@ -471,10 +471,10 @@ const StudentDashboard = () => {
 
           {/* Question */}
           <div className="space-y-4">
-            <h3 className={`text-xl font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            <h3 className={`text-lg md:text-xl font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
               Question {currentQuestionIndex + 1} of {currentExam.questions.length}
             </h3>
-            <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+            <p className={`text-base md:text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               {currentExam.questions[currentQuestionIndex].text}
             </p>
           </div>
@@ -501,11 +501,11 @@ const StudentDashboard = () => {
           </div>
 
           {/* Navigation and Submit Buttons */}
-          <div className="flex justify-between items-center mt-6">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
             <button
               onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
               disabled={currentQuestionIndex === 0}
-              className={`px-4 py-2 rounded ${
+              className={`w-full sm:w-auto px-4 py-2 rounded ${
                 currentQuestionIndex === 0
                   ? 'bg-gray-300 cursor-not-allowed'
                   : 'bg-violet-600 hover:bg-violet-700 text-white'
@@ -515,11 +515,11 @@ const StudentDashboard = () => {
             </button>
 
             {currentQuestionIndex === currentExam.questions.length - 1 ? (
-              <div className="flex flex-col items-end">
+              <div className="w-full sm:w-auto flex flex-col items-center sm:items-end">
                 <button
                   onClick={handleSubmitExam}
                   disabled={examSubmitting || !allAnswered}
-                  className={`px-6 py-2 rounded transition-all ${
+                  className={`w-full sm:w-auto px-6 py-2 rounded transition-all ${
                     examSubmitting
                       ? 'bg-gray-400 cursor-not-allowed'
                       : allAnswered
@@ -545,21 +545,21 @@ const StudentDashboard = () => {
                 onClick={() => setCurrentQuestionIndex(prev => 
                   Math.min(currentExam.questions.length - 1, prev + 1)
                 )}
-                className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded"
+                className="w-full sm:w-auto px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded"
               >
                 Next
               </button>
             )}
           </div>
 
-          {/* Question Navigation with Answer Status */}
+          {/* Question Navigation Grid */}
           <div className="mt-8">
             <h4 className={`text-sm font-medium mb-2 ${
               isDarkMode ? 'text-gray-300' : 'text-gray-700'
             }`}>
               Question Navigation
             </h4>
-            <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2">
+            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
               {currentExam.questions.map((_, index) => (
                 <button
                   key={index}
@@ -593,8 +593,10 @@ const StudentDashboard = () => {
 
         {/* Warning Banner */}
         {isExamMode && (
-          <div className="fixed bottom-0 left-0 right-0 bg-red-600 text-white p-4 text-center z-50">
-            Warning: Leaving this page will submit your exam automatically
+          <div className="fixed bottom-0 left-0 right-0 bg-red-600 text-white py-2 md:py-3 px-4 text-center z-50">
+            <p className="text-xs md:text-sm font-medium">
+              Warning: Leaving this page will automatically submit your exam
+            </p>
           </div>
         )}
       </div>
@@ -604,7 +606,7 @@ const StudentDashboard = () => {
   const renderResultsTab = () => {
     return (
       <div>
-        <h2 className={`text-2xl font-bold mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+        <h2 className={`text-xl md:text-2xl font-bold mb-4 md:mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
           My Results
         </h2>
         
@@ -618,10 +620,10 @@ const StudentDashboard = () => {
                     isDarkMode ? 'bg-gray-800' : 'bg-white'
                   } shadow`}
                 >
-                  <h3 className="font-semibold text-lg mb-2">
+                  <h3 className="font-semibold text-base md:text-lg mb-2">
                     {result.exam.examName}
                   </h3>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-gray-500">Score</p>
                       <p className="font-medium">
@@ -748,14 +750,60 @@ const StudentDashboard = () => {
   };
 
   return (
-    <div className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-100'} min-h-screen pt-24`}>
-      <div className="container mx-auto px-6">
-        <div className="flex flex-col md:flex-row gap-8">
-          {/* Fixed position Sidebar Navigation */}
-          <div className={`md:w-1/4 ${isExamMode ? 'hidden md:block' : ''}`}>
+    <div className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-100'} min-h-screen pt-16 md:pt-24`}>
+      <div className="container mx-auto px-4 md:px-6">
+        <div className="flex flex-col md:flex-row gap-4 md:gap-8">
+          {/* Sidebar Navigation - Mobile Version */}
+          {!isExamMode && (
+            <div className="md:hidden mb-4">
+              <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-xl shadow-lg p-4`}>
+                <nav className="flex gap-2 overflow-x-auto">
+                  <button
+                    onClick={() => handleTabSwitch('start')}
+                    className={`whitespace-nowrap px-4 py-2 rounded-lg transition-all duration-200 ${
+                      activeTab === 'start'
+                        ? 'bg-violet-600 text-white font-medium'
+                        : isDarkMode
+                        ? 'text-gray-300 hover:bg-gray-800'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    Start Exam
+                  </button>
+                  <button
+                    onClick={() => handleTabSwitch('exam')}
+                    className={`whitespace-nowrap px-4 py-2 rounded-lg transition-all duration-200 ${
+                      activeTab === 'exam'
+                        ? 'bg-violet-600 text-white font-medium'
+                        : isDarkMode
+                        ? 'text-gray-300 hover:bg-gray-800'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    Exam
+                  </button>
+                  <button
+                    onClick={() => handleTabSwitch('results')}
+                    className={`whitespace-nowrap px-4 py-2 rounded-lg transition-all duration-200 ${
+                      activeTab === 'results'
+                        ? 'bg-violet-600 text-white font-medium'
+                        : isDarkMode
+                        ? 'text-gray-300 hover:bg-gray-800'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    Results
+                  </button>
+                </nav>
+              </div>
+            </div>
+          )}
+
+          {/* Desktop Sidebar */}
+          <div className={`hidden md:w-1/4 md:block ${isExamMode ? 'md:hidden' : ''}`}>
             <div className={`${
               isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
-            } rounded-xl shadow-lg p-5 fixed w-[22%]`}>
+            } rounded-xl shadow-lg p-5 sticky top-24`}>
               <h2 className={`text-xl font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 Navigation
               </h2>
@@ -802,11 +850,11 @@ const StudentDashboard = () => {
             </div>
           </div>
 
-          {/* Main Content Area with proper spacing */}
-          <div className="md:w-3/4 md:ml-auto pl-[5%]">
+          {/* Main Content Area */}
+          <div className={`w-full ${!isExamMode ? 'md:w-3/4' : 'md:w-full'}`}>
             <div className={`${
               isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
-            } rounded-xl shadow-lg p-6`}>
+            } rounded-xl shadow-lg p-4 md:p-6`}>
               {/* Exam Mode Warning */}
               {isExamMode && (
                 <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded-lg">
@@ -835,10 +883,10 @@ const StudentDashboard = () => {
         </div>
       </div>
 
-      {/* Fixed Warning Banner during Exam */}
+      {/* Warning Banner */}
       {isExamMode && (
-        <div className="fixed bottom-0 left-0 right-0 bg-red-600 text-white py-3 px-4 text-center z-50">
-          <p className="text-sm font-medium">
+        <div className="fixed bottom-0 left-0 right-0 bg-red-600 text-white py-2 md:py-3 px-4 text-center z-50">
+          <p className="text-xs md:text-sm font-medium">
             Warning: Leaving this page will automatically submit your exam
           </p>
         </div>
