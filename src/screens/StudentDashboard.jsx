@@ -560,81 +560,92 @@ const StudentDashboard = () => {
   };
 
   return (
-    <div className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-100'} min-h-screen pt-[180px] p-4 md:p-8`}>
-      <div className="container mx-auto">
-        <div className="flex flex-col md:flex-row gap-4 md:gap-8">
-          {/* Navigation Sidebar - Hidden during exam mode on mobile */}
-          <div className={`w-full md:w-1/4 ${isExamMode ? 'hidden md:block' : ''}`}>
-            <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-lg p-4 md:p-6 shadow-lg sticky top-[200px]`}>
-              <h2 className={`text-xl md:text-2xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+    <div className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-100'} min-h-screen`}>
+      {/* Header Section */}
+      <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} shadow-lg fixed top-0 left-0 right-0 z-10`}>
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <img src="/logo.png" alt="NexusEdu" className="h-10 w-10" />
+              <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                NexusEdu
+              </h1>
+            </div>
+            <div className="flex items-center space-x-4">
+              {/* User info and theme toggle can go here */}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="container mx-auto px-4 pt-24 pb-8">
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Sidebar Navigation */}
+          <div className={`md:w-1/4 ${isExamMode ? 'hidden md:block' : ''}`}>
+            <div className={`${
+              isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
+            } rounded-xl shadow-lg p-5 sticky top-24`}>
+              <h2 className={`text-xl font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 Navigation
               </h2>
-              <ul className="space-y-2">
-                <li>
-                  <button
-                    onClick={() => handleTabSwitch('start')}
-                    disabled={isExamMode}
-                    className={`block w-full text-left px-4 py-2 rounded-lg transition-colors
-                      ${activeTab === 'start'
-                        ? 'bg-violet-600 text-white'
-                        : isDarkMode
-                          ? 'text-gray-300 hover:bg-gray-700'
-                          : 'text-gray-700 hover:bg-gray-200'
-                      }
-                      ${isExamMode ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                    `}
-                  >
-                    Start Exam
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => handleTabSwitch('exam')}
-                    className={`block w-full text-left px-4 py-2 rounded-lg transition-colors
-                      ${activeTab === 'exam'
-                        ? 'bg-violet-600 text-white'
-                        : isDarkMode
-                          ? 'text-gray-300 hover:bg-gray-700'
-                          : 'text-gray-700 hover:bg-gray-200'
-                      }
-                    `}
-                  >
-                    Exam
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => handleTabSwitch('results')}
-                    disabled={isExamMode}
-                    className={`block w-full text-left px-4 py-2 rounded-lg transition-colors
-                      ${activeTab === 'results'
-                        ? 'bg-violet-600 text-white'
-                        : isDarkMode
-                          ? 'text-gray-300 hover:bg-gray-700'
-                          : 'text-gray-700 hover:bg-gray-200'
-                      }
-                      ${isExamMode ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                    `}
-                  >
-                    Results
-                  </button>
-                </li>
-              </ul>
+              <nav className="space-y-2">
+                <button
+                  onClick={() => handleTabSwitch('start')}
+                  disabled={isExamMode}
+                  className={`w-full px-4 py-3 rounded-lg transition-all duration-200 text-left ${
+                    activeTab === 'start'
+                      ? 'bg-violet-600 text-white font-medium'
+                      : isDarkMode
+                      ? 'text-gray-300 hover:bg-gray-800'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  } ${isExamMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  Start Exam
+                </button>
+                <button
+                  onClick={() => handleTabSwitch('exam')}
+                  className={`w-full px-4 py-3 rounded-lg transition-all duration-200 text-left ${
+                    activeTab === 'exam'
+                      ? 'bg-violet-600 text-white font-medium'
+                      : isDarkMode
+                      ? 'text-gray-300 hover:bg-gray-800'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  Exam
+                </button>
+                <button
+                  onClick={() => handleTabSwitch('results')}
+                  disabled={isExamMode}
+                  className={`w-full px-4 py-3 rounded-lg transition-all duration-200 text-left ${
+                    activeTab === 'results'
+                      ? 'bg-violet-600 text-white font-medium'
+                      : isDarkMode
+                      ? 'text-gray-300 hover:bg-gray-800'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  } ${isExamMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  Results
+                </button>
+              </nav>
             </div>
           </div>
 
           {/* Main Content Area */}
-          <div className="w-full md:w-3/4">
-            <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-lg p-4 md:p-6 shadow-lg`}>
-              {/* Warning Banner for Exam Mode */}
+          <div className="md:w-3/4">
+            <div className={`${
+              isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
+            } rounded-xl shadow-lg p-6`}>
+              {/* Exam Mode Warning */}
               {isExamMode && (
-                <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4 rounded">
-                  <p className="font-bold">Exam in Progress</p>
-                  <p>Please do not leave this page or switch tabs until you complete the exam.</p>
+                <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded-lg">
+                  <p className="font-semibold">Exam in Progress</p>
+                  <p className="text-sm mt-1">Please do not leave this page or switch tabs.</p>
                 </div>
               )}
 
-              {/* Content Sections */}
+              {/* Dynamic Content */}
               {activeTab === 'start' && !isExamMode && renderStartExam()}
               {activeTab === 'exam' && renderExam()}
               {activeTab === 'results' && !isExamMode && renderResultsTab()}
@@ -642,6 +653,15 @@ const StudentDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Fixed Warning Banner during Exam */}
+      {isExamMode && (
+        <div className="fixed bottom-0 left-0 right-0 bg-red-600 text-white py-3 px-4 text-center z-50">
+          <p className="text-sm font-medium">
+            Warning: Leaving this page will automatically submit your exam
+          </p>
+        </div>
+      )}
     </div>
   );
 };
