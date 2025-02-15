@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useTheme } from '../context/ThemeContext';
 import config from '../config/config.js';
@@ -20,9 +20,6 @@ const StudentDashboard = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isExamMode, setIsExamMode] = useState(false);
   const navigate = useNavigate();
-
-  // Add a ref to track submission status
-  const isSubmitting = useRef(false);
 
   useEffect(() => {
     fetchExams();
@@ -59,38 +56,31 @@ const StudentDashboard = () => {
 
   useEffect(() => {
     if (isExamMode && currentExam) {
+      // Handle tab visibility change
       const handleVisibilityChange = () => {
-        if (document.hidden && !isSubmitting.current) {
-          isSubmitting.current = true;
-          toast.error('Tab switched! Submitting exam automatically...', {
-            toastId: 'auto-submit', // Prevent duplicate toasts
-            autoClose: 3000
-          });
+        if (document.hidden) {
+          toast.error('Tab switched! Submitting exam automatically...');
           handleSubmitExam(true);
         }
       };
 
+      // Handle window blur (switching windows)
       const handleWindowBlur = () => {
-        if (!isSubmitting.current) {
-          isSubmitting.current = true;
-          toast.error('Window switched! Submitting exam automatically...', {
-            toastId: 'auto-submit', // Prevent duplicate toasts
-            autoClose: 3000
-          });
-          handleSubmitExam(true);
-        }
+        toast.error('Window switched! Submitting exam automatically...');
+        handleSubmitExam(true);
       };
 
+      // Add event listeners
       document.addEventListener('visibilitychange', handleVisibilityChange);
       window.addEventListener('blur', handleWindowBlur);
 
+      // Cleanup event listeners
       return () => {
         document.removeEventListener('visibilitychange', handleVisibilityChange);
         window.removeEventListener('blur', handleWindowBlur);
-        isSubmitting.current = false; // Reset on cleanup
       };
     }
-  }, [isExamMode, currentExam]);
+  }, [isExamMode, currentExam]); // Dependencies
 
   const fetchExams = async () => {
     try {
@@ -302,17 +292,20 @@ const StudentDashboard = () => {
   };
 
   const handleSubmitExam = async (isAutoSubmit = false) => {
-    if (examSubmitting || isSubmitting.current) return; // Prevent multiple submissions
+    if (examSubmitting) return; // Prevent multiple submissions
 
     try {
       setExamSubmitting(true);
+      
+      // Log the answers being submitted
+      console.log('Submitting answers:', answers);
       
       const response = await axios.post(
         `${config.API_BASE_URL}/api/exams/submit`,
         {
           examId: currentExam._id,
           answers: answers,
-          isAutoSubmit: isAutoSubmit
+          isAutoSubmit: isAutoSubmit // Add this flag to indicate auto-submission
         },
         {
           withCredentials: true
@@ -320,16 +313,15 @@ const StudentDashboard = () => {
       );
 
       if (response.data) {
+        console.log('Submission response:', response.data);
+        
         const message = isAutoSubmit 
           ? 'Exam auto-submitted due to tab/window switch'
           : `Exam submitted successfully! Score: ${response.data.score}%`;
         
-        toast.success(message, {
-          toastId: 'submit-success', // Prevent duplicate toasts
-          autoClose: 3000
-        });
+        toast.success(message);
         
-        // Update results and cleanup
+        // Update the results immediately with the correct score
         const newResult = {
           _id: Date.now(),
           exam: {
@@ -349,15 +341,12 @@ const StudentDashboard = () => {
       }
     } catch (error) {
       console.error('Error submitting exam:', error);
-      toast.error(error.response?.data?.message || 'Failed to submit exam', {
-        toastId: 'submit-error' // Prevent duplicate error toasts
-      });
+      toast.error(error.response?.data?.message || 'Failed to submit exam');
     } finally {
       setExamSubmitting(false);
       setCurrentExam(null);
       setAnswers({});
       setTimeLeft(null);
-      isSubmitting.current = false; // Reset submission flag
     }
   };
 
