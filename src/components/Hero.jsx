@@ -52,7 +52,7 @@ const Hero = () => {
       <div 
         ref={ref}
         className={`relative min-h-screen overflow-hidden -mx-4 sm:-mx-6 lg:-mx-8 ${
-          isDarkMode ? 'bg-[#1a1f2e]' : 'bg-gray-50'
+          isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'
         } scroll-smooth pt-24`}
       >
         {/* Optimize background elements */}
@@ -215,9 +215,7 @@ const Hero = () => {
         </motion.div>
 
         {/* Additional sections with enhanced scroll animations */}
-        <div id="how-it-works" className={`py-20 ${
-          isDarkMode ? 'bg-[#1a1f2e]' : 'bg-gray-50'
-        }`}>
+        <div id="how-it-works" className={`py-20 ${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'}`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* How It Works Section */}
             <motion.div

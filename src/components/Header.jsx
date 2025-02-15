@@ -97,10 +97,10 @@ const Header = () => {
         className={`fixed top-0 left-0 right-0 z-50 ${
           scrolled 
             ? isDarkMode 
-              ? 'bg-[#1a1f2e]/90 backdrop-blur-xl shadow-lg'
+              ? 'bg-[#0A0F1C]/90 backdrop-blur-xl shadow-lg'
               : 'bg-white/90 backdrop-blur-xl shadow-lg'
             : isDarkMode
-              ? 'bg-[#1a1f2e]/50 backdrop-blur-sm'
+              ? 'bg-[#0A0F1C]/50 backdrop-blur-sm'
               : 'bg-white/50 backdrop-blur-sm'
         }`}
       >
@@ -250,7 +250,7 @@ const Header = () => {
               exit={{ opacity: 0, height: 0 }}
               className={`md:hidden ${
                 isDarkMode 
-                  ? 'bg-[#1a1f2e] border-gray-800' 
+                  ? 'bg-[#0A0F1C] border-gray-800' 
                   : 'bg-white border-gray-200'
               } border-t`}
             >
