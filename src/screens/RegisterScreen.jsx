@@ -110,18 +110,30 @@ const RegisterScreen = () => {
     checkPasswordStrength(password);
   }, [password]);
 
+  const isPasswordValid = () => {
+    return Object.values(passwordStrength.requirements).every(Boolean);
+  };
+
   const submitHandler = async (e) => {
     e.preventDefault();
+    
+    // Check if password meets all requirements
+    if (!isPasswordValid()) {
+      toast.error('Please ensure your password meets all requirements');
+      return;
+    }
+
     if (password !== confirmPassword) {
       toast.error('Passwords do not match');
-    } else {
-      try {
-        const res = await register({ name, email, password, userType: 'student' }).unwrap();
-        dispatch(setCredentials({ ...res }));
-        navigate('/');
-      } catch (err) {
-        toast.error(err?.data?.message || err.error);
-      }
+      return;
+    }
+
+    try {
+      const res = await register({ name, email, password, userType: 'student' }).unwrap();
+      dispatch(setCredentials({ ...res }));
+      navigate('/');
+    } catch (err) {
+      toast.error(err?.data?.message || err.error);
     }
   };
 
@@ -404,7 +416,7 @@ const RegisterScreen = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !isPasswordValid() || !password || !confirmPassword}
               className="w-full flex justify-center py-3 px-4 rounded-lg text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-150"
             >
               {isLoading ? 'Creating Account...' : 'Create Account'}
