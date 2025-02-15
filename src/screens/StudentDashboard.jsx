@@ -620,28 +620,30 @@ const StudentDashboard = () => {
                     isDarkMode ? 'bg-gray-800' : 'bg-white'
                   } shadow`}
                 >
-                  <h3 className="font-semibold text-base md:text-lg mb-2">
+                  <h3 className={`font-semibold text-base md:text-lg mb-2 ${
+                    isDarkMode ? 'text-white' : 'text-gray-900'
+                  }`}>
                     {result.exam.examName}
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-gray-500">Score</p>
-                      <p className="font-medium">
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Score</p>
+                      <p className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                         {result.score !== null && result.score !== undefined
                           ? `${Number(result.score).toFixed(2)}%`
                           : 'Pending'}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">Correct Answers</p>
-                      <p className="font-medium">
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Correct Answers</p>
+                      <p className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                         {result.correctAnswers !== null && result.correctAnswers !== undefined
                           ? `${result.correctAnswers}/${result.totalQuestions}`
                           : 'Pending'}
                       </p>
                     </div>
                   </div>
-                  <p className="text-sm text-gray-500 mt-2">
+                  <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-2`}>
                     Submitted: {new Date(result.submittedAt).toLocaleString()}
                   </p>
                 </div>
@@ -653,7 +655,7 @@ const StudentDashboard = () => {
             }`}>
               {loading ? (
                 <div className="flex justify-center items-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-violet-600"></div>
                 </div>
               ) : (
                 'No exam results found'
