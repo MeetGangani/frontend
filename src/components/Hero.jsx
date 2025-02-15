@@ -56,7 +56,7 @@ const Hero = () => {
         } scroll-smooth pt-28`}
       >
         {/* Platform Label */}
-        <div className="relative z-50 text-center mb-4">
+        {/* <div className="relative z-50 text-center mb-4">
           <motion.span 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -65,7 +65,7 @@ const Hero = () => {
           >
             Online Examination Platform
           </motion.span>
-        </div>
+        </div> */}
 
         {/* Optimize background elements */}
         <motion.div 
@@ -107,7 +107,7 @@ const Hero = () => {
                 transition={{ duration: 0.8 }}
                 className="text-center"
               >
-                {/* <motion.div
+                <motion.div
                   initial={{ scale: 0.5, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
@@ -123,7 +123,7 @@ const Hero = () => {
                   >
                     Online Examination Platform
                   </motion.span>
-                </motion.div> */}
+                </motion.div>
 
                 <motion.h1 
                   initial={{ y: 20, opacity: 0 }}
