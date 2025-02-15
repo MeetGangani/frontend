@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useTheme } from '../context/ThemeContext';
 import config from '../config/config.js';
 import { useNavigate } from 'react-router-dom';
 import { showToast } from '../utils/toast';
+import { FaExpand, FaCompress } from 'react-icons/fa';
 
 const StudentDashboard = () => {
   const { isDarkMode } = useTheme();
@@ -19,6 +20,7 @@ const StudentDashboard = () => {
   const [ipfsHash, setIpfsHash] = useState('');
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isExamMode, setIsExamMode] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -219,9 +221,64 @@ const StudentDashboard = () => {
     );
   };
 
+  const enterFullscreen = useCallback(async () => {
+    try {
+      const elem = document.documentElement;
+      if (elem.requestFullscreen) {
+        await elem.requestFullscreen();
+      } else if (elem.webkitRequestFullscreen) {
+        await elem.webkitRequestFullscreen();
+      } else if (elem.msRequestFullscreen) {
+        await elem.msRequestFullscreen();
+      }
+      setIsFullscreen(true);
+    } catch (error) {
+      showToast.error('Failed to enter fullscreen mode');
+      console.error('Fullscreen error:', error);
+    }
+  }, []);
+
+  const exitFullscreen = useCallback(async () => {
+    try {
+      if (document.exitFullscreen) {
+        await document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        await document.webkitExitFullscreen();
+      } else if (document.msExitFullscreen) {
+        await document.msExitFullscreen();
+      }
+      setIsFullscreen(false);
+    } catch (error) {
+      console.error('Exit fullscreen error:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+      if (!document.fullscreenElement && isExamMode) {
+        showToast.error('Fullscreen mode is required during the exam');
+        enterFullscreen();
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
+  }, [isExamMode, enterFullscreen]);
+
   const handleStartExam = async (e) => {
     e.preventDefault();
     try {
+      await enterFullscreen();
       setLoading(true);
       setError(null);
 
@@ -244,12 +301,11 @@ const StudentDashboard = () => {
 
       if (response.data) {
         setCurrentExam(response.data);
-        setTimeLeft(response.data.timeLimit * 60); // Convert minutes to seconds
+        setTimeLeft(response.data.timeLimit * 60);
         setAnswers({});
         setCurrentQuestionIndex(0);
         setActiveTab('exam');
         
-        // Store exam state in localStorage in case of page refresh
         localStorage.setItem('currentExam', JSON.stringify({
           ...response.data,
           startTime: new Date().toISOString(),
@@ -257,6 +313,7 @@ const StudentDashboard = () => {
         }));
       }
     } catch (error) {
+      await exitFullscreen();
       console.error('Start exam error:', error);
       setError(
         error.response?.data?.message || 
@@ -267,13 +324,14 @@ const StudentDashboard = () => {
     }
   };
 
-  const handleExamCompletion = () => {
+  const handleExamCompletion = async () => {
+    await exitFullscreen();
     setCurrentExam(null);
     setIsExamMode(false);
     setAnswers({});
     setTimeLeft(null);
-    setActiveTab('results'); // Automatically switch to results tab
-    fetchResults(); // Refresh results
+    setActiveTab('results');
+    fetchResults();
   };
 
   const handleAnswerSelect = (questionIndex, optionIndex) => {
@@ -672,8 +730,19 @@ const StudentDashboard = () => {
               {/* Exam Mode Warning */}
               {isExamMode && (
                 <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded-lg">
-                  <p className="font-semibold">Exam in Progress</p>
-                  <p className="text-sm mt-1">Please do not leave this page or switch tabs.</p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold">Exam in Progress</p>
+                      <p className="text-sm mt-1">Please do not leave this page or exit fullscreen mode.</p>
+                    </div>
+                    <button
+                      onClick={isFullscreen ? exitFullscreen : enterFullscreen}
+                      className="p-2 hover:bg-yellow-200 rounded-lg transition-colors"
+                      title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                    >
+                      {isFullscreen ? <FaCompress size={20} /> : <FaExpand size={20} />}
+                    </button>
+                  </div>
                 </div>
               )}
 
