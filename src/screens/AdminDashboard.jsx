@@ -572,89 +572,97 @@ const AdminDashboard = () => {
 
       {showModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className={`${
-              isDarkMode 
-                ? 'bg-[#1a1f2e] text-white' 
-                : 'bg-white text-gray-900'
-            } rounded-lg max-w-md w-full shadow-xl`}
-          >
-            <div className={`flex justify-between items-center p-6 border-b ${
-              isDarkMode ? 'border-gray-700' : 'border-gray-200'
-            }`}>
-              <h3 className="text-lg font-medium">
-                {processingType === 'approve' ? 'Approve' : 'Reject'} Request
-              </h3>
-              {!actionLoading && (
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="text-gray-400 hover:text-gray-500"
-                >
-                  <span className="sr-only">Close</span>
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            {/* Overlay */}
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className={`absolute inset-0 ${isDarkMode ? 'bg-black' : 'bg-gray-500'} opacity-75`}></div>
             </div>
 
-            <div className="p-6">
-              <div className="mb-4">
-                <label className={`block text-sm font-medium mb-1 ${
-                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                }`}>
-                  Admin Comment
-                </label>
-                <textarea
-                  rows={3}
-                  value={adminComment}
-                  onChange={(e) => setAdminComment(e.target.value)}
-                  disabled={actionLoading}
-                  className={`w-full px-3 py-2 rounded-lg shadow-sm ${
-                    isDarkMode 
-                      ? 'bg-[#2a2f3e] border-gray-700 text-white' 
-                      : 'bg-white border-gray-300 text-gray-900'
-                  }`}
-                />
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className={`${
+                isDarkMode 
+                  ? 'bg-[#1a1f2e] text-white' 
+                  : 'bg-white text-gray-900'
+              } rounded-lg max-w-md w-full shadow-xl relative mx-auto`}
+            >
+              <div className={`flex justify-between items-center p-6 border-b ${
+                isDarkMode ? 'border-gray-700' : 'border-gray-200'
+              }`}>
+                <h3 className="text-lg font-medium">
+                  {processingType === 'approve' ? 'Approve' : 'Reject'} Request
+                </h3>
+                {!actionLoading && (
+                  <button
+                    onClick={() => setShowModal(false)}
+                    className="text-gray-400 hover:text-gray-500"
+                  >
+                    <span className="sr-only">Close</span>
+                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
               </div>
 
-              {actionLoading && (
-                <div className="flex items-center justify-center space-x-2">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-violet-500"></div>
-                  <span>{processingStatus}</span>
+              <div className="p-6">
+                <div className="mb-4">
+                  <label className={`block text-sm font-medium mb-1 ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Admin Comment
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={adminComment}
+                    onChange={(e) => setAdminComment(e.target.value)}
+                    disabled={actionLoading}
+                    className={`w-full px-3 py-2 rounded-lg shadow-sm ${
+                      isDarkMode 
+                        ? 'bg-[#2a2f3e] border-gray-700 text-white' 
+                        : 'bg-white border-gray-300 text-gray-900'
+                    }`}
+                  />
                 </div>
-              )}
-            </div>
 
-            <div className={`px-6 py-4 flex justify-end space-x-3 ${
-              isDarkMode ? 'bg-[#2a2f3e]' : 'bg-gray-50'
-            }`}>
-              <button
-                onClick={() => setShowModal(false)}
-                disabled={actionLoading}
-                className={`px-4 py-2 rounded-lg ${
-                  isDarkMode 
-                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleRequestStatusUpdate}
-                disabled={actionLoading}
-                className={`px-4 py-2 rounded-lg ${
-                  isDarkMode 
-                    ? 'bg-violet-600 text-white hover:bg-violet-700' 
-                    : 'bg-violet-500 text-white hover:bg-violet-600'
-                }`}
-              >
-                {processingType === 'approve' ? 'Approve' : 'Reject'}
-              </button>
-            </div>
-          </motion.div>
+                {actionLoading && (
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-violet-500"></div>
+                    <span>{processingStatus}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className={`px-6 py-4 flex justify-end space-x-3 ${
+                isDarkMode ? 'bg-[#2a2f3e]' : 'bg-gray-50'
+              }`}>
+                <button
+                  onClick={() => setShowModal(false)}
+                  disabled={actionLoading}
+                  className={`px-4 py-2 rounded-lg ${
+                    isDarkMode 
+                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleRequestStatusUpdate}
+                  disabled={actionLoading}
+                  className={`px-4 py-2 rounded-lg ${
+                    isDarkMode 
+                      ? 'bg-violet-600 text-white hover:bg-violet-700' 
+                      : 'bg-violet-500 text-white hover:bg-violet-600'
+                  }`}
+                >
+                  {processingType === 'approve' ? 'Approve' : 'Reject'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
         </div>
       )}
     </div>
