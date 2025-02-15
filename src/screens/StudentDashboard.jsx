@@ -54,6 +54,34 @@ const StudentDashboard = () => {
     }
   }, [currentExam]);
 
+  useEffect(() => {
+    if (isExamMode && currentExam) {
+      // Handle tab visibility change
+      const handleVisibilityChange = () => {
+        if (document.hidden) {
+          toast.error('Tab switched! Submitting exam automatically...');
+          handleSubmitExam(true);
+        }
+      };
+
+      // Handle window blur (switching windows)
+      const handleWindowBlur = () => {
+        toast.error('Window switched! Submitting exam automatically...');
+        handleSubmitExam(true);
+      };
+
+      // Add event listeners
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      window.addEventListener('blur', handleWindowBlur);
+
+      // Cleanup event listeners
+      return () => {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        window.removeEventListener('blur', handleWindowBlur);
+      };
+    }
+  }, [isExamMode, currentExam]); // Dependencies
+
   const fetchExams = async () => {
     try {
       const response = await axios.get(`${config.API_BASE_URL}/api/exams/available`, {
@@ -263,7 +291,9 @@ const StudentDashboard = () => {
     });
   };
 
-  const handleSubmitExam = async () => {
+  const handleSubmitExam = async (isAutoSubmit = false) => {
+    if (examSubmitting) return; // Prevent multiple submissions
+
     try {
       setExamSubmitting(true);
       
@@ -274,7 +304,8 @@ const StudentDashboard = () => {
         `${config.API_BASE_URL}/api/exams/submit`,
         {
           examId: currentExam._id,
-          answers: answers
+          answers: answers,
+          isAutoSubmit: isAutoSubmit // Add this flag to indicate auto-submission
         },
         {
           withCredentials: true
@@ -284,7 +315,11 @@ const StudentDashboard = () => {
       if (response.data) {
         console.log('Submission response:', response.data);
         
-        toast.success(`Exam submitted successfully! Score: ${response.data.score}%`);
+        const message = isAutoSubmit 
+          ? 'Exam auto-submitted due to tab/window switch'
+          : `Exam submitted successfully! Score: ${response.data.score}%`;
+        
+        toast.success(message);
         
         // Update the results immediately with the correct score
         const newResult = {
@@ -297,7 +332,8 @@ const StudentDashboard = () => {
           correctAnswers: response.data.correctAnswers,
           totalQuestions: response.data.totalQuestions,
           submittedAt: new Date(),
-          resultsAvailable: true
+          resultsAvailable: true,
+          autoSubmitted: isAutoSubmit
         };
 
         setExamResults(prev => [newResult, ...prev]);
@@ -561,6 +597,34 @@ const StudentDashboard = () => {
       </div>
     );
   };
+
+  // Add a cleanup function for exam mode
+  useEffect(() => {
+    if (!isExamMode) {
+      // Cleanup when exam mode is disabled
+      setCurrentExam(null);
+      setAnswers({});
+      setTimeLeft(null);
+      setCurrentQuestionIndex(0);
+    }
+  }, [isExamMode]);
+
+  // Add beforeunload event handler
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isExamMode && currentExam) {
+        e.preventDefault();
+        e.returnValue = ''; // Required for Chrome
+        handleSubmitExam(true);
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isExamMode, currentExam]);
 
   return (
     <div className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-100'} min-h-screen pt-24`}>
