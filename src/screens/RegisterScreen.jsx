@@ -3,13 +3,13 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRegisterMutation } from '../slices/usersApiSlice';
 import { setCredentials } from '../slices/authSlice';
-import { toast } from 'react-toastify';
 import { motion } from 'framer-motion';
 import { FaBrain, FaEnvelope, FaLock, FaUser, FaGithub, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
 import Loader from '../components/Loader';
 import { useTheme } from '../context/ThemeContext';
 import config from '../config/config.js';
+import { showToast } from '../utils/toast';
 
 const RegisterScreen = () => {
   const { isDarkMode } = useTheme();
@@ -51,13 +51,14 @@ const RegisterScreen = () => {
     const error = params.get('error');
 
     if (loginSuccess === 'true') {
+      showToast.success('Login successful');
       // Redirect to appropriate dashboard based on user type
       if (userInfo) {
         const dashboardPath = getDashboardPath(userInfo.userType);
         navigate(dashboardPath);
       }
     } else if (error) {
-      toast.error(decodeURIComponent(error));
+      showToast.error(decodeURIComponent(error));
     }
   }, [location, userInfo, navigate]);
 
@@ -117,23 +118,18 @@ const RegisterScreen = () => {
   const submitHandler = async (e) => {
     e.preventDefault();
     
-    // Check if password meets all requirements
-    if (!isPasswordValid()) {
-      toast.error('Please ensure your password meets all requirements');
-      return;
-    }
-
     if (password !== confirmPassword) {
-      toast.error('Passwords do not match');
+      showToast.error('Passwords do not match');
       return;
     }
 
     try {
-      const res = await register({ name, email, password, userType: 'student' }).unwrap();
+      const res = await register({ name, email, password }).unwrap();
       dispatch(setCredentials({ ...res }));
+      showToast.success('Registration successful');
       navigate('/');
     } catch (err) {
-      toast.error(err?.data?.message || err.error);
+      showToast.error(err?.data?.message || 'Registration failed');
     }
   };
 

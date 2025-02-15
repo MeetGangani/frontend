@@ -2,11 +2,9 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
-import { ToastContainer } from 'react-toastify';
 import store from './store';
 import App from './App';
 import { ThemeProvider } from './context/ThemeContext';
-import 'react-toastify/dist/ReactToastify.css';
 import './index.css';
 import HomeScreen from './screens/HomeScreen';
 import LoginScreen from './screens/LoginScreen';
@@ -15,6 +13,7 @@ import ProfileScreen from './screens/ProfileScreen';
 import PrivateRoute from './components/PrivateRoute';
 import AboutScreen from './screens/AboutScreen';
 import ContactScreen from './screens/ContactScreen';
+import { Toaster } from 'react-hot-toast';
 
 // Error boundary component
 class ErrorBoundary extends React.Component {
@@ -60,17 +59,30 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <BrowserRouter>
           <ThemeProvider>
             <App />
-            <ToastContainer
+            <Toaster
               position="top-right"
-              autoClose={5000}
-              hideProgressBar={false}
-              newestOnTop
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-              theme="colored"
+              toastOptions={{
+                // Default options for all toasts
+                duration: 3000,
+                style: {
+                  background: '#363636',
+                  color: '#fff',
+                  padding: '16px',
+                  borderRadius: '8px',
+                },
+                success: {
+                  iconTheme: {
+                    primary: '#4ade80',
+                    secondary: '#fff',
+                  },
+                },
+                error: {
+                  iconTheme: {
+                    primary: '#ef4444',
+                    secondary: '#fff',
+                  },
+                },
+              }}
             />
           </ThemeProvider>
         </BrowserRouter>

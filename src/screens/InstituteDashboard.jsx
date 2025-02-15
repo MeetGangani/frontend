@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { motion } from 'framer-motion';
-import { toast } from 'react-hot-toast';
+import { showToast } from '../utils/toast';
 import axiosInstance from '../utils/axiosConfig';
 
 const InstituteDashboard = () => {
@@ -44,9 +44,8 @@ const InstituteDashboard = () => {
       }
     } catch (error) {
       console.error('Error fetching uploads:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to fetch uploads';
-      toast.error(errorMessage);
-      setError(errorMessage);
+      showToast.error(error.response?.data?.message || 'Failed to fetch uploads');
+      setError(error.response?.data?.message || 'Failed to fetch uploads');
     } finally {
       setLoading(false);
     }
@@ -61,7 +60,7 @@ const InstituteDashboard = () => {
       } else {
         setFile(null);
         setError('Please select a valid JSON file');
-        toast.error('Please select a valid JSON file');
+        showToast.error('Please select a valid JSON file');
         e.target.value = ''; // Reset file input
       }
     }
@@ -120,14 +119,14 @@ const InstituteDashboard = () => {
 
           if (response.status === 201) {
             setSuccess('File uploaded successfully!');
-            toast.success('File uploaded successfully');
+            showToast.success('File uploaded successfully');
             await fetchUploads(); // Refresh the uploads list
             resetForm();
           }
         } catch (error) {
           const errorMessage = error.response?.data?.message || 'Invalid JSON format';
           setError(errorMessage);
-          toast.error(errorMessage);
+          showToast.error(errorMessage);
         } finally {
           setLoading(false);
         }
@@ -143,7 +142,7 @@ const InstituteDashboard = () => {
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Failed to upload file';
       setError(errorMessage);
-      toast.error(errorMessage);
+      showToast.error(errorMessage);
       setLoading(false);
     }
   };
@@ -157,7 +156,7 @@ const InstituteDashboard = () => {
       setShowResultsModal(true);
     } catch (error) {
       console.error('Error fetching results:', error);
-      toast.error('Failed to fetch exam results');
+      showToast.error('Failed to fetch exam results');
       setError('Failed to fetch exam results');
     } finally {
       setLoading(false);
@@ -169,7 +168,7 @@ const InstituteDashboard = () => {
       setLoading(true);
       await axiosInstance.post(`/api/exams/release/${examId}`);
       setSuccess('Results released successfully');
-      toast.success('Results released successfully');
+      showToast.success('Results released successfully');
       await fetchUploads();
       if (selectedExam?._id === examId) {
         const response = await axiosInstance.get(`/api/exams/results/${examId}`);
@@ -179,7 +178,7 @@ const InstituteDashboard = () => {
       console.error('Error releasing results:', error);
       const errorMessage = 'Failed to release results: ' + (error.response?.data?.message || error.message);
       setError(errorMessage);
-      toast.error(errorMessage);
+      showToast.error(errorMessage);
     } finally {
       setLoading(false);
     }

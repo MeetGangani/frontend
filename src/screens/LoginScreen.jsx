@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLoginMutation } from '../slices/usersApiSlice';
 import { setCredentials } from '../slices/authSlice';
-import { toast } from 'react-toastify';
 import { motion } from 'framer-motion';
 import { FaBrain, FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
 import Loader from '../components/Loader';
@@ -11,6 +10,7 @@ import { useTheme } from '../context/ThemeContext';
 import { FcGoogle } from 'react-icons/fc';
 import config from '../config/config.js';
 import Logo from '../components/Logo';
+import { showToast } from '../utils/toast';
 
 const LoginScreen = () => {
   const { isDarkMode } = useTheme();
@@ -50,8 +50,9 @@ const LoginScreen = () => {
       const res = await login({ email, password }).unwrap();
       dispatch(setCredentials({ ...res }));
       navigate('/');
+      showToast.success('Login successful');
     } catch (err) {
-      toast.error(err?.data?.message || err.error);
+      showToast.error(err?.data?.message || 'Login failed');
     }
   };
 

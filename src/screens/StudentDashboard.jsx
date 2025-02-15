@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useTheme } from '../context/ThemeContext';
 import config from '../config/config.js';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import { showToast } from '../utils/toast';
 
 const StudentDashboard = () => {
   const { isDarkMode } = useTheme();
@@ -58,16 +58,20 @@ const StudentDashboard = () => {
     if (isExamMode && currentExam) {
       // Handle tab visibility change
       const handleVisibilityChange = () => {
-        if (document.hidden) {
-          toast.error('Tab switched! Submitting exam automatically...');
+        if (document.hidden && !examSubmitting) {
+          examSubmitting = true;
+          showToast.error('Tab switched! Submitting exam automatically...');
           handleSubmitExam(true);
         }
       };
 
       // Handle window blur (switching windows)
       const handleWindowBlur = () => {
-        toast.error('Window switched! Submitting exam automatically...');
-        handleSubmitExam(true);
+        if (!examSubmitting) {
+          examSubmitting = true;
+          showToast.error('Window switched! Submitting exam automatically...');
+          handleSubmitExam(true);
+        }
       };
 
       // Add event listeners
@@ -319,7 +323,7 @@ const StudentDashboard = () => {
           ? 'Exam auto-submitted due to tab/window switch'
           : `Exam submitted successfully! Score: ${response.data.score}%`;
         
-        toast.success(message);
+        showToast.success(message);
         
         // Update the results immediately with the correct score
         const newResult = {
@@ -341,7 +345,7 @@ const StudentDashboard = () => {
       }
     } catch (error) {
       console.error('Error submitting exam:', error);
-      toast.error(error.response?.data?.message || 'Failed to submit exam');
+      showToast.error(error.response?.data?.message || 'Failed to submit exam');
     } finally {
       setExamSubmitting(false);
       setCurrentExam(null);

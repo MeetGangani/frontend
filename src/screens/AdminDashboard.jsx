@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRegisterMutation } from '../slices/usersApiSlice';
-import { toast } from 'react-toastify';
+import { showToast } from '../utils/toast';
 import Loader from '../components/Loader';
 import AdminUserCreate from './AdminUserCreate';
 import axios from 'axios';
@@ -65,7 +65,7 @@ const AdminDashboard = () => {
     e.preventDefault();
 
     if (password.length < 6) {
-      toast.error('Password must be at least 6 characters long');
+      showToast.error('Password must be at least 6 characters long');
       return;
     }
 
@@ -88,7 +88,7 @@ const AdminDashboard = () => {
       );
 
       if (response.data.success) {
-        toast.success(`Successfully created ${userType} account`);
+        showToast.success(`Successfully created ${userType} account`);
         
         // Reset form
         setName('');
@@ -103,8 +103,7 @@ const AdminDashboard = () => {
         setActiveTab('users');
       }
     } catch (err) {
-      console.error('Error creating user:', err);
-      toast.error(err?.response?.data?.message || 'Failed to create user');
+      showToast.error(err.response?.data?.message || 'Error creating user');
     } finally {
       setLoading(false);
     }
@@ -161,9 +160,9 @@ const AdminDashboard = () => {
         ));
 
         if (status === 'approved' && response.data.ipfsHash) {
-          toast.success(`Request approved and uploaded to IPFS\nHash: ${response.data.ipfsHash.slice(0, 10)}...`);
+          showToast.success(`Request approved and uploaded to IPFS\nHash: ${response.data.ipfsHash.slice(0, 10)}...`);
         } else {
-          toast.success(`Request ${status} successfully`);
+          showToast.success(`Request ${status} successfully`);
         }
 
         await fetchData();
@@ -174,7 +173,7 @@ const AdminDashboard = () => {
       }
     } catch (error) {
       console.error('Status update error:', error);
-      toast.error(error.response?.data?.message || `Failed to ${status} request`);
+      showToast.error(error.response?.data?.message || `Failed to ${status} request`);
     } finally {
       setActionLoading(false);
       setProcessingStatus('');
@@ -195,7 +194,7 @@ const AdminDashboard = () => {
       }
     } catch (error) {
       console.error('Error fetching users:', error);
-      toast.error('Failed to fetch users');
+      showToast.error('Failed to fetch users');
       setUserError('Failed to fetch users');
     } finally {
       setUserLoading(false);
@@ -228,9 +227,9 @@ const AdminDashboard = () => {
           { withCredentials: true }
         );
         fetchUsers(); // Refresh user list
-        toast.success('User deleted successfully');
+        showToast.success('User deleted successfully');
       } catch (error) {
-        toast.error('Failed to delete user');
+        showToast.error('Failed to delete user');
       }
     }
   };
@@ -240,9 +239,9 @@ const AdminDashboard = () => {
     setIsRefreshing(true);
     try {
       await fetchData();
-      toast.success('Data refreshed successfully');
+      showToast.success('Data refreshed successfully');
     } catch (error) {
-      toast.error('Failed to refresh data');
+      showToast.error('Failed to refresh data');
     } finally {
       setIsRefreshing(false);
     }

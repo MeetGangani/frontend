@@ -16,7 +16,7 @@ import AboutScreen from './screens/AboutScreen';
 import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen';
 import TermsScreen from './screens/TermsScreen';
 import { useTheme } from './context/ThemeContext';
-import { Toaster } from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 
 // Create route components here to preserve existing dashboard logic
 const AdminRouteWrapper = () => {
@@ -74,63 +74,60 @@ const App = () => {
   };
 
   return (
-    <>
-      <Toaster position="top-right" />
-      <div className={isDarkMode ? 'dark' : ''}>
-        <Header />
-        <main className="min-h-screen">
-          <Routes>
-            <Route path="/" element={<HomeScreen />} />
-            <Route path="/about" element={<AboutScreen />} />
-            <Route path="/contact" element={<ContactScreen />} />
-            
-            {/* Public routes */}
-            <Route
-              path="/login"
-              element={
-                userInfo ? (
-                  <Navigate to={getRedirectPath(userInfo.userType)} replace />
-                ) : (
-                  <LoginScreen />
-                )
-              }
-            />
-            <Route
-              path="/register"
-              element={
-                userInfo ? (
-                  <Navigate to={getRedirectPath(userInfo.userType)} replace />
-                ) : (
-                  <RegisterScreen />
-                )
-              }
-            />
+    <div className={isDarkMode ? 'dark' : ''}>
+      <Header />
+      <main className="min-h-screen">
+        <Routes>
+          <Route path="/" element={<HomeScreen />} />
+          <Route path="/about" element={<AboutScreen />} />
+          <Route path="/contact" element={<ContactScreen />} />
+          
+          {/* Public routes */}
+          <Route
+            path="/login"
+            element={
+              userInfo ? (
+                <Navigate to={getRedirectPath(userInfo.userType)} replace />
+              ) : (
+                <LoginScreen />
+              )
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              userInfo ? (
+                <Navigate to={getRedirectPath(userInfo.userType)} replace />
+              ) : (
+                <RegisterScreen />
+              )
+            }
+          />
 
-            {/* Protected routes */}
-            <Route
-              path="/profile"
-              element={
-                <PrivateRouteWrapper>
-                  <ProfileScreen />
-                </PrivateRouteWrapper>
-              }
-            />
+          {/* Protected routes */}
+          <Route
+            path="/profile"
+            element={
+              <PrivateRouteWrapper>
+                <ProfileScreen />
+              </PrivateRouteWrapper>
+            }
+          />
 
-            {/* Role-specific routes */}
-            <Route path="/admin/dashboard" element={<AdminRouteWrapper />} />
-            <Route path="/institute/dashboard" element={<InstituteRouteWrapper />} />
-            <Route path="/student/dashboard" element={<StudentRouteWrapper />} />
+          {/* Role-specific routes */}
+          <Route path="/admin/dashboard" element={<AdminRouteWrapper />} />
+          <Route path="/institute/dashboard" element={<InstituteRouteWrapper />} />
+          <Route path="/student/dashboard" element={<StudentRouteWrapper />} />
 
-            {/* Add these new routes */}
-            <Route path="/privacy-policy" element={<PrivacyPolicyScreen />} />
-            <Route path="/terms-of-service" element={<TermsScreen />} />
+          {/* Add these new routes */}
+          <Route path="/privacy-policy" element={<PrivacyPolicyScreen />} />
+          <Route path="/terms-of-service" element={<TermsScreen />} />
 
-            {/* Catch all */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </main>
-      </div>
-    </>
+          {/* Catch all */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
+    </div>
   );
 };
 

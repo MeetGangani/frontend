@@ -8,6 +8,7 @@ import { useUpdateUserMutation } from '../slices/usersApiSlice';
 import { setCredentials } from '../slices/authSlice';
 import { useTheme } from '../context/ThemeContext';
 import { motion } from 'framer-motion';
+import { showToast } from '../utils/toast';
 
 const ProfileScreen = () => {
   const { isDarkMode } = useTheme();
@@ -30,7 +31,7 @@ const ProfileScreen = () => {
   const submitHandler = async (e) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-      toast.error('Passwords do not match');
+      showToast.error('Passwords do not match');
     } else {
       try {
         const res = await updateProfile({
@@ -39,11 +40,10 @@ const ProfileScreen = () => {
           email,
           password,
         }).unwrap();
-        console.log(res);
         dispatch(setCredentials(res));
-        toast.success('Profile updated successfully');
+        showToast.success('Profile updated successfully');
       } catch (err) {
-        toast.error(err?.data?.message || err.error);
+        showToast.error(err?.data?.message || 'Update failed');
       }
     }
   };
