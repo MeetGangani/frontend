@@ -35,8 +35,8 @@ const StudentDashboard = () => {
         setTimeLeft((prevTime) => {
           if (prevTime <= 1) {
             clearInterval(timer);
-            handleSubmitExam(true); // Auto-submit when time runs out
-            localStorage.removeItem('examState'); // Clear saved state
+            handleSubmitExam(true); // Only auto-submit on actual time expiry
+            localStorage.removeItem('examState');
             return 0;
           }
           // Save state every 30 seconds
@@ -51,7 +51,7 @@ const StudentDashboard = () => {
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [currentExam, timeLeft]); // Dependencies for the timer effect
+  }, [currentExam, timeLeft]);
 
   useEffect(() => {
     if (currentExam) {
@@ -338,14 +338,17 @@ const StudentDashboard = () => {
   };
 
   const handleAnswerSelect = (questionIndex, answerIndex) => {
-    const updatedAnswers = {
-      ...answers,
-      [questionIndex]: answerIndex
-    };
-    setAnswers(updatedAnswers);
-    
-    // Save current state to localStorage
-    saveExamState(updatedAnswers);
+    try {
+      const updatedAnswers = {
+        ...answers,
+        [questionIndex]: answerIndex
+      };
+      setAnswers(updatedAnswers);
+      saveExamState(updatedAnswers);
+    } catch (error) {
+      console.error('Error saving answer:', error);
+      showToast.error('Failed to save answer');
+    }
   };
 
   const handleSubmitExam = async (isAutoSubmit = false) => {
@@ -661,7 +664,7 @@ const StudentDashboard = () => {
     };
   }, [isExamMode, currentExam]);
 
-  // Add these state updates to handle persisted data
+  // Update the initial state restoration effect
   useEffect(() => {
     // Check for saved exam state on component mount
     const savedExamState = localStorage.getItem('examState');
@@ -679,18 +682,20 @@ const StudentDashboard = () => {
         const elapsedSeconds = Math.floor((new Date() - new Date(startTime)) / 1000);
         const remainingTime = Math.max(savedTimeLeft - elapsedSeconds, 0);
         
+        // Only restore if there's time remaining
         if (remainingTime > 0) {
           setCurrentExam(exam);
-          setAnswers(answers);
+          setAnswers(answers || {});
           setTimeLeft(remainingTime);
           setCurrentQuestionIndex(savedIndex);
           setIsExamMode(true);
           setActiveTab('exam');
           enterFullscreen(); // Re-enter fullscreen mode
+          showToast.info('Exam state restored successfully');
         } else {
-          // Time has expired, auto-submit
-          handleSubmitExam(true);
+          // If time has expired, just clear the saved state
           localStorage.removeItem('examState');
+          showToast.error('Exam session expired');
         }
       } catch (error) {
         console.error('Error restoring exam state:', error);
@@ -700,7 +705,7 @@ const StudentDashboard = () => {
     }
   }, []);
 
-  // Add function to save exam state
+  // Update saveExamState to include timestamp
   const saveExamState = (updatedAnswers = answers) => {
     if (currentExam && isExamMode) {
       const stateToSave = {
@@ -708,7 +713,8 @@ const StudentDashboard = () => {
         answers: updatedAnswers,
         timeLeft,
         startTime: new Date().toISOString(),
-        currentQuestionIndex
+        currentQuestionIndex,
+        lastSaved: new Date().toISOString()
       };
       localStorage.setItem('examState', JSON.stringify(stateToSave));
     }
