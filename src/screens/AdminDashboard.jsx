@@ -6,7 +6,7 @@ import AdminUserCreate from './AdminUserCreate';
 import axios from 'axios';
 import { useTheme } from '../context/ThemeContext';
 import { motion } from 'framer-motion';
-import { FaTrash, FaSearch } from 'react-icons/fa';
+import { FaTrash, FaSearch, FaSync } from 'react-icons/fa';
 
 const AdminDashboard = () => {
   const { isDarkMode } = useTheme();
@@ -32,6 +32,7 @@ const AdminDashboard = () => {
   const [searchEmail, setSearchEmail] = useState('');
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [register, { isLoading }] = useRegisterMutation();
 
@@ -201,6 +202,19 @@ const AdminDashboard = () => {
     }
   };
 
+  // Add refresh function
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await fetchData();
+      toast.success('Data refreshed successfully');
+    } catch (error) {
+      toast.error('Failed to refresh data');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -313,11 +327,25 @@ const AdminDashboard = () => {
         <div className={`rounded-lg shadow-md overflow-hidden ${
           isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
         }`}>
-          <h2 className={`text-2xl font-bold p-6 border-b ${
-            isDarkMode ? 'border-gray-700' : 'border-gray-200'
-          }`}>
-            Exam Requests
-          </h2>
+          <div className="flex justify-between items-center p-6 border-b">
+            <h2 className={`text-2xl font-bold ${
+              isDarkMode ? 'text-white border-gray-700' : 'text-gray-900 border-gray-200'
+            }`}>
+              Exam Requests
+            </h2>
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className={`p-2 rounded-lg transition-all duration-200 ${
+                isDarkMode 
+                  ? 'bg-[#2a2f3e] hover:bg-[#3a3f4e] text-gray-300' 
+                  : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+              } ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title="Refresh requests"
+            >
+              <FaSync className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
           
           {loading ? (
             <div className="flex justify-center items-center p-8">
