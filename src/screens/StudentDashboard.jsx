@@ -97,87 +97,90 @@ const StudentDashboard = () => {
 
   const renderStartExam = () => {
     return (
-      <div className="max-w-lg mx-auto p-4 md:p-6">
-        <div className="text-center mb-8">
-          <h2 className={`text-2xl md:text-3xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            Start Exam
-          </h2>
-          <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-            Enter the exam code provided by your institute to begin
-          </p>
-        </div>
+      <div className="mt-8">
+        <h2 className={`text-2xl font-bold mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+          Start Exam
+        </h2>
+        
+        <div className="max-w-md mx-auto space-y-6">
+          <div>
+            <p className={`text-lg mb-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+              Enter the exam code provided by your institute to begin
+            </p>
 
-        <div className="space-y-6">
-          {/* IPFS Hash Input */}
-          <div className="space-y-4">
-            <label 
-              htmlFor="ipfsHash"
-              className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
-            >
-              Exam Code
-            </label>
-            <input
-              id="ipfsHash"
-              type="text"
-              value={ipfsHash}
-              onChange={(e) => setIpfsHash(e.target.value)}
-              placeholder="Enter your exam code"
-              className={`w-full p-3 rounded-lg border ${
-                isDarkMode 
-                  ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500' 
-                  : 'bg-white border-gray-300 placeholder-gray-400'
-              } focus:outline-none focus:ring-2 focus:ring-violet-500`}
-            />
+            <div className="space-y-4">
+              <div>
+                <label 
+                  htmlFor="examCode" 
+                  className={`block text-sm font-medium mb-2 ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}
+                >
+                  Exam Code
+                </label>
+                <input
+                  type="text"
+                  id="examCode"
+                  value={ipfsHash}
+                  onChange={(e) => setIpfsHash(e.target.value)}
+                  placeholder="Enter your exam code"
+                  className={`w-full px-4 py-3 rounded-lg ${
+                    isDarkMode 
+                      ? 'bg-gray-800 text-white border-gray-700 focus:border-violet-500' 
+                      : 'bg-white text-gray-900 border-gray-300 focus:border-violet-500'
+                  } border focus:ring-2 focus:ring-violet-200 transition-colors`}
+                />
+              </div>
+
+              <button
+                onClick={handleStartExam}
+                disabled={!ipfsHash.trim() || loading}
+                className={`w-full py-3 px-4 rounded-lg transition-colors ${
+                  !ipfsHash.trim() || loading
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-violet-600 hover:bg-violet-700'
+                } text-white font-medium`}
+              >
+                {loading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <span className="ml-2">Loading...</span>
+                  </div>
+                ) : (
+                  'Start Exam'
+                )}
+              </button>
+            </div>
           </div>
 
-          {/* Start Button */}
-          <button
-            onClick={handleStartExam}
-            disabled={loading || !ipfsHash.trim()}
-            className={`w-full py-3 px-4 rounded-lg text-white font-medium transition-all
-              ${loading || !ipfsHash.trim()
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-violet-600 hover:bg-violet-700 active:bg-violet-800'
-              }
-            `}
-          >
-            {loading ? (
-              <span className="flex items-center justify-center">
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Starting Exam...
-              </span>
-            ) : (
-              'Start Exam'
-            )}
-          </button>
-
-          {/* Error Message */}
-          {error && (
-            <div className="p-4 bg-red-100 border-l-4 border-red-500 text-red-700 rounded">
-              <p className="font-medium">Unable to start exam</p>
-              <p className="text-sm">{error}</p>
-            </div>
-          )}
-
-          {/* Instructions */}
+          {/* Important Instructions */}
           <div className={`mt-8 p-4 rounded-lg ${
-            isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'
+            isDarkMode ? 'bg-gray-800' : 'bg-gray-50'
           }`}>
             <h3 className={`text-lg font-medium mb-3 ${
               isDarkMode ? 'text-gray-200' : 'text-gray-900'
             }`}>
               Important Instructions
             </h3>
-            <ul className={`list-disc list-inside space-y-2 text-sm ${
+            <ul className={`space-y-2 ${
               isDarkMode ? 'text-gray-400' : 'text-gray-600'
             }`}>
-              <li>Make sure you have a stable internet connection</li>
-              <li>Do not leave or refresh the page during the exam</li>
-              <li>Switching tabs or windows will auto-submit your exam</li>
-              <li>Keep track of the time limit once you start</li>
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                Make sure you have a stable internet connection
+              </li>
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                Do not leave or refresh the page during the exam
+              </li>
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                Switching tabs or windows will auto-submit your exam
+              </li>
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                Keep track of the time limit once you start
+              </li>
             </ul>
           </div>
         </div>
