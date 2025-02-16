@@ -35,7 +35,7 @@ const StudentDashboard = () => {
         setTimeLeft((prevTime) => {
           if (prevTime <= 1) {
             clearInterval(timer);
-            handleSubmitExam(true); // Only auto-submit on actual time expiry
+            handleSubmitExam('time_expired');
             localStorage.removeItem('examState');
             return 0;
           }
@@ -68,18 +68,14 @@ const StudentDashboard = () => {
       const handleVisibilityChange = () => {
         if (document.hidden && !isSubmitting && !examSubmitting) {
           isSubmitting = true;
-          const attemptedCount = Object.keys(answers).length;
-          showToast.error(`Tab switched! Submitting exam with ${attemptedCount} attempted questions...`);
-          handleSubmitExam(true);
+          handleSubmitExam('tab_switch');
         }
       };
 
       const handleWindowBlur = () => {
         if (!isSubmitting && !examSubmitting) {
           isSubmitting = true;
-          const attemptedCount = Object.keys(answers).length;
-          showToast.error(`Window switched! Submitting exam with ${attemptedCount} attempted questions...`);
-          handleSubmitExam(true);
+          handleSubmitExam('window_switch');
         }
       };
 
@@ -354,7 +350,7 @@ const StudentDashboard = () => {
     }
   };
 
-  const handleSubmitExam = async (isAutoSubmit = false) => {
+  const handleSubmitExam = async (submitType = 'manual') => {
     if (examSubmitting) return;
     
     try {
@@ -370,7 +366,7 @@ const StudentDashboard = () => {
       const submissionData = {
         examId: currentExam._id,
         answers: attemptedAnswers,
-        isAutoSubmit: Boolean(isAutoSubmit),
+        isAutoSubmit: submitType !== 'manual',
         totalQuestions: currentExam.questions.length,
         attemptedCount: Object.keys(attemptedAnswers).length,
         timeRemaining: timeLeft
@@ -391,10 +387,18 @@ const StudentDashboard = () => {
         localStorage.removeItem('examState');
         
         // Show different messages based on submission type
-        if (isAutoSubmit) {
-          showToast.error(`Exam auto-submitted with ${Object.keys(attemptedAnswers).length} attempted questions`);
-        } else {
-          showToast.success('Exam submitted successfully!');
+        switch (submitType) {
+          case 'tab_switch':
+            showToast.error(`Tab switched! Exam auto-submitted with ${Object.keys(attemptedAnswers).length} attempted questions`);
+            break;
+          case 'window_switch':
+            showToast.error(`Window switched! Exam auto-submitted with ${Object.keys(attemptedAnswers).length} attempted questions`);
+            break;
+          case 'time_expired':
+            showToast.warning(`Time's up! Exam submitted with ${Object.keys(attemptedAnswers).length} attempted questions`);
+            break;
+          default:
+            showToast.success('Exam submitted successfully!');
         }
         
         await handleExamCompletion();
@@ -683,7 +687,7 @@ const StudentDashboard = () => {
       if (isExamMode && currentExam) {
         e.preventDefault();
         e.returnValue = ''; // Required for Chrome
-        handleSubmitExam(true);
+        handleSubmitExam('time_expired');
       }
     };
 
