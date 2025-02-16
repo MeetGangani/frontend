@@ -219,33 +219,63 @@ const InstituteDashboard = () => {
     // Create CSV headers
     const headers = ['Student Name', 'Score (%)', 'Correct Answers', 'Total Questions', 'Submission Date'];
     
-    // Convert results to CSV format
-    const csvData = examResults.map(result => [
-      result.student?.name || 'N/A',
-      result.score?.toFixed(2) || '0.00',
-      result.correctAnswers,
-      result.totalQuestions,
-      new Date(result.submittedAt).toLocaleString()
-    ]);
+    // Convert results to CSV format with properly formatted date
+    const csvData = examResults.map(result => {
+      // Format the date properly
+      const submissionDate = result.submittedAt 
+        ? new Date(result.submittedAt).toLocaleString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+          })
+        : 'N/A';
+
+      return [
+        result.student?.name || 'N/A',
+        result.score?.toFixed(2) || '0.00',
+        result.correctAnswers || '0',
+        result.totalQuestions || '0',
+        submissionDate
+      ];
+    });
 
     // Add headers to the beginning
     csvData.unshift(headers);
 
-    // Convert to CSV string
-    const csvString = csvData.map(row => row.join(',')).join('\n');
+    // Convert to CSV string with proper escaping for commas and quotes
+    const csvString = csvData.map(row => 
+      row.map(cell => {
+        // If cell contains commas, quotes, or newlines, wrap it in quotes
+        if (cell && cell.toString().includes(',') || cell.toString().includes('"') || cell.toString().includes('\n')) {
+          return `"${cell.toString().replace(/"/g, '""')}"`;
+        }
+        return cell;
+      }).join(',')
+    ).join('\n');
 
     // Create blob and download
     const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     
+    // Create filename with current date
+    const currentDate = new Date().toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).replace(/\//g, '-');
+    
     link.setAttribute('href', url);
-    link.setAttribute('download', `${selectedExam.examName}_results.csv`);
+    link.setAttribute('download', `${selectedExam.examName}_results_${currentDate}.csv`);
     link.style.visibility = 'hidden';
     
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url); // Clean up the URL object
   };
 
   return (
