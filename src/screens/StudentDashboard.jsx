@@ -393,11 +393,13 @@ const StudentDashboard = () => {
       if (response.data) {
         localStorage.removeItem('examState');
         
-        const message = isAutoSubmit 
-          ? `Exam auto-submitted. ${Object.keys(attemptedAnswers).length} questions attempted`
-          : `Exam submitted successfully! ${Object.keys(attemptedAnswers).length} questions attempted`;
+        // Show different messages based on submission type
+        if (isAutoSubmit) {
+          showToast.error(`Tab switched! Exam auto-submitted with ${Object.keys(attemptedAnswers).length} attempted questions`);
+        } else {
+          showToast.success('Exam submitted successfully!');
+        }
         
-        showToast.success(message);
         await handleExamCompletion();
       }
     } catch (error) {
