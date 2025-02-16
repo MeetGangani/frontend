@@ -74,6 +74,13 @@ const LoginScreen = () => {
         <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-500/10 rounded-full filter blur-3xl" />
       </div>
 
+      {/* Loader - Move outside the motion.div and center it */}
+      {isLoading && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+          <Loader />
+        </div>
+      )}
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -235,8 +242,6 @@ const LoginScreen = () => {
               </motion.button>
             </form>
           </div>
-
-          {isLoading && <Loader />}
 
           <div className="text-center mt-6">
             <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
