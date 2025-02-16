@@ -66,7 +66,7 @@ const StudentDashboard = () => {
       let isSubmitting = false;
 
       const handleVisibilityChange = () => {
-        if (document.hidden && !isSubmitting) {
+        if (document.hidden && !isSubmitting && !examSubmitting) {
           isSubmitting = true;
           const attemptedCount = Object.keys(answers).length;
           showToast.error(`Tab switched! Submitting exam with ${attemptedCount} attempted questions...`);
@@ -75,7 +75,7 @@ const StudentDashboard = () => {
       };
 
       const handleWindowBlur = () => {
-        if (!isSubmitting) {
+        if (!isSubmitting && !examSubmitting) {
           isSubmitting = true;
           const attemptedCount = Object.keys(answers).length;
           showToast.error(`Window switched! Submitting exam with ${attemptedCount} attempted questions...`);
@@ -92,7 +92,7 @@ const StudentDashboard = () => {
         isSubmitting = false;
       };
     }
-  }, [isExamMode, currentExam, answers]);
+  }, [isExamMode, currentExam, answers, examSubmitting]);
 
   const fetchExams = async () => {
     try {
@@ -360,16 +360,13 @@ const StudentDashboard = () => {
     try {
       setExamSubmitting(true);
       
-      // Filter out only attempted questions and ensure we're sending a clean object
       const attemptedAnswers = Object.keys(answers).reduce((acc, key) => {
         if (answers[key] !== null && answers[key] !== undefined) {
-          // Convert to number to ensure clean data
           acc[key] = Number(answers[key]);
         }
         return acc;
       }, {});
 
-      // Create a clean exam submission object with only necessary data
       const submissionData = {
         examId: currentExam._id,
         answers: attemptedAnswers,
@@ -395,7 +392,7 @@ const StudentDashboard = () => {
         
         // Show different messages based on submission type
         if (isAutoSubmit) {
-          showToast.error(`Tab switched! Exam auto-submitted with ${Object.keys(attemptedAnswers).length} attempted questions`);
+          showToast.error(`Exam auto-submitted with ${Object.keys(attemptedAnswers).length} attempted questions`);
         } else {
           showToast.success('Exam submitted successfully!');
         }
