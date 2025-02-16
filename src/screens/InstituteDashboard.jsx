@@ -3,7 +3,7 @@ import { useTheme } from '../context/ThemeContext';
 import { motion } from 'framer-motion';
 import { showToast } from '../utils/toast';
 import axiosInstance from '../utils/axiosConfig';
-import { FaSync } from 'react-icons/fa';
+import { FaSync, FaDownload } from 'react-icons/fa';
 
 const InstituteDashboard = () => {
   const { isDarkMode } = useTheme();
@@ -211,6 +211,41 @@ const InstituteDashboard = () => {
     } finally {
       setIsRefreshing(false);
     }
+  };
+
+  const downloadResultsAsCSV = () => {
+    if (!examResults.length || !selectedExam) return;
+
+    // Create CSV headers
+    const headers = ['Student Name', 'Score (%)', 'Correct Answers', 'Total Questions', 'Submission Date'];
+    
+    // Convert results to CSV format
+    const csvData = examResults.map(result => [
+      result.student?.name || 'N/A',
+      result.score?.toFixed(2) || '0.00',
+      result.correctAnswers,
+      result.totalQuestions,
+      new Date(result.submittedAt).toLocaleString()
+    ]);
+
+    // Add headers to the beginning
+    csvData.unshift(headers);
+
+    // Convert to CSV string
+    const csvString = csvData.map(row => row.join(',')).join('\n');
+
+    // Create blob and download
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${selectedExam.examName}_results.csv`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -503,6 +538,19 @@ const InstituteDashboard = () => {
                   >
                     <FaSync className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                   </button>
+                  {examResults.length > 0 && (
+                    <button
+                      onClick={downloadResultsAsCSV}
+                      className={`p-2 rounded-lg transition-all duration-200 ${
+                        isDarkMode 
+                          ? 'bg-[#2a2f3e] hover:bg-[#3a3f4e] text-gray-300' 
+                          : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                      }`}
+                      title="Download results as CSV"
+                    >
+                      <FaDownload className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
                 <button
                   onClick={() => setShowResultsModal(false)}
