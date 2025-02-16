@@ -470,12 +470,12 @@ const AdminDashboard = () => {
           )}
         </div>
       ) : (
-        <div className="flex flex-col lg:flex-row gap-6">
+        <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-200px)]">
           {/* Create User Form */}
           <div className="w-full lg:w-[400px]">
             <div className={`rounded-lg shadow-md ${
               isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
-            }`}>
+            } sticky top-0`}>
               <div className="p-4 lg:p-6">
                 <h2 className={`text-xl font-semibold mb-6 ${
                   isDarkMode ? 'text-white' : 'text-gray-900'
@@ -486,11 +486,11 @@ const AdminDashboard = () => {
           </div>
 
           {/* Users Table */}
-          <div className="flex-1">
+          <div className="flex-1 h-full">
             <div className={`rounded-lg shadow-md ${
               isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
-            }`}>
-              <div className="p-4 lg:p-6">
+            } h-full flex flex-col`}>
+              <div className="p-4 lg:p-6 flex flex-col h-full">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                   <div className="flex items-center gap-3">
                     <h2 className={`text-xl font-semibold ${
@@ -530,65 +530,63 @@ const AdminDashboard = () => {
                 </div>
                 
                 {userLoading ? (
-                  <div className="flex justify-center items-center p-4">
+                  <div className="flex-1 flex justify-center items-center">
                     <Loader />
                   </div>
                 ) : userError ? (
                   <div className="text-red-500 p-4">{userError}</div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <div className="inline-block min-w-full align-middle">
-                      <div className="overflow-hidden">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'}`}>
-                            <tr>
-                              {['Name', 'Email', 'Type', 'Status', 'Actions'].map((header) => (
-                                <th key={header} className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                                }`}>
-                                  {header}
-                                </th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody className={`divide-y ${
-                            isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
-                          }`}>
-                            {filteredUsers.map((user) => (
-                              <tr key={user._id} className={`${
-                                isDarkMode 
-                                  ? 'hover:bg-[#2a2f3e] text-gray-200' 
-                                  : 'hover:bg-gray-50 text-gray-900'
+                  <div className="flex-1 overflow-hidden">
+                    <div className="h-full overflow-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} sticky top-0 z-10`}>
+                          <tr>
+                            {['Name', 'Email', 'Type', 'Status', 'Actions'].map((header) => (
+                              <th key={header} className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                                isDarkMode ? 'text-gray-300' : 'text-gray-700'
                               }`}>
-                                <td className="px-4 py-3 whitespace-nowrap text-sm">{user.name}</td>
-                                <td className="px-4 py-3 whitespace-nowrap text-sm">{user.email}</td>
-                                <td className="px-4 py-3 whitespace-nowrap text-sm capitalize">{user.userType}</td>
-                                <td className="px-4 py-3 whitespace-nowrap">
-                                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                                    user.isActive
-                                      ? 'bg-green-500 text-white'
-                                      : 'bg-red-500 text-white'
-                                  }`}>
-                                    {user.isActive ? 'Active' : 'Inactive'}
-                                  </span>
-                                </td>
-                                <td className="px-4 py-3 whitespace-nowrap">
-                                  <button
-                                    onClick={() => handleDeleteUser(user._id)}
-                                    className={`p-1.5 rounded-full ${
-                                      isDarkMode 
-                                        ? 'hover:bg-[#3a3f4e] text-red-400' 
-                                        : 'hover:bg-gray-100 text-red-500'
-                                    }`}
-                                  >
-                                    <FaTrash className="w-4 h-4" />
-                                  </button>
-                                </td>
-                              </tr>
+                                {header}
+                              </th>
                             ))}
-                          </tbody>
-                        </table>
-                      </div>
+                          </tr>
+                        </thead>
+                        <tbody className={`divide-y ${
+                          isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
+                        }`}>
+                          {filteredUsers.map((user) => (
+                            <tr key={user._id} className={`${
+                              isDarkMode 
+                                ? 'hover:bg-[#2a2f3e] text-gray-200' 
+                                : 'hover:bg-gray-50 text-gray-900'
+                            }`}>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm">{user.name}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm">{user.email}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm capitalize">{user.userType}</td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                  user.isActive
+                                    ? 'bg-green-500 text-white'
+                                    : 'bg-red-500 text-white'
+                                }`}>
+                                  {user.isActive ? 'Active' : 'Inactive'}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <button
+                                  onClick={() => handleDeleteUser(user._id)}
+                                  className={`p-1.5 rounded-full ${
+                                    isDarkMode 
+                                      ? 'hover:bg-[#3a3f4e] text-red-400' 
+                                      : 'hover:bg-gray-100 text-red-500'
+                                  }`}
+                                >
+                                  <FaTrash className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 )}
