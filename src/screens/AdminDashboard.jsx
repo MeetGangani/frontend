@@ -12,7 +12,6 @@ const AdminDashboard = () => {
   const { isDarkMode } = useTheme();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [userType, setUserType] = useState('student');
   const [success, setSuccess] = useState('');
   const [requests, setRequests] = useState([]);
@@ -64,11 +63,6 @@ const AdminDashboard = () => {
   const submitHandler = async (e) => {
     e.preventDefault();
 
-    if (password.length < 6) {
-      showToast.error('Password must be at least 6 characters long');
-      return;
-    }
-
     try {
       setLoading(true);
       const response = await axios.post(
@@ -76,7 +70,6 @@ const AdminDashboard = () => {
         {
           name,
           email,
-          password,
           userType
         },
         {
@@ -88,12 +81,11 @@ const AdminDashboard = () => {
       );
 
       if (response.data.success) {
-        showToast.success(`Successfully created ${userType} account`);
+        showToast.success(`Successfully created ${userType} account. Credentials sent to user's email.`);
         
         // Reset form
         setName('');
         setEmail('');
-        setPassword('');
         setUserType('student');
         
         // Fetch updated user list

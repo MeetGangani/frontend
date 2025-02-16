@@ -6,13 +6,7 @@ import store from './store';
 import App from './App';
 import { ThemeProvider } from './context/ThemeContext';
 import './index.css';
-import HomeScreen from './screens/HomeScreen';
-import LoginScreen from './screens/LoginScreen';
-import RegisterScreen from './screens/RegisterScreen';
-import ProfileScreen from './screens/ProfileScreen';
-import PrivateRoute from './components/PrivateRoute';
-import AboutScreen from './screens/AboutScreen';
-import ContactScreen from './screens/ContactScreen';
+
 import { Toaster } from 'react-hot-toast';
 
 // Error boundary component

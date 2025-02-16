@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { useRegisterMutation } from '../slices/usersApiSlice';
-import { toast } from 'react-toastify';
-import Loader from '../components/Loader';
+import { showToast } from '../utils/toast';
+import axios from 'axios';
 import { useTheme } from '../context/ThemeContext';
 import { motion } from 'framer-motion';
 
@@ -9,93 +8,108 @@ const AdminUserCreate = ({ onUserCreated }) => {
   const { isDarkMode } = useTheme();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [userType, setUserType] = useState('student');
-  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const [register, { isLoading }] = useRegisterMutation();
+  const BACKEND_URL = 'https://backdeploy-9bze.onrender.com';
 
-  const submitHandler = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
-      await register({ 
-        name, 
-        email, 
-        password,
-        userType
-      }).unwrap();
-      
-      setSuccess(`Successfully created ${userType} account`);
-      setName('');
-      setEmail('');
-      setPassword('');
-      setUserType('student');
-      onUserCreated();
+      setLoading(true);
+      const response = await axios.post(
+        `${BACKEND_URL}/api/admin/users/create`,
+        {
+          name,
+          email,
+          userType
+        },
+        {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      );
+
+      if (response.data.success) {
+        showToast.success(`Successfully created ${userType} account. Credentials sent to user's email.`);
+        
+        // Reset form
+        setName('');
+        setEmail('');
+        setUserType('student');
+        
+        // Notify parent component
+        if (onUserCreated) {
+          onUserCreated();
+        }
+      }
     } catch (err) {
-      toast.error(err?.data?.message || err.error);
+      showToast.error(err.response?.data?.message || 'Error creating user');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* <h2 className={`text-2xl font-bold mb-6 ${
-        isDarkMode ? 'text-white' : 'text-gray-900'
-      }`}>
+    <div className="max-w-md w-full">
+      {/* <h2 className={`text-3xl font-semibold mb-8 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
         Create New User
       </h2> */}
-      
-      {success && (
-        <div className={`mb-4 p-4 rounded-lg ${
-          isDarkMode 
-            ? 'bg-green-900/20 border-green-800 text-green-300' 
-            : 'bg-green-50 border-green-200 text-green-700'
-        } border`}>
-          {success}
-        </div>
-      )}
-      
       <motion.form
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        onSubmit={submitHandler}
-        className="space-y-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        onSubmit={handleSubmit}
+        className="space-y-8"
       >
-        {['name', 'email', 'password'].map((field) => (
-          <div key={field}>
-            <label className={`block text-sm font-medium mb-1 ${
-              isDarkMode ? 'text-gray-300' : 'text-gray-700'
-            }`}>
-              {field.charAt(0).toUpperCase() + field.slice(1)}
-            </label>
-            <input
-              type={field === 'password' ? 'password' : 'text'}
-              placeholder={`Enter ${field}`}
-              value={eval(field)}
-              onChange={(e) => eval(`set${field.charAt(0).toUpperCase() + field.slice(1)}`)(e.target.value)}
-              required
-              className={`w-full px-4 py-2 rounded-lg ${
-                isDarkMode 
-                  ? 'bg-[#2a2f3e] border-gray-700 text-white placeholder-gray-500' 
-                  : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400'
-              } border focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
-            />
-          </div>
-        ))}
+        <div>
+          <label className={`block text-base font-medium mb-3 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+            Name
+          </label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            className={`mt-1 block w-full rounded-md shadow-sm py-2.5 text-base border ${
+              isDarkMode 
+                ? 'bg-[#2a2f3e] border-gray-600 text-white' 
+                : 'bg-gray-50 border-gray-400 text-gray-900'
+            } focus:border-violet-500 focus:ring-violet-500`}
+          />
+        </div>
 
         <div>
-          <label className={`block text-sm font-medium mb-1 ${
-            isDarkMode ? 'text-gray-300' : 'text-gray-700'
-          }`}>
+          <label className={`block text-base font-medium mb-3 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+            Email
+          </label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className={`mt-1 block w-full rounded-md shadow-sm py-2.5 text-base border ${
+              isDarkMode 
+                ? 'bg-[#2a2f3e] border-gray-600 text-white' 
+                : 'bg-gray-50 border-gray-400 text-gray-900'
+            } focus:border-violet-500 focus:ring-violet-500`}
+          />
+        </div>
+
+        <div>
+          <label className={`block text-base font-medium mb-3 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
             User Type
           </label>
           <select
             value={userType}
             onChange={(e) => setUserType(e.target.value)}
-            className={`w-full px-4 py-2 rounded-lg ${
+            className={`mt-1 block w-full rounded-md shadow-sm py-2.5 text-base border ${
               isDarkMode 
-                ? 'bg-[#2a2f3e] border-gray-700 text-white' 
-                : 'bg-gray-50 border-gray-200 text-gray-900'
-            } border focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
+                ? 'bg-[#2a2f3e] border-gray-600 text-white' 
+                : 'bg-gray-50 border-gray-400 text-gray-900'
+            } focus:border-violet-500 focus:ring-violet-500`}
           >
             <option value="student">Student</option>
             <option value="institute">Institute</option>
@@ -107,17 +121,16 @@ const AdminUserCreate = ({ onUserCreated }) => {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           type="submit"
-          disabled={isLoading}
-          className="w-full px-4 py-3 text-white bg-gradient-to-r from-violet-600 to-indigo-600 rounded-lg hover:from-violet-500 hover:to-indigo-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-150"
+          disabled={loading}
+          className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-white ${
+            isDarkMode 
+              ? 'bg-violet-600 hover:bg-violet-700' 
+              : 'bg-violet-500 hover:bg-violet-600'
+          } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500 ${
+            loading ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
         >
-          {isLoading ? (
-            <div className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
-              Creating...
-            </div>
-          ) : (
-            'Create User'
-          )}
+          {loading ? 'Creating...' : 'Create User'}
         </motion.button>
       </motion.form>
     </div>
