@@ -69,13 +69,13 @@ const AboutScreen = () => {
       name: 'Isha Jivani',
       role: 'Frontend Developer',
       github: 'https://github.com/ishajivani',
-      linkedin: 'https://linkedin.com/in/isha-jivani'
+      linkedin: 'https://www.linkedin.com/in/isha-jivani-012a112b3'
     },
     {
       name: 'Stuti Patel',
       role: 'Frontend Developer',
       github: 'https://github.com/stutipatel',
-      linkedin: 'https://linkedin.com/in/stuti-patel'
+      linkedin: 'https://www.linkedin.com/in/stuti-ghiyal11060210060000011'
     }
   ];
 
