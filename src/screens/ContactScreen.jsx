@@ -28,17 +28,14 @@ const ContactScreen = () => {
         `${config.API_BASE_URL}/api/contact`,
         formData,
         {
-          withCredentials: true,
           headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${userInfo?.token}`
+            'Content-Type': 'application/json'
           }
         }
       );
 
       if (response.data) {
         toast.success('Message sent successfully!');
-        // Clear form after successful submission
         setFormData({
           name: '',
           email: '',
