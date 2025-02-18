@@ -1,366 +1,287 @@
+import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { motion, useScroll, useSpring, useTransform } from 'framer-motion';
-import { FaRocket, FaShieldAlt, FaBrain, FaArrowRight } from 'react-icons/fa';
-import Footer from './Footer';
 import { useTheme } from '../context/ThemeContext';
-import { useRef } from 'react';
-import Logo from './Logo';
+import { FaArrowRight, FaShieldAlt, FaBrain, FaRocket, FaChartLine, FaClock, FaUsers } from 'react-icons/fa';
+import Footer from './Footer';
 
 const Hero = () => {
   const { isDarkMode } = useTheme();
-  const ref = useRef(null);
-  
-  // Optimize scroll animations
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start start", "end start"]
-  });
-
-  // Reduce transform calculations
-  const y = useSpring(
-    useTransform(scrollYProgress, [0, 1], ["0%", "50%"]),
-    { stiffness: 100, damping: 30 }
-  );
-  const opacity = useSpring(
-    useTransform(scrollYProgress, [0, 0.5], [1, 0]),
-    { stiffness: 100, damping: 30 }
-  );
-
-  // Optimize background animations
-  const backgroundVariants = {
-    animate: {
-      scale: [1, 1.1, 1],
-      rotate: [0, 180, 360],
-      transition: {
-        duration: 30,
-        repeat: Infinity,
-        ease: "linear"
-      }
-    }
-  };
-
-  // Smooth scroll function
-  const scrollToSection = (sectionId) => {
-    const section = document.getElementById(sectionId);
-    if (section) {
-      section.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
 
   return (
     <>
-      <div 
-        ref={ref}
-        className={`relative min-h-screen ${
-          isDarkMode ? 'bg-[#0A0F1C]' : 'bg-white'
-        } scroll-smooth pt-24`}
-      >
-        {/* Background with fixed positioning */}
-        <motion.div 
-          style={{ y, opacity }} 
-          className="fixed inset-0 z-0"
-          initial={false}
+      <div className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'}`}>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="relative min-h-screen flex flex-col justify-center overflow-hidden"
         >
-          <div className={`absolute inset-0 bg-gradient-to-br ${
-            isDarkMode 
-              ? 'from-violet-600/10 via-transparent to-indigo-600/10'
-              : 'from-violet-600/5 via-transparent to-indigo-600/5'
-          }`} />
-          
-          <motion.div 
-            variants={backgroundVariants}
-            animate="animate"
-            className="hidden md:block absolute top-0 left-0 w-96 h-96 bg-violet-500/10 rounded-full filter blur-3xl" 
-          />
-          <motion.div 
-            variants={backgroundVariants}
-            animate="animate"
-            className="hidden md:block absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full filter blur-3xl" 
-          />
-        </motion.div>
+          {/* Background Gradient Effects */}
+          <div className="absolute inset-0 overflow-hidden">
+            <div className={`absolute -top-48 left-1/2 transform -translate-x-1/2 w-[800px] h-[800px] rounded-full ${
+              isDarkMode ? 'bg-violet-900' : 'bg-violet-200'
+            } opacity-20 blur-3xl`}></div>
+            <div className={`absolute top-1/2 left-1/4 w-[600px] h-[600px] rounded-full ${
+              isDarkMode ? 'bg-indigo-900' : 'bg-indigo-200'
+            } opacity-20 blur-3xl`}></div>
+          </div>
 
-        {/* Content with relative positioning */}
-        <div className="relative z-10">
-          {/* Optimize content animations */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="relative min-h-[85vh] flex flex-col justify-center"
-          >
-            <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
+          {/* Main Content */}
+          <div className="relative max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-20">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="text-center"
+            >
+              {/* Badge */}
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8 }}
-                className="text-center"
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
+                className="inline-block"
               >
-                <motion.div
-                  initial={{ scale: 0.5, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
-                  className="inline-block"
+                <motion.span 
+                  whileHover={{ scale: 1.05 }}
+                  className={`inline-flex items-center px-6 py-2.5 rounded-full ${
+                    isDarkMode 
+                      ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20'
+                      : 'bg-violet-100 text-violet-600 border border-violet-200'
+                  } text-sm font-medium mb-8 gap-2`}
                 >
-                  <motion.span 
-                    whileHover={{ scale: 1.05 }}
-                    className={`inline-block px-5 py-2 rounded-full ${
-                      isDarkMode 
-                        ? 'bg-violet-500/10 text-violet-400'
-                        : 'bg-violet-100 text-violet-600'
-                    } text-sm font-medium mb-6`}
-                  >
-                    Online Examination Platform
-                  </motion.span>
-                </motion.div>
+                  <span className="relative flex h-2 w-2">
+                    <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                      isDarkMode ? 'bg-violet-400' : 'bg-violet-500'
+                    }`}></span>
+                    <span className={`relative inline-flex rounded-full h-2 w-2 ${
+                      isDarkMode ? 'bg-violet-400' : 'bg-violet-500'
+                    }`}></span>
+                  </span>
+                  Next Generation Examination Platform
+                </motion.span>
+              </motion.div>
 
-                <motion.h1 
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.2, duration: 0.8 }}
-                  className={`text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight ${
-                    isDarkMode ? 'text-white' : 'text-gray-900'
-                  } mb-8`}
+              {/* Hero Title */}
+              <motion.h1 
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2, duration: 0.8 }}
+                className={`text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight ${
+                  isDarkMode ? 'text-white' : 'text-gray-900'
+                } mb-8 leading-tight`}
+              >
+                Transform Your
+                <motion.span 
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.5, duration: 0.8 }}
+                  className="block mt-2 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent"
                 >
-                  Take Your Exams
-                  <motion.span 
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.5, duration: 0.8 }}
-                    className="block mt-2 bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent"
-                  >
-                    Anytime, Anywhere
-                  </motion.span>
-                </motion.h1>
+                  Examination Process
+                </motion.span>
+              </motion.h1>
 
-                <p className={`mt-6 text-lg md:text-xl ${
-                  isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                } max-w-3xl mx-auto`}>
-                  A secure and reliable platform for conducting online examinations. 
-                  Easy to use for both institutions and students.
-                </p>
+              {/* Description */}
+              <p className={`mt-8 text-xl md:text-2xl leading-relaxed ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-600'
+              } max-w-3xl mx-auto`}>
+                Experience the future of assessments with our secure, 
+                intelligent, and seamless examination platform.
+              </p>
 
-                {/* CTA Section */}
-                <div className="mt-10 flex flex-col sm:flex-row justify-center items-center gap-4">
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Link
-                      to="/register"
-                      className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-medium rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg hover:shadow-violet-500/25 transition-all duration-300"
-                    >
-                      Get Started
-                      <FaArrowRight className="ml-2 group-hover:translate-x-1 transition-transform duration-300" />
-                    </Link>
-                  </motion.div>
-                </div>
-
-                {/* Features Grid with theme support */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-20">
-                  {[
-                    {
-                      icon: <FaShieldAlt className="h-6 w-6" />,
-                      title: 'Secure Exams',
-                      description: 'Robust security measures to maintain exam integrity.'
-                    },
-                    {
-                      icon: <FaBrain className="h-6 w-6" />,
-                      title: 'Easy Management',
-                      description: 'Simple tools for creating and managing examinations.'
-                    },
-                    {
-                      icon: <FaRocket className="h-6 w-6" />,
-                      title: 'Instant Results',
-                      description: 'Quick evaluation and result declaration.'
-                    }
-                  ].map((feature, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, y: 50 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.5, delay: index * 0.2 }}
-                      whileHover={{ y: -8, transition: { duration: 0.2 }}}
-                      className={`relative group p-8 text-center ${
-                        isDarkMode 
-                          ? 'bg-gray-800/50 hover:bg-gray-800/70'
-                          : 'bg-white hover:bg-gray-50'
-                      } rounded-xl shadow-lg transition-all duration-300`}
-                    >
-                      <div className={`mx-auto flex items-center justify-center w-12 h-12 rounded-2xl ${
-                        isDarkMode 
-                          ? 'bg-violet-500/10 text-violet-400' 
-                          : 'bg-violet-100 text-violet-600'
-                      } mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                        {feature.icon}
-                      </div>
-                      <h3 className={`text-xl font-semibold mb-4 ${
-                        isDarkMode ? 'text-white' : 'text-gray-900'
-                      }`}>
-                        {feature.title}
-                      </h3>
-                      <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-                        {feature.description}
-                      </p>
-                    </motion.div>
-                  ))}
-                </div>
-
-              </motion.div>
-            </div>
-          </motion.div>
-
-          {/* Additional sections with enhanced scroll animations */}
-          <div id="how-it-works" className={`py-20 ${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'}`}>
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              {/* How It Works Section */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="text-center mb-20"
-              >
-                <h2 className={`text-3xl md:text-4xl font-bold mb-6 ${
-                  isDarkMode ? 'text-white' : 'text-gray-900'
-                }`}>
-                  How It Works
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
-                  {[
-                    {
-                      step: '01',
-                      title: 'Create Account',
-                      description: 'Sign up as an institution or student to get started with our platform.'
-                    },
-                    {
-                      step: '02',
-                      title: 'Set Up Exam',
-                      description: 'Institutions can easily create and schedule exams with our user-friendly interface.'
-                    },
-                    {
-                      step: '03',
-                      title: 'Take Exam',
-                      description: 'Students can securely take exams from anywhere with stable internet connection.'
-                    }
-                  ].map((item, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, y: 20 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: index * 0.2 }}
-                      className={`p-6 rounded-2xl ${
-                        isDarkMode ? 'bg-gray-800/50' : 'bg-white'
-                      } shadow-xl`}
-                    >
-                      <div className={`text-4xl font-bold mb-4 bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent`}>
-                        {item.step}
-                      </div>
-                      <h3 className={`text-xl font-semibold mb-3 ${
-                        isDarkMode ? 'text-white' : 'text-gray-900'
-                      }`}>
-                        {item.title}
-                      </h3>
-                      <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-                        {item.description}
-                      </p>
-                    </motion.div>
-                  ))}
-                </div>
-              </motion.div>
-
-              {/* Benefits Section */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="text-center mt-32"
-              >
-                <h2 className={`text-3xl md:text-4xl font-bold mb-6 ${
-                  isDarkMode ? 'text-white' : 'text-gray-900'
-                }`}>
-                  Why Choose NexusEdu?
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
-                  {[
-                    {
-                      title: 'Advanced Security',
-                      description: 'Our platform uses state-of-the-art security measures to prevent cheating and ensure exam integrity.'
-                    },
-                    {
-                      title: 'Real-time Monitoring',
-                      description: 'Track student progress and exam status in real-time with our comprehensive dashboard.'
-                    },
-                    {
-                      title: 'Automated Evaluation',
-                      description: 'Save time with instant result generation and automated performance analytics.'
-                    },
-                    {
-                      title: 'Flexible Access',
-                      description: 'Conduct exams anywhere, anytime with our cloud-based platform accessible from any device.'
-                    }
-                  ].map((benefit, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, y: 20 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: index * 0.2 }}
-                      className={`p-8 rounded-2xl ${
-                        isDarkMode ? 'bg-gray-800/50' : 'bg-white'
-                      } shadow-xl`}
-                    >
-                      <h3 className={`text-xl font-semibold mb-4 ${
-                        isDarkMode ? 'text-white' : 'text-gray-900'
-                      }`}>
-                        {benefit.title}
-                      </h3>
-                      <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-                        {benefit.description}
-                      </p>
-                    </motion.div>
-                  ))}
-                </div>
-              </motion.div>
-
-              {/* Updated CTA Section */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="text-center mt-32 mb-20"
-              >
-                <h2 className={`text-3xl md:text-4xl font-bold mb-6 ${
-                  isDarkMode ? 'text-white' : 'text-gray-900'
-                }`}>
-                  Ready to Get Started?
-                </h2>
-                <p className={`text-lg mb-8 ${
-                  isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                }`}>
-                  Join NexusEdu today and transform your examination process
-                </p>
+              {/* CTA Buttons */}
+              <div className="mt-12 flex flex-col sm:flex-row justify-center items-center gap-6">
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
                   <Link
                     to="/register"
-                    className="group inline-flex items-center px-8 py-4 text-lg font-medium rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg hover:shadow-violet-500/25 transition-all duration-300"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      window.location.href = '/register';
-                    }}
+                    className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-medium rounded-full bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 text-white shadow-xl hover:shadow-violet-500/25 transition-all duration-300"
                   >
-                    Create Free Account
-                    <FaArrowRight className="ml-2 transform group-hover:translate-x-1 transition-transform duration-300" />
+                    Get Started Now
+                    <FaArrowRight className="ml-2 group-hover:translate-x-1 transition-transform duration-300" />
                   </Link>
                 </motion.div>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Link
+                    to="/about"
+                    className={`group inline-flex items-center px-8 py-4 text-lg font-medium rounded-full border-2 ${
+                      isDarkMode 
+                        ? 'border-gray-700 text-gray-300 hover:bg-gray-800'
+                        : 'border-gray-200 text-gray-600 hover:bg-gray-100'
+                    } transition-all duration-300`}
+                  >
+                    Learn More
+                  </Link>
+                </motion.div>
+              </div>
+
+              {/* Features Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-24">
+                {[
+                  {
+                    icon: <FaShieldAlt className="h-6 w-6" />,
+                    title: 'Advanced Security',
+                    description: 'Multi-layered protection for exam integrity'
+                  },
+                  {
+                    icon: <FaBrain className="h-6 w-6" />,
+                    title: 'Smart Analytics',
+                    description: 'AI-powered insights and performance tracking'
+                  },
+                  {
+                    icon: <FaRocket className="h-6 w-6" />,
+                    title: 'Real-time Results',
+                    description: 'Instant evaluation and detailed reports'
+                  }
+                ].map((feature, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 50 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: index * 0.2 }}
+                    whileHover={{ y: -8, transition: { duration: 0.2 }}}
+                    className={`relative group p-8 ${
+                      isDarkMode 
+                        ? 'bg-gray-800/50 hover:bg-gray-800/70 backdrop-blur-lg'
+                        : 'bg-white/80 hover:bg-white backdrop-blur-lg'
+                    } rounded-2xl shadow-lg transition-all duration-300 border ${
+                      isDarkMode ? 'border-gray-700' : 'border-gray-200'
+                    }`}
+                  >
+                    <div className={`mx-auto flex items-center justify-center w-14 h-14 rounded-2xl ${
+                      isDarkMode 
+                        ? 'bg-violet-500/10 text-violet-400' 
+                        : 'bg-violet-100 text-violet-600'
+                    } mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                      {feature.icon}
+                    </div>
+                    <h3 className={`text-xl font-semibold mb-4 ${
+                      isDarkMode ? 'text-white' : 'text-gray-900'
+                    }`}>
+                      {feature.title}
+                    </h3>
+                    <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                      {feature.description}
+                    </p>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Why Choose Us Section - Core Features */}
+      <motion.section 
+        className={`py-20 ${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'}`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <motion.h2 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className={`text-4xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}
+            >
+              Platform Features
+            </motion.h2>
+            <p className={`text-xl ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Designed specifically for modern educational needs
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              {
+                icon: <FaShieldAlt className="h-6 w-6" />,
+                title: 'Secure Testing',
+                description: 'Anti-cheating measures and encrypted exam data'
+              },
+              {
+                icon: <FaClock className="h-6 w-6" />,
+                title: 'Auto-Proctoring',
+                description: 'Real-time monitoring and automated supervision'
+              },
+              {
+                icon: <FaChartLine className="h-6 w-6" />,
+                title: 'Result Analysis',
+                description: 'Detailed performance reports and analytics'
+              }
+            ].map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.2 }}
+                className={`p-8 rounded-2xl ${
+                  isDarkMode 
+                    ? 'bg-gray-800/50 hover:bg-gray-800/70' 
+                    : 'bg-white hover:bg-gray-50'
+                } transition-all duration-300 shadow-lg hover:shadow-xl`}
+              >
+                <div className={`w-12 h-12 rounded-lg mb-6 flex items-center justify-center ${
+                  isDarkMode ? 'bg-violet-500/20' : 'bg-violet-100'
+                }`}>
+                  <span className={isDarkMode ? 'text-violet-400' : 'text-violet-600'}>
+                    {feature.icon}
+                  </span>
+                </div>
+                <h3 className={`text-xl font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  {feature.title}
+                </h3>
+                <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                  {feature.description}
+                </p>
               </motion.div>
-            </div>
+            ))}
           </div>
         </div>
-      </div>
+      </motion.section>
+
+      {/* Call to Action Section */}
+      <motion.section 
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        className={`py-20 relative overflow-hidden ${isDarkMode ? 'bg-[#0F1524]' : 'bg-white'}`}
+      >
+        <div className="absolute inset-0">
+          <div className={`absolute inset-0 bg-gradient-to-r from-violet-600/20 to-indigo-600/20 backdrop-blur-3xl`}></div>
+        </div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <motion.h2 
+            initial={{ y: 20, opacity: 0 }}
+            whileInView={{ y: 0, opacity: 1 }}
+            viewport={{ once: true }}
+            className={`text-4xl font-bold mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}
+          >
+            Start Your Digital Assessment Journey
+          </motion.h2>
+          <p className={`text-xl mb-10 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            Experience secure and efficient online examinations
+          </p>
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Link
+              to="/register"
+              className="inline-flex items-center px-8 py-4 text-lg font-medium rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-xl hover:shadow-violet-500/25 transition-all duration-300"
+            >
+              Get Started
+              <FaArrowRight className="ml-2" />
+            </Link>
+          </motion.div>
+        </div>
+      </motion.section>
+
       <Footer />
     </>
   );
