@@ -24,7 +24,7 @@ const AdminRouteWrapper = () => {
   return userInfo?.userType === 'admin' ? <AdminDashboard /> : <Navigate to="/login" replace />;
 };
 
-const InstituteRouteWrapper = () => {
+const InstituteRouteWrapper  = () => {
   const { userInfo } = useSelector((state) => state.auth);
   return userInfo?.userType === 'institute' ? <InstituteDashboard /> : <Navigate to="/login" replace />;
 };
