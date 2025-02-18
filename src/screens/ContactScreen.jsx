@@ -1,16 +1,14 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
-import { FaEnvelope, FaPhone, FaMapMarkerAlt, FaQuestionCircle, FaUserGraduate, FaUniversity, FaCheckCircle } from 'react-icons/fa';
-import { toast } from 'react-toastify';
+import { FaEnvelope, FaPhone, FaMapMarkerAlt, FaQuestionCircle, FaUserGraduate, FaUniversity } from 'react-icons/fa';
 import axios from 'axios';
 import Footer from '../components/Footer';
 import config from '../config/config.js';
-import { useSelector } from 'react-redux';
+import { showToast } from '../utils/toast';
 
 const ContactScreen = () => {
   const { isDarkMode } = useTheme();
-  const { userInfo } = useSelector((state) => state.auth);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -35,30 +33,7 @@ const ContactScreen = () => {
       );
 
       if (response.data) {
-        toast.success(
-          <div className="flex items-center">
-            <FaCheckCircle className="text-green-500 mr-2" />
-            <div>
-              <h4 className="font-medium">Message Sent Successfully!</h4>
-              <p className="text-sm">We'll get back to you soon.</p>
-            </div>
-          </div>,
-          {
-            position: "top-right",
-            autoClose: 5000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-            progress: undefined,
-            theme: isDarkMode ? "dark" : "light",
-            style: {
-              background: isDarkMode ? '#1a1f2e' : '#ffffff',
-              color: isDarkMode ? '#ffffff' : '#000000',
-            }
-          }
-        );
-        
+        showToast.success('Message sent successfully! We\'ll get back to you soon.');
         setFormData({
           name: '',
           email: '',
@@ -68,29 +43,7 @@ const ContactScreen = () => {
       }
     } catch (err) {
       console.error('Contact form error:', err);
-      toast.error(
-        <div className="flex items-center">
-          <div className="text-red-500 mr-2">❌</div>
-          <div>
-            <h4 className="font-medium">Error Sending Message</h4>
-            <p className="text-sm">{err.response?.data?.message || 'Please try again.'}</p>
-          </div>
-        </div>,
-        {
-          position: "top-right",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: isDarkMode ? "dark" : "light",
-          style: {
-            background: isDarkMode ? '#1a1f2e' : '#ffffff',
-            color: isDarkMode ? '#ffffff' : '#000000',
-          }
-        }
-      );
+      showToast.error(err.response?.data?.message || 'Error sending message. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
