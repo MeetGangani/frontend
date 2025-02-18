@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
-import { FaShieldAlt, FaLock, FaChartLine, FaRobot, FaCode, FaUserShield, FaCloudUploadAlt, FaMobileAlt } from 'react-icons/fa';
+import { FaShieldAlt, FaLock, FaChartLine, FaRobot, FaCode, FaUserShield, FaCloudUploadAlt, FaMobileAlt, FaGithub, FaLinkedin } from 'react-icons/fa';
 import Footer from '../components/Footer';
 
 const AboutScreen = () => {
@@ -49,6 +49,33 @@ const AboutScreen = () => {
       icon: <FaMobileAlt />,
       title: 'Responsive Design',
       description: 'Works smoothly on both desktop and mobile devices.'
+    }
+  ];
+
+  const developers = [
+    {
+      name: 'Meet Gangani',
+      role: 'Full Stack Developer & Deployment Specialist',
+      github: 'https://github.com/MeetGangani',
+      linkedin: 'https://www.linkedin.com/in/meet-gangani-166750254'
+    },
+    {
+      name: 'Abhay Hindocha',
+      role: 'Full Stack Developer & Deployment Specialist',
+      github: 'https://github.com/Abhayhindocha',
+      linkedin: 'https://www.linkedin.com/in/hindocha-abhay-48a610268'
+    },
+    {
+      name: 'Isha Jivani',
+      role: 'Frontend Developer',
+      github: 'https://github.com/ishajivani',
+      linkedin: 'https://linkedin.com/in/isha-jivani'
+    },
+    {
+      name: 'Stuti Patel',
+      role: 'Frontend Developer',
+      github: 'https://github.com/stutipatel',
+      linkedin: 'https://linkedin.com/in/stuti-patel'
     }
   ];
 
@@ -170,6 +197,84 @@ const AboutScreen = () => {
               effective solution for online education needs.
             </p>
           </motion.div>
+
+          {/* Team Section */}
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20"
+          >
+            <div className="text-center mb-16">
+              <h2 className={`text-3xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                Meet Our Developers
+              </h2>
+              <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                The talented team behind NexusEdu
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {developers.map((dev, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className={`relative group overflow-hidden rounded-2xl ${
+                    isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
+                  } shadow-lg p-6`}
+                >
+                  <div className="text-center">
+                    <div className={`w-24 h-24 mx-auto rounded-full mb-4 flex items-center justify-center text-3xl ${
+                      isDarkMode ? 'bg-violet-500/20' : 'bg-violet-100'
+                    } ${isDarkMode ? 'text-violet-400' : 'text-violet-600'}`}>
+                      {dev.name.charAt(0)}
+                    </div>
+                    <h3 className={`text-xl font-semibold mb-2 ${
+                      isDarkMode ? 'text-white' : 'text-gray-900'
+                    }`}>
+                      {dev.name}
+                    </h3>
+                    <p className={`text-sm mb-4 ${
+                      isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
+                      {dev.role}
+                    </p>
+                    <div className="flex justify-center space-x-4">
+                      <motion.a
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                        href={dev.github}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`p-2 rounded-full ${
+                          isDarkMode 
+                            ? 'bg-violet-500/20 text-violet-400 hover:bg-violet-500/30' 
+                            : 'bg-violet-100 text-violet-600 hover:bg-violet-200'
+                        } transition-colors duration-200`}
+                      >
+                        <FaGithub className="w-5 h-5" />
+                      </motion.a>
+                      <motion.a
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                        href={dev.linkedin}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`p-2 rounded-full ${
+                          isDarkMode 
+                            ? 'bg-violet-500/20 text-violet-400 hover:bg-violet-500/30' 
+                            : 'bg-violet-100 text-violet-600 hover:bg-violet-200'
+                        } transition-colors duration-200`}
+                      >
+                        <FaLinkedin className="w-5 h-5" />
+                      </motion.a>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.section>
         </div>
       </div>
       <Footer />
