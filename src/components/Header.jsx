@@ -8,6 +8,7 @@ import { FaSignInAlt, FaSignOutAlt, FaUser, FaBrain, FaChalkboardTeacher, FaMoon
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 import { clearAuthCookies } from '../utils/cookieUtils';
+import logoImage from '../assets/logo.png';
 
 const Header = () => {
   const { userInfo } = useSelector((state) => state.auth);
@@ -116,9 +117,13 @@ const Header = () => {
                 <motion.div
                   whileHover={{ scale: 1.1, rotate: 360 }}
                   transition={{ duration: 0.5 }}
-                  className="p-2 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-600"
+                  className="w-14 h-14"
                 >
-                  <FaBrain className="text-2xl text-white" />
+                  <img 
+                    src={logoImage} 
+                    alt="NexusEdu Logo" 
+                    className="w-full h-full object-contain"
+                  />
                 </motion.div>
                 <span className={`text-xl font-bold ${
                   isDarkMode ? 'text-white' : 'text-gray-900'
