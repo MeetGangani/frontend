@@ -6,9 +6,11 @@ import { toast } from 'react-toastify';
 import axios from 'axios';
 import Footer from '../components/Footer';
 import config from '../config/config.js';
+import { useSelector } from 'react-redux';
 
 const ContactScreen = () => {
   const { isDarkMode } = useTheme();
+  const { userInfo } = useSelector((state) => state.auth);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -28,7 +30,8 @@ const ContactScreen = () => {
         {
           withCredentials: true,
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${userInfo?.token}`
           }
         }
       );
@@ -44,6 +47,7 @@ const ContactScreen = () => {
         });
       }
     } catch (err) {
+      console.error('Contact form error:', err);
       toast.error(
         err.response?.data?.message || 'Error sending message. Please try again.'
       );
