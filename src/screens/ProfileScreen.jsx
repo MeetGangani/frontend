@@ -174,7 +174,10 @@ const ProfileScreen = () => {
           isDarkMode 
             ? 'bg-[#0A0F1C] border-gray-700 text-white placeholder-gray-500' 
             : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400'
-        } border focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-colors duration-200`}
+        } border focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-colors duration-200 ${
+          !isEditing ? 'opacity-75 cursor-not-allowed' : ''
+        }`}
+        disabled={!isEditing}
         {...props}
       />
     </div>
@@ -226,7 +229,6 @@ const ProfileScreen = () => {
                 placeholder="Enter name"
                 value={formData.name}
                 onChange={handleInputChange}
-                disabled={!isEditing}
               />
             </div>
 
@@ -244,7 +246,6 @@ const ProfileScreen = () => {
                 placeholder="Enter email"
                 value={formData.email}
                 onChange={handleInputChange}
-                disabled={!isEditing}
               />
             </div>
 
@@ -343,47 +344,45 @@ const ProfileScreen = () => {
             {/* Action Buttons */}
             <div className="flex space-x-4">
               {!isEditing ? (
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                <button
                   type="button"
-                  onClick={handleEditClick}
-                  className="w-full px-4 py-3 text-white bg-gradient-to-r from-violet-600 to-indigo-600 rounded-lg hover:from-violet-500 hover:to-indigo-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 transition-all duration-150"
+                  onClick={() => {
+                    console.log('Edit button clicked'); // Debug log
+                    setIsEditing(true);
+                  }}
+                  className="w-full px-4 py-3 text-white bg-violet-600 hover:bg-violet-700 rounded-lg transition-colors duration-200"
                 >
                   Edit Profile
-                </motion.button>
+                </button>
               ) : (
-                <>
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                <div className="flex space-x-4 w-full">
+                  <button
                     type="submit"
                     disabled={isLoading}
-                    className="flex-1 px-4 py-3 text-white bg-gradient-to-r from-violet-600 to-indigo-600 rounded-lg hover:from-violet-500 hover:to-indigo-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150"
+                    className="flex-1 px-4 py-3 text-white bg-violet-600 hover:bg-violet-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isLoading ? (
-                      <div className="flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
-                        Saving...
-                      </div>
-                    ) : (
-                      'Save Changes'
-                    )}
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    {isLoading ? 'Saving...' : 'Save Changes'}
+                  </button>
+                  <button
                     type="button"
-                    onClick={handleCancelClick}
+                    onClick={() => {
+                      setIsEditing(false);
+                      setFormData({
+                        name: userInfo.name || '',
+                        email: userInfo.email || '',
+                        password: '',
+                        confirmPassword: ''
+                      });
+                    }}
                     className={`px-4 py-3 rounded-lg ${
                       isDarkMode 
                         ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    } focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-150`}
+                    }`}
                   >
                     Cancel
-                  </motion.button>
-                </>
+                  </button>
+                </div>
               )}
             </div>
           </form>
