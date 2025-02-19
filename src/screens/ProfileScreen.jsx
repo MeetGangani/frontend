@@ -13,12 +13,14 @@ import { FaEye, FaEyeSlash, FaLock, FaUser, FaEnvelope, FaUserCircle } from 'rea
 
 const ProfileScreen = () => {
   const { isDarkMode } = useTheme();
-  const [formData, setFormData] = useState({
-    email: '',
-    name: '',
-    password: '',
-    confirmPassword: '',
-  });
+  const dispatch = useDispatch();
+  const { userInfo } = useSelector((state) => state.auth);
+  const [updateProfile, { isLoading }] = useUpdateUserMutation();
+
+  const [name, setName] = useState(userInfo?.name || '');
+  const [email, setEmail] = useState(userInfo?.email || '');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -34,13 +36,6 @@ const ProfileScreen = () => {
     }
   });
 
-  const dispatch = useDispatch();
-
-  const { userInfo } = useSelector((state) => state.auth);
-
-  const [updateProfile, { isLoading }] = useUpdateUserMutation();
-
-  // Generate avatar URL using DiceBear API
   useEffect(() => {
     if (userInfo?.name) {
       setAvatarUrl(`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(userInfo.name)}&backgroundColor=6d28d9`);
@@ -48,29 +43,15 @@ const ProfileScreen = () => {
   }, [userInfo?.name]);
 
   useEffect(() => {
-    if (userInfo && !isEditing) {  // Only update form when not in editing mode
-      setFormData({
-        name: userInfo.name || '',
-        email: userInfo.email || '',
-        password: '',
-        confirmPassword: '',
-      });
+    if (userInfo && !isEditing) {
+      setName(userInfo.name || '');
+      setEmail(userInfo.email || '');
+      setPassword('');
+      setConfirmPassword('');
     }
   }, [userInfo, isEditing]);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-
-    if (name === 'password') {
-      checkPasswordStrength(value);
-    }
-  };
-
-  // Password strength checker
+  // Password strength checker function
   const checkPasswordStrength = (password) => {
     const requirements = {
       length: password.length >= 8,
@@ -85,66 +66,42 @@ const ProfileScreen = () => {
   };
 
   const getStrengthColor = () => {
-    const { score } = passwordStrength;
-    if (score <= 2) return 'bg-red-500';
-    if (score <= 4) return 'bg-yellow-500';
-    return 'bg-green-500';
+    switch (passwordStrength.score) {
+      case 0:
+      case 1:
+        return 'bg-red-500';
+      case 2:
+      case 3:
+        return 'bg-yellow-500';
+      case 4:
+      case 5:
+        return 'bg-green-500';
+      default:
+        return 'bg-gray-200';
+    }
   };
 
-  const handleEditClick = () => {
-    setIsEditing(true);
-    setFormData({
-      name: userInfo.name || '',
-      email: userInfo.email || '',
-      password: '',
-      confirmPassword: '',
-    });
-  };
-
-  const handleCancelClick = () => {
-    setIsEditing(false);
-    setFormData({
-      name: userInfo.name || '',
-      email: userInfo.email || '',
-      password: '',
-      confirmPassword: '',
-    });
-    setPasswordStrength({
-      score: 0,
-      requirements: {
-        length: false,
-        uppercase: false,
-        lowercase: false,
-        number: false,
-        special: false
-      }
-    });
-  };
-
-  const submitHandler = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (formData.password && formData.password !== formData.confirmPassword) {
+    if (password && password !== confirmPassword) {
       showToast.error('Passwords do not match');
       return;
     }
 
     try {
-      // Only send fields that have changed
       const updateData = {
         _id: userInfo._id,
-        name: formData.name !== userInfo.name ? formData.name : undefined,
-        email: formData.email !== userInfo.email ? formData.email : undefined,
-        password: formData.password || undefined,
+        name: name !== userInfo.name ? name : undefined,
+        email: email !== userInfo.email ? email : undefined,
+        password: password || undefined,
       };
 
-      // Filter out undefined values
       const filteredUpdateData = Object.fromEntries(
         Object.entries(updateData).filter(([_, v]) => v !== undefined)
       );
 
-      // Only make API call if there are changes
-      if (Object.keys(filteredUpdateData).length > 1) { // > 1 because _id is always present
+      if (Object.keys(filteredUpdateData).length > 1) {
         const res = await updateProfile(filteredUpdateData).unwrap();
         dispatch(setCredentials(res));
         setIsEditing(false);
@@ -153,34 +110,27 @@ const ProfileScreen = () => {
         setIsEditing(false);
       }
       
-      // Clear password fields
-      setFormData(prev => ({
-        ...prev,
-        password: '',
-        confirmPassword: ''
-      }));
+      setPassword('');
+      setConfirmPassword('');
     } catch (err) {
       showToast.error(err?.data?.message || 'Update failed');
     }
   };
 
-  const InputField = ({ icon: Icon, ...props }) => (
-    <div className="relative">
-      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-        <Icon className={isDarkMode ? 'text-gray-500' : 'text-gray-400'} />
-      </div>
-      <input
-        className={`w-full pl-10 pr-12 py-3 rounded-lg ${
-          isDarkMode 
-            ? 'bg-[#0A0F1C] border-gray-700 text-white placeholder-gray-500' 
-            : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400'
-        } border focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-colors duration-200 ${
-          !isEditing ? 'opacity-75 cursor-not-allowed' : ''
-        }`}
-        disabled={!isEditing}
-        {...props}
-      />
-    </div>
+  const InputField = ({ value, onChange, ...props }) => (
+    <input
+      className={`w-full pl-10 pr-12 py-3 rounded-lg ${
+        isDarkMode 
+          ? 'bg-[#0A0F1C] border-gray-700 text-white placeholder-gray-500' 
+          : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400'
+      } border focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-colors duration-200 ${
+        !isEditing ? 'opacity-75 cursor-not-allowed' : ''
+      }`}
+      disabled={!isEditing}
+      value={value}
+      onChange={onChange}
+      {...props}
+    />
   );
 
   return (
@@ -214,7 +164,7 @@ const ProfileScreen = () => {
             </div>
           </div>
 
-          <form onSubmit={submitHandler} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* Name Field */}
             <div>
               <label className={`block text-sm font-medium mb-2 ${
@@ -222,14 +172,17 @@ const ProfileScreen = () => {
               }`}>
                 Name
               </label>
-              <InputField
-                icon={FaUser}
-                type="text"
-                name="name"
-                placeholder="Enter name"
-                value={formData.name}
-                onChange={handleInputChange}
-              />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaUser className={isDarkMode ? 'text-gray-500' : 'text-gray-400'} />
+                </div>
+                <InputField
+                  type="text"
+                  placeholder="Enter name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
             </div>
 
             {/* Email Field */}
@@ -237,19 +190,22 @@ const ProfileScreen = () => {
               <label className={`block text-sm font-medium mb-2 ${
                 isDarkMode ? 'text-gray-300' : 'text-gray-700'
               }`}>
-                Email Address
+                Email
               </label>
-              <InputField
-                icon={FaEnvelope}
-                type="email"
-                name="email"
-                placeholder="Enter email"
-                value={formData.email}
-                onChange={handleInputChange}
-              />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaEnvelope className={isDarkMode ? 'text-gray-500' : 'text-gray-400'} />
+                </div>
+                <InputField
+                  type="email"
+                  placeholder="Enter email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
             </div>
 
-            {/* Password Fields - Only show when editing */}
+            {/* Password Fields */}
             {isEditing && (
               <>
                 <div>
@@ -258,68 +214,101 @@ const ProfileScreen = () => {
                   }`}>
                     New Password
                   </label>
-                  <div className="relative">
-                    <InputField
-                      icon={FaLock}
-                      type={showPassword ? "text" : "password"}
-                      name="password"
-                      placeholder="Enter new password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    >
-                      {showPassword ? (
-                        <FaEye className={`h-5 w-5 ${
-                          isDarkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+                  <div className="mt-1 space-y-2">
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <FaLock className={`h-5 w-5 ${
+                          isDarkMode ? 'text-gray-500' : 'text-gray-400'
                         }`} />
-                      ) : (
-                        <FaEyeSlash className={`h-5 w-5 ${
-                          isDarkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
-                        }`} />
-                      )}
-                    </button>
-                  </div>
-
-                  {/* Password Strength Indicator */}
-                  {formData.password && (
-                    <div className="mt-2 space-y-2">
-                      <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full ${getStrengthColor()} transition-all duration-300`}
-                          style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
-                        />
                       </div>
-                      <div className={`text-xs space-y-1 ${
-                        isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                      }`}>
-                        {Object.entries(passwordStrength.requirements).map(([key, met]) => (
-                          <p key={key} className={met ? 'text-green-500' : ''}>
-                            ✓ {key.charAt(0).toUpperCase() + key.slice(1)} requirement
-                          </p>
-                        ))}
-                      </div>
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Enter new password"
+                        value={password}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          checkPasswordStrength(e.target.value);
+                        }}
+                        className={`block w-full pl-10 pr-12 py-2 border ${
+                          isDarkMode 
+                            ? 'border-gray-700 bg-gray-800/50 text-white placeholder-gray-500' 
+                            : 'border-gray-300 bg-white/50 text-gray-900 placeholder-gray-400'
+                        } rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      >
+                        {showPassword ? (
+                          <FaEye className={`h-5 w-5 ${
+                            isDarkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+                          } cursor-pointer transition-colors`} />
+                        ) : (
+                          <FaEyeSlash className={`h-5 w-5 ${
+                            isDarkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+                          } cursor-pointer transition-colors`} />
+                        )}
+                      </button>
                     </div>
-                  )}
+
+                    {/* Password Strength Indicator */}
+                    {password && (
+                      <div className="space-y-2">
+                        <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full ${getStrengthColor()} transition-all duration-300`}
+                            style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
+                          />
+                        </div>
+
+                        {/* Password Requirements */}
+                        <div className={`text-xs space-y-1 ${
+                          isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                        }`}>
+                          <p className={passwordStrength.requirements.length ? 'text-green-500' : ''}>
+                            ✓ At least 8 characters
+                          </p>
+                          <p className={passwordStrength.requirements.uppercase ? 'text-green-500' : ''}>
+                            ✓ At least one uppercase letter
+                          </p>
+                          <p className={passwordStrength.requirements.lowercase ? 'text-green-500' : ''}>
+                            ✓ At least one lowercase letter
+                          </p>
+                          <p className={passwordStrength.requirements.number ? 'text-green-500' : ''}>
+                            ✓ At least one number
+                          </p>
+                          <p className={passwordStrength.requirements.special ? 'text-green-500' : ''}>
+                            ✓ At least one special character
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div>
                   <label className={`block text-sm font-medium mb-2 ${
                     isDarkMode ? 'text-gray-300' : 'text-gray-700'
                   }`}>
-                    Confirm New Password
+                    Confirm Password
                   </label>
                   <div className="relative">
-                    <InputField
-                      icon={FaLock}
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <FaLock className={`h-5 w-5 ${
+                        isDarkMode ? 'text-gray-500' : 'text-gray-400'
+                      }`} />
+                    </div>
+                    <input
                       type={showConfirmPassword ? "text" : "password"}
-                      name="confirmPassword"
                       placeholder="Confirm new password"
-                      value={formData.confirmPassword}
-                      onChange={handleInputChange}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className={`block w-full pl-10 pr-12 py-2 border ${
+                        isDarkMode 
+                          ? 'border-gray-700 bg-gray-800/50 text-white placeholder-gray-500' 
+                          : 'border-gray-300 bg-white/50 text-gray-900 placeholder-gray-400'
+                      } rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
                     />
                     <button
                       type="button"
@@ -329,11 +318,11 @@ const ProfileScreen = () => {
                       {showConfirmPassword ? (
                         <FaEye className={`h-5 w-5 ${
                           isDarkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
-                        }`} />
+                        } cursor-pointer transition-colors`} />
                       ) : (
                         <FaEyeSlash className={`h-5 w-5 ${
                           isDarkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
-                        }`} />
+                        } cursor-pointer transition-colors`} />
                       )}
                     </button>
                   </div>
@@ -346,10 +335,7 @@ const ProfileScreen = () => {
               {!isEditing ? (
                 <button
                   type="button"
-                  onClick={() => {
-                    console.log('Edit button clicked'); // Debug log
-                    setIsEditing(true);
-                  }}
+                  onClick={() => setIsEditing(true)}
                   className="w-full px-4 py-3 text-white bg-violet-600 hover:bg-violet-700 rounded-lg transition-colors duration-200"
                 >
                   Edit Profile
@@ -367,12 +353,10 @@ const ProfileScreen = () => {
                     type="button"
                     onClick={() => {
                       setIsEditing(false);
-                      setFormData({
-                        name: userInfo.name || '',
-                        email: userInfo.email || '',
-                        password: '',
-                        confirmPassword: ''
-                      });
+                      setName(userInfo.name || '');
+                      setEmail(userInfo.email || '');
+                      setPassword('');
+                      setConfirmPassword('');
                     }}
                     className={`px-4 py-3 rounded-lg ${
                       isDarkMode 
