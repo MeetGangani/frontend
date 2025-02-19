@@ -48,7 +48,7 @@ const ProfileScreen = () => {
   }, [userInfo?.name]);
 
   useEffect(() => {
-    if (userInfo) {
+    if (userInfo && !isEditing) {  // Only update form when not in editing mode
       setFormData({
         name: userInfo.name || '',
         email: userInfo.email || '',
@@ -56,7 +56,7 @@ const ProfileScreen = () => {
         confirmPassword: '',
       });
     }
-  }, [userInfo]);
+  }, [userInfo, isEditing]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -100,18 +100,30 @@ const ProfileScreen = () => {
     }
 
     try {
-      const res = await updateProfile({
+      // Only send fields that have changed
+      const updateData = {
         _id: userInfo._id,
-        name: formData.name,
-        email: formData.email,
+        name: formData.name !== userInfo.name ? formData.name : undefined,
+        email: formData.email !== userInfo.email ? formData.email : undefined,
         password: formData.password || undefined,
-      }).unwrap();
+      };
+
+      // Filter out undefined values
+      const filteredUpdateData = Object.fromEntries(
+        Object.entries(updateData).filter(([_, v]) => v !== undefined)
+      );
+
+      // Only make API call if there are changes
+      if (Object.keys(filteredUpdateData).length > 1) { // > 1 because _id is always present
+        const res = await updateProfile(filteredUpdateData).unwrap();
+        dispatch(setCredentials(res));
+        setIsEditing(false);
+        showToast.success('Profile updated successfully');
+      } else {
+        setIsEditing(false);
+      }
       
-      dispatch(setCredentials(res));
-      setIsEditing(false);
-      showToast.success('Profile updated successfully');
-      
-      // Clear password fields after successful update
+      // Clear password fields
       setFormData(prev => ({
         ...prev,
         password: '',
