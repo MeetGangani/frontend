@@ -8,6 +8,7 @@ import { FaExpand, FaCompress } from 'react-icons/fa';
 
 const StudentDashboard = () => {
   const { isDarkMode } = useTheme();
+  const [isExamMode, setIsExamMode] = useState(false);
   const [availableExams, setAvailableExams] = useState([]);
   const [examResults, setExamResults] = useState([]);
   const [currentExam, setCurrentExam] = useState(null);
@@ -15,11 +16,16 @@ const StudentDashboard = () => {
   const [timeLeft, setTimeLeft] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('start');
   const [examSubmitting, setExamSubmitting] = useState(false);
   const [ipfsHash, setIpfsHash] = useState('');
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [isExamMode, setIsExamMode] = useState(false);
+
+  // Initialize activeTab after isExamMode is declared
+  const [activeTab, setActiveTab] = useState(() => {
+    const savedTab = localStorage.getItem('studentDashboardTab');
+    return isExamMode ? 'exam' : (savedTab || 'start');
+  });
+
   const [isFullscreen, setIsFullscreen] = useState(false);
   const navigate = useNavigate();
 
@@ -124,12 +130,18 @@ const StudentDashboard = () => {
   };
 
   const handleTabSwitch = (tab) => {
-    if (isExamMode && tab !== 'exam') {
-      // Prevent switching tabs during exam
-      return;
+    if (!isExamMode) {
+      setActiveTab(tab);
+      localStorage.setItem('studentDashboardTab', tab);
     }
-    setActiveTab(tab);
   };
+
+  useEffect(() => {
+    if (isExamMode) {
+      setActiveTab('exam');
+      localStorage.removeItem('studentDashboardTab');
+    }
+  }, [isExamMode]);
 
   const renderStartExam = () => {
     return (
@@ -698,43 +710,21 @@ const StudentDashboard = () => {
     };
   }, [isExamMode, currentExam]);
 
-  // Update the initial state restoration effect
+  // Restore exam state if available
   useEffect(() => {
-    // Check for saved exam state on component mount
     const savedExamState = localStorage.getItem('examState');
     if (savedExamState) {
       try {
-        const { 
-          exam, 
-          answers, 
-          timeLeft: savedTimeLeft, 
-          startTime,
-          currentQuestionIndex: savedIndex 
-        } = JSON.parse(savedExamState);
-        
-        // Calculate remaining time
+        const { exam, answers, timeLeft: savedTimeLeft, startTime } = JSON.parse(savedExamState);
         const elapsedSeconds = Math.floor((new Date() - new Date(startTime)) / 1000);
         const remainingTime = Math.max(savedTimeLeft - elapsedSeconds, 0);
         
-        // Only restore if there's time remaining
         if (remainingTime > 0) {
-          setCurrentExam(exam);
-          setAnswers(answers || {});
-          setTimeLeft(remainingTime);
-          setCurrentQuestionIndex(savedIndex);
-          setIsExamMode(true);
           setActiveTab('exam');
-          enterFullscreen(); // Re-enter fullscreen mode
-          showToast.info('Exam state restored successfully');
-        } else {
-          // If time has expired, just clear the saved state
-          localStorage.removeItem('examState');
-          showToast.error('Exam session expired');
+          setIsExamMode(true);
         }
       } catch (error) {
         console.error('Error restoring exam state:', error);
-        showToast.error('Failed to restore exam state');
-        localStorage.removeItem('examState');
       }
     }
   }, []);
