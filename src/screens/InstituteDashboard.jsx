@@ -17,7 +17,9 @@ const InstituteDashboard = () => {
   const [showResultsModal, setShowResultsModal] = useState(false);
   const [selectedExam, setSelectedExam] = useState(null);
   const [examResults, setExamResults] = useState([]);
-  const [activeTab, setActiveTab] = useState('upload');
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('instituteDashboardTab') || 'upload';
+  });
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
@@ -278,6 +280,11 @@ const InstituteDashboard = () => {
     URL.revokeObjectURL(url); // Clean up the URL object
   };
 
+  const handleTabSwitch = (tab) => {
+    setActiveTab(tab);
+    localStorage.setItem('instituteDashboardTab', tab);
+  };
+
   return (
     <div className={`min-h-screen pt-20 ${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -286,7 +293,7 @@ const InstituteDashboard = () => {
             {['upload', 'exams'].map((tab) => (
               <button
                 key={tab}
-                onClick={() => setActiveTab(tab)}
+                onClick={() => handleTabSwitch(tab)}
                 className={`py-2 px-1 text-sm font-medium border-b-2 transition-colors duration-200 ${
                   activeTab === tab
                     ? 'border-violet-500 text-violet-500'

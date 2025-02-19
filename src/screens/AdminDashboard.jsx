@@ -23,7 +23,9 @@ const AdminDashboard = () => {
   const [adminComment, setAdminComment] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [processingStatus, setProcessingStatus] = useState('');
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('adminDashboardTab') || 'dashboard';
+  });
   const [processingType, setProcessingType] = useState(null);
   const [users, setUsers] = useState([]);
   const [userLoading, setUserLoading] = useState(false);
@@ -252,6 +254,12 @@ const AdminDashboard = () => {
     }
   };
 
+  // Update tab handler to save to localStorage
+  const handleTabSwitch = (tab) => {
+    setActiveTab(tab);
+    localStorage.setItem('adminDashboardTab', tab);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -329,7 +337,7 @@ const AdminDashboard = () => {
       <div className="mb-6 relative z-0">
         <div className={`flex space-x-4 border-b transition-none ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
           <button
-            onClick={() => setActiveTab('dashboard')}
+            onClick={() => handleTabSwitch('dashboard')}
             className={`px-4 py-2 font-medium transition-none ${
               activeTab === 'dashboard'
                 ? isDarkMode
@@ -343,7 +351,7 @@ const AdminDashboard = () => {
             Exam Requests
           </button>
           <button
-            onClick={() => setActiveTab('users')}
+            onClick={() => handleTabSwitch('users')}
             className={`px-4 py-2 font-medium transition-none ${
               activeTab === 'users'
                 ? isDarkMode
