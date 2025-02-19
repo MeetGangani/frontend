@@ -106,8 +106,8 @@ const Header = () => {
               ? 'bg-[#0A0F1C]/90 backdrop-blur-xl border-b border-gray-800'
               : 'bg-white/90 backdrop-blur-xl border-b border-gray-200'
             : isDarkMode
-              ? 'bg-[#0A0F1C]/50 backdrop-blur-sm'
-              : 'bg-white/50 backdrop-blur-sm'
+              ? 'bg-transparent'
+              : 'bg-transparent'
         }`}
       >
         <nav className="max-w-7xl mx-auto px-6 py-4">
