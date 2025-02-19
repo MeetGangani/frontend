@@ -91,6 +91,36 @@ const ProfileScreen = () => {
     return 'bg-green-500';
   };
 
+  const handleEditClick = () => {
+    setIsEditing(true);
+    setFormData({
+      name: userInfo.name || '',
+      email: userInfo.email || '',
+      password: '',
+      confirmPassword: '',
+    });
+  };
+
+  const handleCancelClick = () => {
+    setIsEditing(false);
+    setFormData({
+      name: userInfo.name || '',
+      email: userInfo.email || '',
+      password: '',
+      confirmPassword: '',
+    });
+    setPasswordStrength({
+      score: 0,
+      requirements: {
+        length: false,
+        uppercase: false,
+        lowercase: false,
+        number: false,
+        special: false
+      }
+    });
+  };
+
   const submitHandler = async (e) => {
     e.preventDefault();
     
@@ -317,7 +347,7 @@ const ProfileScreen = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   type="button"
-                  onClick={() => setIsEditing(true)}
+                  onClick={handleEditClick}
                   className="w-full px-4 py-3 text-white bg-gradient-to-r from-violet-600 to-indigo-600 rounded-lg hover:from-violet-500 hover:to-indigo-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 transition-all duration-150"
                 >
                   Edit Profile
@@ -344,16 +374,7 @@ const ProfileScreen = () => {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     type="button"
-                    onClick={() => {
-                      setIsEditing(false);
-                      setFormData(prev => ({
-                        ...prev,
-                        name: userInfo.name,
-                        email: userInfo.email,
-                        password: '',
-                        confirmPassword: ''
-                      }));
-                    }}
+                    onClick={handleCancelClick}
                     className={`px-4 py-3 rounded-lg ${
                       isDarkMode 
                         ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
