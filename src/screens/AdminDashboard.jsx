@@ -310,387 +310,365 @@ const AdminDashboard = () => {
   console.log('Current stats:', stats);
 
   return (
-    <div className={`min-h-screen pt-28 p-4 transition-none ${isDarkMode ? 'bg-[#0A0F1C] text-white' : 'bg-gray-50 text-gray-900'}`}>
-      {/* Stats Cards - Adjusted z-index */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 relative z-0">
-        <div className={`p-4 rounded-lg shadow-md transition-none ${
-          isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
-        }`}>
-          <h3 className="text-lg font-semibold mb-2">Total Requests</h3>
-          <p className="text-3xl font-bold">{stats?.totalRequests || 0}</p>
-        </div>
-        <div className={`p-4 rounded-lg shadow-md ${
-          isDarkMode ? 'bg-[#1a1f2e] text-white' : 'bg-white text-gray-900'
-        }`}>
-          <h3 className="text-lg font-semibold mb-2">Pending Requests</h3>
-          <p className="text-3xl font-bold">{stats?.pendingRequests || 0}</p>
-        </div>
-        <div className={`p-4 rounded-lg shadow-md ${
-          isDarkMode ? 'bg-[#1a1f2e] text-white' : 'bg-white text-gray-900'
-        }`}>
-          <h3 className="text-lg font-semibold mb-2">Approved Requests</h3>
-          <p className="text-3xl font-bold">{stats?.approvedRequests || 0}</p>
-        </div>
-      </div>
-
-      {/* Tab Navigation - Adjusted z-index */}
-      <div className="mb-6 relative z-0">
-        <div className={`flex space-x-4 border-b transition-none ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-          <button
-            onClick={() => handleTabSwitch('dashboard')}
-            className={`px-4 py-2 font-medium transition-none ${
-              activeTab === 'dashboard'
-                ? isDarkMode
-                  ? 'text-violet-400 border-b-2 border-violet-400'
-                  : 'text-violet-600 border-b-2 border-violet-600'
-                : isDarkMode
-                ? 'text-gray-400 hover:text-gray-300'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Exam Requests
-          </button>
-          <button
-            onClick={() => handleTabSwitch('users')}
-            className={`px-4 py-2 font-medium transition-none ${
-              activeTab === 'users'
-                ? isDarkMode
-                  ? 'text-violet-400 border-b-2 border-violet-400'
-                  : 'text-violet-600 border-b-2 border-violet-600'
-                : isDarkMode
-                ? 'text-gray-400 hover:text-gray-300'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Manage Users
-          </button>
-        </div>
-      </div>
-
-      {/* Content Area - Adjusted z-index and margin */}
-      {activeTab === 'dashboard' ? (
-        <div className={`rounded-lg shadow-md overflow-hidden relative z-0 mt-4 ${
-          isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
-        }`}>
-          <div className="flex justify-between items-center p-6 border-b">
-            <h2 className={`text-2xl font-bold ${
-              isDarkMode ? 'text-white border-gray-700' : 'text-gray-900 border-gray-200'
-            }`}>
-              Exam Requests
-            </h2>
+    <div className={`min-h-screen pt-20 ${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'}`}>
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="mb-6 relative z-0">
+          <div className={`flex space-x-4 border-b transition-none ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
             <button
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className={`p-2 rounded-lg transition-all duration-200 ${
-                isDarkMode 
-                  ? 'bg-[#2a2f3e] hover:bg-[#3a3f4e] text-gray-300' 
-                  : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
-              } ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
-              title="Refresh requests"
+              onClick={() => handleTabSwitch('dashboard')}
+              className={`px-4 py-2 font-medium transition-none ${
+                activeTab === 'dashboard'
+                  ? isDarkMode
+                    ? 'text-violet-400 border-b-2 border-violet-400'
+                    : 'text-violet-600 border-b-2 border-violet-600'
+                  : isDarkMode
+                  ? 'text-gray-400 hover:text-gray-300'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
             >
-              <FaSync className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+              Exam Requests
+            </button>
+            <button
+              onClick={() => handleTabSwitch('users')}
+              className={`px-4 py-2 font-medium transition-none ${
+                activeTab === 'users'
+                  ? isDarkMode
+                    ? 'text-violet-400 border-b-2 border-violet-400'
+                    : 'text-violet-600 border-b-2 border-violet-600'
+                  : isDarkMode
+                  ? 'text-gray-400 hover:text-gray-300'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Manage Users
             </button>
           </div>
-          
-          {loading ? (
-            <div className="flex justify-center items-center p-8">
-              <div className={`animate-spin rounded-full h-8 w-8 border-b-2 ${
-                isDarkMode ? 'border-violet-400' : 'border-violet-600'
-              }`}></div>
-            </div>
-          ) : error ? (
-            <div className="text-red-500 p-6">{error}</div>
-          ) : requests.length === 0 ? (
-            <div className={`text-center p-6 ${
-              isDarkMode ? 'text-gray-400' : 'text-gray-500'
-            }`}>
-              No pending requests
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className={isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'}>
-                  <tr>
-                    {['Exam Name', 'Institute', 'Status', 'Questions', 'Date', 'Actions'].map((header) => (
-                      <th key={header} className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                        isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                      }`}>
-                        {header}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className={`divide-y ${
-                  isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
-                }`}>
-                  {requests.map((request) => (
-                    <tr key={request._id} className={
-                      isDarkMode ? 'hover:bg-[#2a2f3e]' : 'hover:bg-gray-50'
-                    }>
-                      <td className="px-6 py-4 whitespace-nowrap">{request.examName}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">{request.institute?.name}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          request.status === 'pending'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : request.status === 'approved'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {request.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">{request.totalQuestions}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {new Date(request.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {request.status === 'pending' && (
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => handleApprove(request)}
-                              className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors"
-                            >
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => handleReject(request)}
-                              className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-colors"
-                            >
-                              Reject
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
         </div>
-      ) : (
-        <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-200px)]">
-          {/* Create User Form */}
-          <div className="w-full lg:w-[400px]">
-            <div className={`rounded-lg shadow-md ${
-              isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
-            } sticky top-0`}>
-              <div className="p-4 lg:p-6">
-                <h2 className={`text-xl font-semibold mb-6 ${
-                  isDarkMode ? 'text-white' : 'text-gray-900'
-                }`}>Create New User</h2>
-                <AdminUserCreate onUserCreated={fetchUsers} />
+
+        {activeTab === 'dashboard' ? (
+          <div className={`rounded-lg shadow-md overflow-hidden relative z-0 mt-4 ${
+            isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
+          }`}>
+            <div className="flex justify-between items-center p-6 border-b">
+              <h2 className={`text-2xl font-bold ${
+                isDarkMode ? 'text-white border-gray-700' : 'text-gray-900 border-gray-200'
+              }`}>
+                Exam Requests
+              </h2>
+              <button
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className={`p-2 rounded-lg transition-all duration-200 ${
+                  isDarkMode 
+                    ? 'bg-[#2a2f3e] hover:bg-[#3a3f4e] text-gray-300' 
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                } ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title="Refresh requests"
+              >
+                <FaSync className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+            
+            {loading ? (
+              <div className="flex justify-center items-center p-8">
+                <div className={`animate-spin rounded-full h-8 w-8 border-b-2 ${
+                  isDarkMode ? 'border-violet-400' : 'border-violet-600'
+                }`}></div>
+              </div>
+            ) : error ? (
+              <div className="text-red-500 p-6">{error}</div>
+            ) : requests.length === 0 ? (
+              <div className={`text-center p-6 ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-500'
+              }`}>
+                No pending requests
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className={isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'}>
+                    <tr>
+                      {['Exam Name', 'Institute', 'Status', 'Questions', 'Date', 'Actions'].map((header) => (
+                        <th key={header} className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                          isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                        }`}>
+                          {header}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className={`divide-y ${
+                    isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
+                  }`}>
+                    {requests.map((request) => (
+                      <tr key={request._id} className={
+                        isDarkMode ? 'hover:bg-[#2a2f3e]' : 'hover:bg-gray-50'
+                      }>
+                        <td className="px-6 py-4 whitespace-nowrap">{request.examName}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{request.institute?.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            request.status === 'pending'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : request.status === 'approved'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {request.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">{request.totalQuestions}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {new Date(request.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {request.status === 'pending' && (
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => handleApprove(request)}
+                                className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleReject(request)}
+                                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-colors"
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-200px)]">
+            {/* Create User Form */}
+            <div className="w-full lg:w-[400px]">
+              <div className={`rounded-lg shadow-md ${
+                isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
+              } sticky top-0`}>
+                <div className="p-4 lg:p-6">
+                  <h2 className={`text-xl font-semibold mb-6 ${
+                    isDarkMode ? 'text-white' : 'text-gray-900'
+                  }`}>Create New User</h2>
+                  <AdminUserCreate onUserCreated={fetchUsers} />
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Users Table */}
-          <div className="flex-1 h-full">
-            <div className={`rounded-lg shadow-md ${
-              isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
-            } h-full flex flex-col`}>
-              <div className="p-4 lg:p-6 flex flex-col h-full">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                  <div className="flex items-center gap-3">
-                    <h2 className={`text-xl font-semibold ${
-                      isDarkMode ? 'text-white' : 'text-gray-900'
-                    }`}>
-                      User List
-                    </h2>
-                    <button
-                      onClick={handleUserListRefresh}
-                      disabled={isRefreshing}
-                      className={`p-2 rounded-lg transition-all duration-200 ${
-                        isDarkMode 
-                          ? 'bg-[#2a2f3e] hover:bg-[#3a3f4e] text-gray-300' 
-                          : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
-                      } ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      title="Refresh user list"
-                    >
-                      <FaSync className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                    </button>
-                  </div>
-                  <div className="relative w-full sm:w-auto">
-                    <input
-                      type="text"
-                      placeholder="Search by email or type..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className={`pl-10 pr-4 py-2 rounded-lg w-full sm:w-72 ${
-                        isDarkMode 
-                          ? 'bg-[#2a2f3e] text-white border-gray-700' 
-                          : 'bg-white text-gray-900 border-gray-300'
-                      } border focus:outline-none focus:ring-1 focus:ring-violet-500`}
-                    />
-                    <FaSearch className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${
-                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                    }`} />
-                  </div>
-                </div>
-                
-                {userLoading ? (
-                  <div className="flex-1 flex justify-center items-center">
-                    <Loader />
-                  </div>
-                ) : userError ? (
-                  <div className="text-red-500 p-4">{userError}</div>
-                ) : (
-                  <div className="flex-1 overflow-hidden">
-                    <div className="h-full overflow-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} sticky top-0 z-10`}>
-                          <tr>
-                            {['Name', 'Email', 'Type', 'Status', 'Actions'].map((header) => (
-                              <th key={header} className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                                isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                              }`}>
-                                {header}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody className={`divide-y ${
-                          isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
-                        }`}>
-                          {filteredUsers.map((user) => (
-                            <tr key={user._id} className={`${
-                              isDarkMode 
-                                ? 'hover:bg-[#2a2f3e] text-gray-200' 
-                                : 'hover:bg-gray-50 text-gray-900'
-                            }`}>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm">{user.name}</td>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm">{user.email}</td>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm capitalize">{user.userType}</td>
-                              <td className="px-4 py-3 whitespace-nowrap">
-                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                                  user.isActive
-                                    ? 'bg-green-500 text-white'
-                                    : 'bg-red-500 text-white'
-                                }`}>
-                                  {user.isActive ? 'Active' : 'Inactive'}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap">
-                                <button
-                                  onClick={() => handleDeleteUser(user._id)}
-                                  className={`p-1.5 rounded-full ${
-                                    isDarkMode 
-                                      ? 'hover:bg-[#3a3f4e] text-red-400' 
-                                      : 'hover:bg-gray-100 text-red-500'
-                                  }`}
-                                >
-                                  <FaTrash className="w-4 h-4" />
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+            {/* Users Table */}
+            <div className="flex-1 h-full">
+              <div className={`rounded-lg shadow-md ${
+                isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
+              } h-full flex flex-col`}>
+                <div className="p-4 lg:p-6 flex flex-col h-full">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <div className="flex items-center gap-3">
+                      <h2 className={`text-xl font-semibold ${
+                        isDarkMode ? 'text-white' : 'text-gray-900'
+                      }`}>
+                        User List
+                      </h2>
+                      <button
+                        onClick={handleUserListRefresh}
+                        disabled={isRefreshing}
+                        className={`p-2 rounded-lg transition-all duration-200 ${
+                          isDarkMode 
+                            ? 'bg-[#2a2f3e] hover:bg-[#3a3f4e] text-gray-300' 
+                            : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                        } ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        title="Refresh user list"
+                      >
+                        <FaSync className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                      </button>
+                    </div>
+                    <div className="relative w-full sm:w-auto">
+                      <input
+                        type="text"
+                        placeholder="Search by email or type..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className={`pl-10 pr-4 py-2 rounded-lg w-full sm:w-72 ${
+                          isDarkMode 
+                            ? 'bg-[#2a2f3e] text-white border-gray-700' 
+                            : 'bg-white text-gray-900 border-gray-300'
+                        } border focus:outline-none focus:ring-1 focus:ring-violet-500`}
+                      />
+                      <FaSearch className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${
+                        isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                      }`} />
                     </div>
                   </div>
-                )}
+                  
+                  {userLoading ? (
+                    <div className="flex-1 flex justify-center items-center">
+                      <Loader />
+                    </div>
+                  ) : userError ? (
+                    <div className="text-red-500 p-4">{userError}</div>
+                  ) : (
+                    <div className="flex-1 overflow-hidden">
+                      <div className="h-full overflow-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} sticky top-0 z-10`}>
+                            <tr>
+                              {['Name', 'Email', 'Type', 'Status', 'Actions'].map((header) => (
+                                <th key={header} className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                                }`}>
+                                  {header}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody className={`divide-y ${
+                            isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
+                          }`}>
+                            {filteredUsers.map((user) => (
+                              <tr key={user._id} className={`${
+                                isDarkMode 
+                                  ? 'hover:bg-[#2a2f3e] text-gray-200' 
+                                  : 'hover:bg-gray-50 text-gray-900'
+                              }`}>
+                                <td className="px-4 py-3 whitespace-nowrap text-sm">{user.name}</td>
+                                <td className="px-4 py-3 whitespace-nowrap text-sm">{user.email}</td>
+                                <td className="px-4 py-3 whitespace-nowrap text-sm capitalize">{user.userType}</td>
+                                <td className="px-4 py-3 whitespace-nowrap">
+                                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                    user.isActive
+                                      ? 'bg-green-500 text-white'
+                                      : 'bg-red-500 text-white'
+                                  }`}>
+                                    {user.isActive ? 'Active' : 'Inactive'}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap">
+                                  <button
+                                    onClick={() => handleDeleteUser(user._id)}
+                                    className={`p-1.5 rounded-full ${
+                                      isDarkMode 
+                                        ? 'hover:bg-[#3a3f4e] text-red-400' 
+                                        : 'hover:bg-gray-100 text-red-500'
+                                    }`}
+                                  >
+                                    <FaTrash className="w-4 h-4" />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {showModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
-            {/* Overlay */}
-            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
-              <div className={`absolute inset-0 ${isDarkMode ? 'bg-black' : 'bg-gray-500'} opacity-75`}></div>
-            </div>
-
-            {/* Modal */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className={`${
-                isDarkMode 
-                  ? 'bg-[#1a1f2e] text-white' 
-                  : 'bg-white text-gray-900'
-              } rounded-lg max-w-md w-full shadow-xl relative mx-auto`}
-            >
-              <div className={`flex justify-between items-center p-6 border-b ${
-                isDarkMode ? 'border-gray-700' : 'border-gray-200'
-              }`}>
-                <h3 className="text-lg font-medium">
-                  {processingType === 'approve' ? 'Approve' : 'Reject'} Request
-                </h3>
-                {!actionLoading && (
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="text-gray-400 hover:text-gray-500"
-                  >
-                    <span className="sr-only">Close</span>
-                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                )}
+        {showModal && (
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+              {/* Overlay */}
+              <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div className={`absolute inset-0 ${isDarkMode ? 'bg-black' : 'bg-gray-500'} opacity-75`}></div>
               </div>
 
-              <div className="p-6">
-                <div className="mb-4">
-                  <label className={`block text-sm font-medium mb-1 ${
-                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                  }`}>
-                    Admin Comment
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={adminComment}
-                    onChange={(e) => setAdminComment(e.target.value)}
-                    disabled={actionLoading}
-                    className={`w-full px-3 py-2 rounded-lg shadow-sm ${
-                      isDarkMode 
-                        ? 'bg-[#2a2f3e] border-gray-700 text-white' 
-                        : 'bg-white border-gray-300 text-gray-900'
-                    }`}
-                  />
+              {/* Modal */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className={`${
+                  isDarkMode 
+                    ? 'bg-[#1a1f2e] text-white' 
+                    : 'bg-white text-gray-900'
+                } rounded-lg max-w-md w-full shadow-xl relative mx-auto`}
+              >
+                <div className={`flex justify-between items-center p-6 border-b ${
+                  isDarkMode ? 'border-gray-700' : 'border-gray-200'
+                }`}>
+                  <h3 className="text-lg font-medium">
+                    {processingType === 'approve' ? 'Approve' : 'Reject'} Request
+                  </h3>
+                  {!actionLoading && (
+                    <button
+                      onClick={() => setShowModal(false)}
+                      className="text-gray-400 hover:text-gray-500"
+                    >
+                      <span className="sr-only">Close</span>
+                      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
 
-                {actionLoading && (
-                  <div className="flex items-center justify-center space-x-2">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-violet-500"></div>
-                    <span>{processingStatus}</span>
+                <div className="p-6">
+                  <div className="mb-4">
+                    <label className={`block text-sm font-medium mb-1 ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      Admin Comment
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={adminComment}
+                      onChange={(e) => setAdminComment(e.target.value)}
+                      disabled={actionLoading}
+                      className={`w-full px-3 py-2 rounded-lg shadow-sm ${
+                        isDarkMode 
+                          ? 'bg-[#2a2f3e] border-gray-700 text-white' 
+                          : 'bg-white border-gray-300 text-gray-900'
+                      }`}
+                    />
                   </div>
-                )}
-              </div>
 
-              <div className={`px-6 py-4 flex justify-end space-x-3 ${
-                isDarkMode ? 'bg-[#2a2f3e]' : 'bg-gray-50'
-              }`}>
-                <button
-                  onClick={() => setShowModal(false)}
-                  disabled={actionLoading}
-                  className={`px-4 py-2 rounded-lg ${
-                    isDarkMode 
-                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleRequestStatusUpdate}
-                  disabled={actionLoading}
-                  className={`px-4 py-2 rounded-lg ${
-                    isDarkMode 
-                      ? 'bg-violet-600 text-white hover:bg-violet-700' 
-                      : 'bg-violet-500 text-white hover:bg-violet-600'
-                  }`}
-                >
-                  {processingType === 'approve' ? 'Approve' : 'Reject'}
-                </button>
-              </div>
-            </motion.div>
+                  {actionLoading && (
+                    <div className="flex items-center justify-center space-x-2">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-violet-500"></div>
+                      <span>{processingStatus}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className={`px-6 py-4 flex justify-end space-x-3 ${
+                  isDarkMode ? 'bg-[#2a2f3e]' : 'bg-gray-50'
+                }`}>
+                  <button
+                    onClick={() => setShowModal(false)}
+                    disabled={actionLoading}
+                    className={`px-4 py-2 rounded-lg ${
+                      isDarkMode 
+                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleRequestStatusUpdate}
+                    disabled={actionLoading}
+                    className={`px-4 py-2 rounded-lg ${
+                      isDarkMode 
+                        ? 'bg-violet-600 text-white hover:bg-violet-700' 
+                        : 'bg-violet-500 text-white hover:bg-violet-600'
+                    }`}
+                  >
+                    {processingType === 'approve' ? 'Approve' : 'Reject'}
+                  </button>
+                </div>
+              </motion.div>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
