@@ -755,12 +755,12 @@ const StudentDashboard = () => {
   };
 
   return (
-    <div className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'} pt-20`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
-        <div className="flex flex-col">
-          {/* Mobile Navigation */}
+    <div className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'} min-h-screen pt-16 md:pt-24`}>
+      <div className="container mx-auto px-4 md:px-6">
+        <div className="flex flex-col md:flex-row gap-4 md:gap-8">
+          {/* Sidebar Navigation - Mobile Version */}
           {!isExamMode && (
-            <div className="md:hidden mb-4 sticky top-[80px] z-10">
+            <div className="md:hidden mb-4 sticky top-24 z-30 bg-inherit">
               <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-xl shadow-lg p-4`}>
                 <nav className="flex gap-2 overflow-x-auto">
                   <button
@@ -856,7 +856,7 @@ const StudentDashboard = () => {
           </div>
 
           {/* Main Content Area */}
-          <div className={`w-full ${!isExamMode ? 'md:w-3/4' : 'md:w-full'}`}>
+          <div className={`w-full mt-2 md:mt-0 ${!isExamMode ? 'md:w-3/4' : 'md:w-full'}`}>
             <div className={`${
               isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
             } rounded-xl shadow-lg p-4 md:p-6`}>
