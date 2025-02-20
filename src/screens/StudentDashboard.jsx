@@ -5,6 +5,7 @@ import config from '../config/config.js';
 import { useNavigate } from 'react-router-dom';
 import { showToast } from '../utils/toast';
 import { FaExpand, FaCompress } from 'react-icons/fa';
+import { Loader } from '../components/Loader';
 
 const StudentDashboard = () => {
   const { isDarkMode } = useTheme();
@@ -109,6 +110,7 @@ const StudentDashboard = () => {
 
   const fetchExams = async () => {
     try {
+      setLoading(true);
       const response = await axios.get(`${config.API_BASE_URL}/api/exams/available`, {
         withCredentials: true
       });
@@ -117,6 +119,9 @@ const StudentDashboard = () => {
     } catch (error) {
       console.error('Error fetching exams:', error);
       setError('Failed to fetch available exams');
+      showToast.error('Failed to fetch available exams');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -127,24 +132,33 @@ const StudentDashboard = () => {
         `${config.API_BASE_URL}/api/exams/my-results`,
         { withCredentials: true }
       );
-      
-      // Ensure we have an array, even if empty
       setExamResults(Array.isArray(response.data) ? response.data : []);
       setError(null);
     } catch (error) {
       console.error('Error fetching results:', error);
       setExamResults([]);
       setError('Failed to fetch exam results');
+      showToast.error('Failed to fetch exam results');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleTabSwitch = (tab) => {
-    if (!isExamMode) {
-      setActiveTab(tab);
-      localStorage.setItem('studentDashboardTab', tab);
+  useEffect(() => {
+    if (activeTab === 'start' && !isExamMode) {
+      fetchExams();
+    } else if (activeTab === 'results' && !isExamMode) {
+      fetchResults();
     }
+  }, [activeTab, isExamMode]);
+
+  const handleTabSwitch = (tab) => {
+    if (isExamMode && tab !== 'exam') {
+      showToast.warning('Please complete or submit the exam first');
+      return;
+    }
+    setActiveTab(tab);
+    localStorage.setItem('studentDashboardTab', tab);
   };
 
   useEffect(() => {
@@ -155,6 +169,36 @@ const StudentDashboard = () => {
   }, [isExamMode]);
 
   const renderStartExam = () => {
+    if (loading) {
+      return <Loader />;
+    }
+
+    if (error) {
+      return (
+        <div className="text-center py-8">
+          <p className={`text-lg ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
+            {error}
+          </p>
+          <button
+            onClick={fetchExams}
+            className="mt-4 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700"
+          >
+            Retry
+          </button>
+        </div>
+      );
+    }
+
+    if (availableExams.length === 0) {
+      return (
+        <div className="text-center py-8">
+          <p className={`text-lg ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            No exams available at the moment.
+          </p>
+        </div>
+      );
+    }
+
     return (
       <div className="mt-8">
         <h2 className={`text-2xl font-bold mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -630,6 +674,36 @@ const StudentDashboard = () => {
   };
 
   const renderResultsTab = () => {
+    if (loading) {
+      return <Loader />;
+    }
+
+    if (error) {
+      return (
+        <div className="text-center py-8">
+          <p className={`text-lg ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
+            {error}
+          </p>
+          <button
+            onClick={fetchResults}
+            className="mt-4 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700"
+          >
+            Retry
+          </button>
+        </div>
+      );
+    }
+
+    if (examResults.length === 0) {
+      return (
+        <div className="text-center py-8">
+          <p className={`text-lg ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            No exam results available.
+          </p>
+        </div>
+      );
+    }
+
     return (
       <div>
         <h2 className={`text-xl md:text-2xl font-bold mb-4 md:mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
