@@ -151,6 +151,12 @@ const StudentDashboard = () => {
         </h2>
         
         <div className="max-w-md mx-auto space-y-6">
+          {error && (
+            <div className="p-4 rounded-lg bg-red-100 border border-red-400 text-red-700">
+              <p>{error}</p>
+            </div>
+          )}
+
           <div>
             <p className={`text-lg mb-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
               Enter the exam code provided by your institute to begin
@@ -170,7 +176,10 @@ const StudentDashboard = () => {
                   type="text"
                   id="examCode"
                   value={ipfsHash}
-                  onChange={(e) => setIpfsHash(e.target.value)}
+                  onChange={(e) => {
+                    setIpfsHash(e.target.value);
+                    setError(null); // Clear error when input changes
+                  }}
                   placeholder="Enter your exam code"
                   className={`w-full px-4 py-3 rounded-lg ${
                     isDarkMode 
@@ -294,7 +303,6 @@ const StudentDashboard = () => {
   const handleStartExam = async (e) => {
     e.preventDefault();
     try {
-      await enterFullscreen();
       setLoading(true);
       setError(null);
 
@@ -302,6 +310,17 @@ const StudentDashboard = () => {
         setError('Please enter the IPFS hash provided by your institute');
         return;
       }
+
+      // Check if exam was already attempted using examResults
+      const hasAttempted = examResults.some(result => result.exam.ipfsHash === ipfsHash.trim());
+      if (hasAttempted) {
+        setError('You have already attempted this exam. You cannot retake it.');
+        setIpfsHash('');
+        setLoading(false);
+        return;
+      }
+
+      await enterFullscreen();
 
       const response = await axios.post(
         `${config.API_BASE_URL}/api/exams/start`,
@@ -329,10 +348,18 @@ const StudentDashboard = () => {
     } catch (error) {
       await exitFullscreen();
       console.error('Start exam error:', error);
-      setError(
-        error.response?.data?.message || 
-        'Failed to start exam. Please verify your IPFS hash with your institute.'
-      );
+      
+      // Handle specific error cases
+      if (error.response?.status === 409) {
+        setError('You have already attempted this exam. You cannot retake it.');
+        setIpfsHash('');
+      } else if (error.response?.data?.message) {
+        setError(error.response.data.message);
+      } else {
+        setError(
+          'Failed to start exam. Please verify your IPFS hash with your institute.'
+        );
+      }
     } finally {
       setLoading(false);
     }
