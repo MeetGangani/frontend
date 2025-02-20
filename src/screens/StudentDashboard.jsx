@@ -29,11 +29,21 @@ const StudentDashboard = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchExams();
-    fetchResults();
-  }, []);
+  // Move saveExamState before any effects that use it
+  const saveExamState = useCallback((answersData) => {
+    if (currentExam && timeLeft > 0) {
+      const examState = {
+        currentExam,
+        answers: answersData,
+        timeLeft,
+        currentQuestionIndex,
+        isExamMode: true
+      };
+      localStorage.setItem('examState', JSON.stringify(examState));
+    }
+  }, [currentExam, timeLeft, currentQuestionIndex]);
 
+  // Modified timer effect to avoid the circular dependency
   useEffect(() => {
     let timer;
     if (currentExam && timeLeft > 0 && isExamMode) {
@@ -47,7 +57,7 @@ const StudentDashboard = () => {
             return 0;
           }
           // Save state every 30 seconds
-          if (newTime % 30 === 0) {
+          if (newTime % 30 === 0 && answers) {
             saveExamState(answers);
           }
           return newTime;
@@ -707,20 +717,6 @@ const StudentDashboard = () => {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isExamMode, currentExam, answers, saveExamState]);
-
-  // Add new saveExamState function
-  const saveExamState = useCallback((answersData) => {
-    if (currentExam && timeLeft > 0) {
-      const examState = {
-        currentExam,
-        answers: answersData,
-        timeLeft,
-        currentQuestionIndex,
-        isExamMode: true
-      };
-      localStorage.setItem('examState', JSON.stringify(examState));
-    }
-  }, [currentExam, timeLeft, currentQuestionIndex]);
 
   // Add new effect to load saved state on mount
   useEffect(() => {
