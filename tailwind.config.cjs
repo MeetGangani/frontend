@@ -18,7 +18,7 @@ module.exports = {
         blob: {
           "0%": {
             transform: "translate(0px, 0px) scale(1)",
-          },
+          },  
           "33%": {
             transform: "translate(30px, -50px) scale(1.1)",
           },
@@ -66,10 +66,10 @@ module.exports = {
   },
   plugins: [],
   variants: {
-    extend: {
+    extend: { 
       backgroundColor: ['dark', 'dark-hover'],
       textColor: ['dark', 'dark-hover'],
       borderColor: ['dark', 'dark-hover'],
     },
   },
-} 
+}  
