@@ -345,7 +345,7 @@ const StudentDashboard = () => {
         setError(error.response.data.message);
         showToast.error(error.response.data.message);
       } else {
-        const errorMsg = 'Check Exam code OR \n You have already attempted this exam. You cannot retake it.';
+        const errorMsg = 'Check Exam code OR \n You have already attempted this exam.';
         setError(errorMsg);
         showToast.error(errorMsg);
       }
