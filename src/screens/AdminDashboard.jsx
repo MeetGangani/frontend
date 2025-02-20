@@ -390,7 +390,7 @@ const AdminDashboard = () => {
                     <tr>
                       {['Exam Name', 'Institute', 'Status', 'Questions', 'Date', 'Actions'].map((header) => (
                         <th key={header} className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                          isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                          isDarkMode ? 'text-gray-300' : 'text-gray-500'
                         }`}>
                           {header}
                         </th>
@@ -398,28 +398,50 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody className={`divide-y ${
-                    isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
+                    isDarkMode ? 'divide-gray-700 text-gray-300' : 'divide-gray-200'
                   }`}>
                     {requests.map((request) => (
                       <tr key={request._id} className={
-                        isDarkMode ? 'hover:bg-[#2a2f3e]' : 'hover:bg-gray-50'
+                        isDarkMode 
+                          ? 'hover:bg-[#2a2f3e] text-gray-200' 
+                          : 'hover:bg-gray-50'
                       }>
-                        <td className="px-6 py-4 whitespace-nowrap">{request.examName}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">{request.institute?.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={isDarkMode ? 'text-gray-200' : 'text-gray-900'}>
+                            {request.examName}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={isDarkMode ? 'text-gray-200' : 'text-gray-900'}>
+                            {request.institute?.name}
+                          </span>
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 text-xs rounded-full ${
                             request.status === 'pending'
-                              ? 'bg-yellow-100 text-yellow-800'
+                              ? isDarkMode 
+                                ? 'bg-yellow-900 text-yellow-200' 
+                                : 'bg-yellow-100 text-yellow-800'
                               : request.status === 'approved'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
+                              ? isDarkMode 
+                                ? 'bg-green-900 text-green-200' 
+                                : 'bg-green-100 text-green-800'
+                              : isDarkMode 
+                                ? 'bg-red-900 text-red-200' 
+                                : 'bg-red-100 text-red-800'
                           }`}>
                             {request.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">{request.totalQuestions}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {new Date(request.createdAt).toLocaleDateString()}
+                          <span className={isDarkMode ? 'text-gray-200' : 'text-gray-900'}>
+                            {request.totalQuestions}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={isDarkMode ? 'text-gray-200' : 'text-gray-900'}>
+                            {new Date(request.createdAt).toLocaleDateString()}
+                          </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {request.status === 'pending' && (
