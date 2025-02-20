@@ -5,7 +5,6 @@ import config from '../config/config.js';
 import { useNavigate } from 'react-router-dom';
 import { showToast } from '../utils/toast';
 import { FaExpand, FaCompress } from 'react-icons/fa';
-import { Loader } from '../components/Loader';
 
 const StudentDashboard = () => {
   const { isDarkMode } = useTheme();
@@ -30,38 +29,27 @@ const StudentDashboard = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const navigate = useNavigate();
 
-  // Move saveExamState before any effects that use it
-  const saveExamState = useCallback((answersData) => {
-    if (currentExam && timeLeft > 0) {
-      const examState = {
-        currentExam,
-        answers: answersData,
-        timeLeft,
-        currentQuestionIndex,
-        isExamMode: true
-      };
-      localStorage.setItem('examState', JSON.stringify(examState));
-    }
-  }, [currentExam, timeLeft, currentQuestionIndex]);
+  useEffect(() => {
+    fetchExams();
+    fetchResults();
+  }, []);
 
-  // Modified timer effect to avoid the circular dependency
   useEffect(() => {
     let timer;
-    if (currentExam && timeLeft > 0 && isExamMode) {
+    if (currentExam && timeLeft > 0) {
       timer = setInterval(() => {
         setTimeLeft((prevTime) => {
-          const newTime = prevTime - 1;
-          if (newTime <= 0) {
+          if (prevTime <= 1) {
             clearInterval(timer);
             handleSubmitExam('time_expired');
             localStorage.removeItem('examState');
             return 0;
           }
           // Save state every 30 seconds
-          if (newTime % 30 === 0 && answers) {
-            saveExamState(answers);
+          if (prevTime % 30 === 0) {
+            saveExamState();
           }
-          return newTime;
+          return prevTime - 1;
         });
       }, 1000);
     }
@@ -69,7 +57,7 @@ const StudentDashboard = () => {
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [currentExam, timeLeft, isExamMode, answers, saveExamState]);
+  }, [currentExam, timeLeft]);
 
   useEffect(() => {
     if (currentExam) {
@@ -110,7 +98,6 @@ const StudentDashboard = () => {
 
   const fetchExams = async () => {
     try {
-      setLoading(true);
       const response = await axios.get(`${config.API_BASE_URL}/api/exams/available`, {
         withCredentials: true
       });
@@ -119,9 +106,6 @@ const StudentDashboard = () => {
     } catch (error) {
       console.error('Error fetching exams:', error);
       setError('Failed to fetch available exams');
-      showToast.error('Failed to fetch available exams');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -132,33 +116,24 @@ const StudentDashboard = () => {
         `${config.API_BASE_URL}/api/exams/my-results`,
         { withCredentials: true }
       );
+      
+      // Ensure we have an array, even if empty
       setExamResults(Array.isArray(response.data) ? response.data : []);
       setError(null);
     } catch (error) {
       console.error('Error fetching results:', error);
       setExamResults([]);
       setError('Failed to fetch exam results');
-      showToast.error('Failed to fetch exam results');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (activeTab === 'start' && !isExamMode) {
-      fetchExams();
-    } else if (activeTab === 'results' && !isExamMode) {
-      fetchResults();
-    }
-  }, [activeTab, isExamMode]);
-
   const handleTabSwitch = (tab) => {
-    if (isExamMode && tab !== 'exam') {
-      showToast.warning('Please complete or submit the exam first');
-      return;
+    if (!isExamMode) {
+      setActiveTab(tab);
+      localStorage.setItem('studentDashboardTab', tab);
     }
-    setActiveTab(tab);
-    localStorage.setItem('studentDashboardTab', tab);
   };
 
   useEffect(() => {
@@ -169,36 +144,6 @@ const StudentDashboard = () => {
   }, [isExamMode]);
 
   const renderStartExam = () => {
-    if (loading) {
-      return <Loader />;
-    }
-
-    if (error) {
-      return (
-        <div className="text-center py-8">
-          <p className={`text-lg ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
-            {error}
-          </p>
-          <button
-            onClick={fetchExams}
-            className="mt-4 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700"
-          >
-            Retry
-          </button>
-        </div>
-      );
-    }
-
-    if (availableExams.length === 0) {
-      return (
-        <div className="text-center py-8">
-          <p className={`text-lg ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-            No exams available at the moment.
-          </p>
-        </div>
-      );
-    }
-
     return (
       <div className="mt-8">
         <h2 className={`text-2xl font-bold mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -674,36 +619,6 @@ const StudentDashboard = () => {
   };
 
   const renderResultsTab = () => {
-    if (loading) {
-      return <Loader />;
-    }
-
-    if (error) {
-      return (
-        <div className="text-center py-8">
-          <p className={`text-lg ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
-            {error}
-          </p>
-          <button
-            onClick={fetchResults}
-            className="mt-4 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700"
-          >
-            Retry
-          </button>
-        </div>
-      );
-    }
-
-    if (examResults.length === 0) {
-      return (
-        <div className="text-center py-8">
-          <p className={`text-lg ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-            No exam results available.
-          </p>
-        </div>
-      );
-    }
-
     return (
       <div>
         <h2 className={`text-xl md:text-2xl font-bold mb-4 md:mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -782,45 +697,52 @@ const StudentDashboard = () => {
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       if (isExamMode && currentExam) {
-        saveExamState(answers);
         e.preventDefault();
         e.returnValue = ''; // Required for Chrome
+        handleSubmitExam('time_expired');
       }
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isExamMode, currentExam, answers, saveExamState]);
 
-  // Add new effect to load saved state on mount
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isExamMode, currentExam]);
+
+  // Restore exam state if available
   useEffect(() => {
     const savedExamState = localStorage.getItem('examState');
     if (savedExamState) {
       try {
-        const { 
-          currentExam: savedExam, 
-          answers: savedAnswers, 
-          timeLeft: savedTime,
-          currentQuestionIndex: savedIndex,
-          isExamMode: savedExamMode
-        } = JSON.parse(savedExamState);
+        const { exam, answers, timeLeft: savedTimeLeft, startTime } = JSON.parse(savedExamState);
+        const elapsedSeconds = Math.floor((new Date() - new Date(startTime)) / 1000);
+        const remainingTime = Math.max(savedTimeLeft - elapsedSeconds, 0);
         
-        if (savedTime > 0) {
-          setCurrentExam(savedExam);
-          setAnswers(savedAnswers);
-          setTimeLeft(savedTime);
-          setCurrentQuestionIndex(savedIndex);
-          setIsExamMode(savedExamMode);
-          enterFullscreen();
-        } else {
-          localStorage.removeItem('examState');
+        if (remainingTime > 0) {
+          setActiveTab('exam');
+          setIsExamMode(true);
         }
       } catch (error) {
         console.error('Error restoring exam state:', error);
-        localStorage.removeItem('examState');
       }
     }
   }, []);
+
+  // Update saveExamState to include timestamp
+  const saveExamState = (updatedAnswers = answers) => {
+    if (currentExam && isExamMode) {
+      const stateToSave = {
+        exam: currentExam,
+        answers: updatedAnswers,
+        timeLeft,
+        startTime: new Date().toISOString(),
+        currentQuestionIndex,
+        lastSaved: new Date().toISOString()
+      };
+      localStorage.setItem('examState', JSON.stringify(stateToSave));
+    }
+  };
 
   return (
     <div className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'} min-h-screen pt-16 md:pt-24`}>
