@@ -9,7 +9,6 @@ import { FaExpand, FaCompress } from 'react-icons/fa';
 const StudentDashboard = () => {
   const { isDarkMode } = useTheme();
   const [isExamMode, setIsExamMode] = useState(false);
-  const [availableExams, setAvailableExams] = useState([]);
   const [examResults, setExamResults] = useState([]);
   const [currentExam, setCurrentExam] = useState(null);
   const [answers, setAnswers] = useState({});
@@ -30,7 +29,6 @@ const StudentDashboard = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchExams();
     fetchResults();
   }, []);
 
@@ -95,19 +93,6 @@ const StudentDashboard = () => {
       };
     }
   }, [isExamMode, currentExam, answers, examSubmitting]);
-
-  const fetchExams = async () => {
-    try {
-      const response = await axios.get(`${config.API_BASE_URL}/api/exams/available`, {
-        withCredentials: true
-      });
-      setAvailableExams(response.data);
-      setError(null);
-    } catch (error) {
-      console.error('Error fetching exams:', error);
-      setError('Failed to fetch available exams');
-    }
-  };
 
   const fetchResults = async () => {
     try {
