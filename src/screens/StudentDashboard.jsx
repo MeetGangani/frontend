@@ -36,20 +36,21 @@ const StudentDashboard = () => {
 
   useEffect(() => {
     let timer;
-    if (currentExam && timeLeft > 0) {
+    if (currentExam && timeLeft > 0 && isExamMode) {
       timer = setInterval(() => {
         setTimeLeft((prevTime) => {
-          if (prevTime <= 1) {
+          const newTime = prevTime - 1;
+          if (newTime <= 0) {
             clearInterval(timer);
             handleSubmitExam('time_expired');
             localStorage.removeItem('examState');
             return 0;
           }
           // Save state every 30 seconds
-          if (prevTime % 30 === 0) {
-            saveExamState();
+          if (newTime % 30 === 0) {
+            saveExamState(answers);
           }
-          return prevTime - 1;
+          return newTime;
         });
       }, 1000);
     }
@@ -57,7 +58,7 @@ const StudentDashboard = () => {
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [currentExam, timeLeft]);
+  }, [currentExam, timeLeft, isExamMode, answers, saveExamState]);
 
   useEffect(() => {
     if (currentExam) {
@@ -697,52 +698,59 @@ const StudentDashboard = () => {
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       if (isExamMode && currentExam) {
+        saveExamState(answers);
         e.preventDefault();
         e.returnValue = ''; // Required for Chrome
-        handleSubmitExam('time_expired');
       }
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isExamMode, currentExam, answers, saveExamState]);
 
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, [isExamMode, currentExam]);
+  // Add new saveExamState function
+  const saveExamState = useCallback((answersData) => {
+    if (currentExam && timeLeft > 0) {
+      const examState = {
+        currentExam,
+        answers: answersData,
+        timeLeft,
+        currentQuestionIndex,
+        isExamMode: true
+      };
+      localStorage.setItem('examState', JSON.stringify(examState));
+    }
+  }, [currentExam, timeLeft, currentQuestionIndex]);
 
-  // Restore exam state if available
+  // Add new effect to load saved state on mount
   useEffect(() => {
     const savedExamState = localStorage.getItem('examState');
     if (savedExamState) {
       try {
-        const { exam, answers, timeLeft: savedTimeLeft, startTime } = JSON.parse(savedExamState);
-        const elapsedSeconds = Math.floor((new Date() - new Date(startTime)) / 1000);
-        const remainingTime = Math.max(savedTimeLeft - elapsedSeconds, 0);
+        const { 
+          currentExam: savedExam, 
+          answers: savedAnswers, 
+          timeLeft: savedTime,
+          currentQuestionIndex: savedIndex,
+          isExamMode: savedExamMode
+        } = JSON.parse(savedExamState);
         
-        if (remainingTime > 0) {
-          setActiveTab('exam');
-          setIsExamMode(true);
+        if (savedTime > 0) {
+          setCurrentExam(savedExam);
+          setAnswers(savedAnswers);
+          setTimeLeft(savedTime);
+          setCurrentQuestionIndex(savedIndex);
+          setIsExamMode(savedExamMode);
+          enterFullscreen();
+        } else {
+          localStorage.removeItem('examState');
         }
       } catch (error) {
         console.error('Error restoring exam state:', error);
+        localStorage.removeItem('examState');
       }
     }
   }, []);
-
-  // Update saveExamState to include timestamp
-  const saveExamState = (updatedAnswers = answers) => {
-    if (currentExam && isExamMode) {
-      const stateToSave = {
-        exam: currentExam,
-        answers: updatedAnswers,
-        timeLeft,
-        startTime: new Date().toISOString(),
-        currentQuestionIndex,
-        lastSaved: new Date().toISOString()
-      };
-      localStorage.setItem('examState', JSON.stringify(stateToSave));
-    }
-  };
 
   return (
     <div className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'} min-h-screen pt-16 md:pt-24`}>
