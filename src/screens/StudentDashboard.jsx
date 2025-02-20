@@ -693,13 +693,59 @@ const StudentDashboard = () => {
     }
   }, [isExamMode]);
 
-  // Add beforeunload event handler
+  // Update the restore exam state effect
+  useEffect(() => {
+    const savedExamState = localStorage.getItem('examState');
+    if (savedExamState) {
+      try {
+        const { exam, answers: savedAnswers, timeLeft: savedTimeLeft, startTime, currentIndex } = JSON.parse(savedExamState);
+        const elapsedSeconds = Math.floor((new Date() - new Date(startTime)) / 1000);
+        const remainingTime = Math.max(savedTimeLeft - elapsedSeconds, 0);
+        
+        if (remainingTime > 0) {
+          setCurrentExam(exam);
+          setAnswers(savedAnswers);
+          setTimeLeft(remainingTime);
+          setCurrentQuestionIndex(currentIndex || 0);
+          setActiveTab('exam');
+          setIsExamMode(true);
+          enterFullscreen(); // Ensure fullscreen mode is activated
+        } else {
+          // If time has expired, clean up the stored state
+          localStorage.removeItem('examState');
+        }
+      } catch (error) {
+        console.error('Error restoring exam state:', error);
+        localStorage.removeItem('examState');
+      }
+    }
+  }, []);
+
+  // Update saveExamState function to include more state
+  const saveExamState = (updatedAnswers = answers) => {
+    if (currentExam && isExamMode) {
+      const stateToSave = {
+        exam: currentExam,
+        answers: updatedAnswers,
+        timeLeft,
+        startTime: new Date().toISOString(),
+        currentIndex: currentQuestionIndex,
+        lastSaved: new Date().toISOString()
+      };
+      localStorage.setItem('examState', JSON.stringify(stateToSave));
+    }
+  };
+
+  // Update beforeunload handler to not auto-submit on refresh
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       if (isExamMode && currentExam) {
+        // Save current state before refresh
+        saveExamState();
+        
+        // Show warning message
         e.preventDefault();
-        e.returnValue = ''; // Required for Chrome
-        handleSubmitExam('time_expired');
+        e.returnValue = 'Are you sure you want to leave? Your exam progress will be saved.';
       }
     };
 
@@ -708,41 +754,7 @@ const StudentDashboard = () => {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [isExamMode, currentExam]);
-
-  // Restore exam state if available
-  useEffect(() => {
-    const savedExamState = localStorage.getItem('examState');
-    if (savedExamState) {
-      try {
-        const { exam, answers, timeLeft: savedTimeLeft, startTime } = JSON.parse(savedExamState);
-        const elapsedSeconds = Math.floor((new Date() - new Date(startTime)) / 1000);
-        const remainingTime = Math.max(savedTimeLeft - elapsedSeconds, 0);
-        
-        if (remainingTime > 0) {
-          setActiveTab('exam');
-          setIsExamMode(true);
-        }
-      } catch (error) {
-        console.error('Error restoring exam state:', error);
-      }
-    }
-  }, []);
-
-  // Update saveExamState to include timestamp
-  const saveExamState = (updatedAnswers = answers) => {
-    if (currentExam && isExamMode) {
-      const stateToSave = {
-        exam: currentExam,
-        answers: updatedAnswers,
-        timeLeft,
-        startTime: new Date().toISOString(),
-        currentQuestionIndex,
-        lastSaved: new Date().toISOString()
-      };
-      localStorage.setItem('examState', JSON.stringify(stateToSave));
-    }
-  };
+  }, [isExamMode, currentExam, answers, timeLeft, currentQuestionIndex]);
 
   return (
     <div className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'} min-h-screen pt-16 md:pt-24`}>
