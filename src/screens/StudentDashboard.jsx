@@ -345,6 +345,8 @@ const StudentDashboard = () => {
     setAnswers({});
     setTimeLeft(null);
     setActiveTab('results');
+    localStorage.removeItem('examState');
+    localStorage.removeItem('pendingSubmission');
     fetchResults();
   };
 
@@ -384,6 +386,21 @@ const StudentDashboard = () => {
         timeRemaining: timeLeft
       };
 
+      // Add offline handling
+      if (!navigator.onLine) {
+        // Store submission in localStorage for later
+        localStorage.setItem('pendingSubmission', JSON.stringify({
+          submissionData,
+          timestamp: new Date().toISOString()
+        }));
+        
+        showToast.warning('You are offline. Your exam will be submitted when you reconnect.');
+        
+        // Don't clear exam state yet
+        setExamSubmitting(false);
+        return;
+      }
+
       const response = await axios.post(
         `${config.API_BASE_URL}/api/exams/submit`,
         submissionData,
@@ -391,14 +408,16 @@ const StudentDashboard = () => {
           withCredentials: true,
           headers: {
             'Content-Type': 'application/json'
-          }
+          },
+          // Add timeout to prevent infinite loading
+          timeout: 10000
         }
       );
 
       if (response.data) {
         localStorage.removeItem('examState');
+        localStorage.removeItem('pendingSubmission');
         
-        // Show different messages based on submission type
         switch (submitType) {
           case 'tab_switch':
             showToast.error(`Tab switched! Exam auto-submitted with ${Object.keys(attemptedAnswers).length} attempted questions`);
@@ -417,18 +436,74 @@ const StudentDashboard = () => {
       }
     } catch (error) {
       console.error('Error submitting exam:', error);
-      showToast.error(
-        error.response?.data?.message || 
-        'Failed to submit exam. Please try again or contact support.'
-      );
+      
+      // Store submission data if network error
+      if (error.message.includes('Network Error') || !navigator.onLine) {
+        localStorage.setItem('pendingSubmission', JSON.stringify({
+          submissionData,
+          timestamp: new Date().toISOString()
+        }));
+        showToast.warning('Network error. Your exam will be submitted when you reconnect.');
+      } else {
+        showToast.error(
+          error.response?.data?.message || 
+          'Failed to submit exam. Please try again or contact support.'
+        );
+      }
     } finally {
       setExamSubmitting(false);
-      setCurrentExam(null);
-      setAnswers({});
-      setTimeLeft(null);
-      setActiveTab('results');
     }
   };
+
+  // Add online/offline status handling
+  useEffect(() => {
+    const handleOnline = async () => {
+      const pendingSubmission = localStorage.getItem('pendingSubmission');
+      if (pendingSubmission) {
+        try {
+          const { submissionData } = JSON.parse(pendingSubmission);
+          
+          const response = await axios.post(
+            `${config.API_BASE_URL}/api/exams/submit`,
+            submissionData,
+            {
+              withCredentials: true,
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+
+          if (response.data) {
+            localStorage.removeItem('examState');
+            localStorage.removeItem('pendingSubmission');
+            showToast.success('Pending exam submitted successfully!');
+            await handleExamCompletion();
+          }
+        } catch (error) {
+          console.error('Error submitting pending exam:', error);
+          showToast.error('Failed to submit pending exam. Please try again or contact support.');
+        }
+      }
+    };
+
+    const handleOffline = () => {
+      showToast.warning('You are offline. Don\'t worry, your exam progress is saved.');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Check for pending submission on component mount
+    if (navigator.onLine) {
+      handleOnline();
+    }
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // Add this function to check if all questions are answered
   const areAllQuestionsAnswered = () => {
