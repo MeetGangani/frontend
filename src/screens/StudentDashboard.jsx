@@ -315,6 +315,7 @@ const StudentDashboard = () => {
       const hasAttempted = examResults.some(result => result.exam.ipfsHash === ipfsHash.trim());
       if (hasAttempted) {
         setError('You have already attempted this exam. You cannot retake it.');
+        showToast.error('You have already attempted this exam. You cannot retake it.');
         setIpfsHash('');
         setLoading(false);
         return;
@@ -351,14 +352,17 @@ const StudentDashboard = () => {
       
       // Handle specific error cases
       if (error.response?.status === 409) {
-        setError('You have already attempted this exam. You cannot retake it.');
+        const errorMsg = 'You have already attempted this exam. You cannot retake it.';
+        setError(errorMsg);
+        showToast.error(errorMsg);
         setIpfsHash('');
       } else if (error.response?.data?.message) {
         setError(error.response.data.message);
+        showToast.error(error.response.data.message);
       } else {
-        setError(
-          'Failed to start exam. Please verify your IPFS hash with your institute.'
-        );
+        const errorMsg = 'Failed to start exam. Please verify your IPFS hash with your institute.';
+        setError(errorMsg);
+        showToast.error(errorMsg);
       }
     } finally {
       setLoading(false);
