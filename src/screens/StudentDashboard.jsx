@@ -345,7 +345,7 @@ const StudentDashboard = () => {
         setError(error.response.data.message);
         showToast.error(error.response.data.message);
       } else {
-        const errorMsg = 'Failed to start exam. Please verify your IPFS hash with your institute.';
+        const errorMsg = 'You have already attempted this exam. You cannot retake it.';
         setError(errorMsg);
         showToast.error(errorMsg);
       }
