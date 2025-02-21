@@ -585,7 +585,9 @@ const InstituteDashboard = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <button
                           onClick={() => handleToggleExamMode(upload._id)}
-                          className={`px-3 py-1 bg-violet-600 text-white text-sm rounded-lg hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2`}
+                          className={`px-3 py-1 text-white text-sm rounded-lg hover:bg-opacity-80 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                            upload.examMode ? 'bg-red-600' : 'bg-green-600'
+                          }`}
                         >
                           {upload.examMode ? 'Disable Exam Mode' : 'Enable Exam Mode'}
                         </button>
