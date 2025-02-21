@@ -17,6 +17,7 @@ import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen';
 import TermsScreen from './screens/TermsScreen';
 import { useTheme } from './context/ThemeContext';
 import { toast } from 'react-hot-toast';
+import { Analytics } from "@vercel/analytics/react"
 
 // Create route components here to preserve existing dashboard logic
 const AdminRouteWrapper = () => {
