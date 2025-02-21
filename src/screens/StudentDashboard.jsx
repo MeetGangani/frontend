@@ -250,12 +250,8 @@ const StudentDashboard = () => {
 
   const exitFullscreen = useCallback(async () => {
     try {
-      if (document.exitFullscreen) {
+      if (document.fullscreenElement) { // Check if in fullscreen
         await document.exitFullscreen();
-      } else if (document.webkitExitFullscreen) {
-        await document.webkitExitFullscreen();
-      } else if (document.msExitFullscreen) {
-        await document.msExitFullscreen();
       }
       setIsFullscreen(false);
     } catch (error) {
