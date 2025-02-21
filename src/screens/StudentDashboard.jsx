@@ -620,16 +620,92 @@ const StudentDashboard = () => {
     return totalQuestions - answeredQuestions;
   };
 
-  // Update the exam rendering with submit button validation
+  // Add function to prevent selection
+  const preventSelection = (e) => {
+    if (isExamMode) {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+  };
+
+  // Add function to prevent copy
+  const preventCopy = (e) => {
+    if (isExamMode) {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    if (isExamMode) {
+      // Prevent selection
+      document.addEventListener('selectstart', preventSelection);
+      document.addEventListener('mousedown', preventSelection);
+      document.addEventListener('mouseup', preventSelection);
+      
+      // Prevent copy
+      document.addEventListener('copy', preventCopy);
+      document.addEventListener('cut', preventCopy);
+      document.addEventListener('paste', preventCopy);
+      
+      // Prevent keyboard shortcuts
+      const preventKeyboardShortcuts = (e) => {
+        if (e.ctrlKey || e.metaKey) {
+          switch (e.key) {
+            case 'c':
+            case 'C':
+            case 'x':
+            case 'X':
+            case 'v':
+            case 'V':
+              e.preventDefault();
+              return false;
+          }
+        }
+      };
+      document.addEventListener('keydown', preventKeyboardShortcuts);
+
+      // Add CSS to prevent selection
+      document.body.style.userSelect = 'none';
+      document.body.style.webkitUserSelect = 'none';
+      document.body.style.msUserSelect = 'none';
+      document.body.style.mozUserSelect = 'none';
+      document.body.style.webkitTouchCallout = 'none'; // Prevent iOS context menu
+
+      return () => {
+        // Clean up all event listeners
+        document.removeEventListener('selectstart', preventSelection);
+        document.removeEventListener('mousedown', preventSelection);
+        document.removeEventListener('mouseup', preventSelection);
+        document.removeEventListener('copy', preventCopy);
+        document.removeEventListener('cut', preventCopy);
+        document.removeEventListener('paste', preventCopy);
+        document.removeEventListener('keydown', preventKeyboardShortcuts);
+        
+        // Reset CSS
+        document.body.style.userSelect = '';
+        document.body.style.webkitUserSelect = '';
+        document.body.style.msUserSelect = '';
+        document.body.style.mozUserSelect = '';
+        document.body.style.webkitTouchCallout = '';
+      };
+    }
+  }, [isExamMode]);
+
   const renderExam = () => {
     if (!currentExam) return null;
 
     const currentQuestion = currentExam.questions[currentQuestionIndex];
 
     return (
-      <div className="space-y-6">
+      <div 
+        className="space-y-6 select-none"
+        onContextMenu={e => isExamMode && e.preventDefault()}
+      >
         {/* Question Number and Timer */}
-        <div className="flex justify-between items-center mb-6 select-none">
+        <div className="flex justify-between items-center mb-6">
           <h3 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
             Question {currentQuestionIndex + 1} of {currentExam.questions.length}
           </h3>
@@ -642,13 +718,18 @@ const StudentDashboard = () => {
 
         {/* Question Text */}
         <div 
-          className="prose max-w-none mb-6 select-none"
-          onCopy={e => e.preventDefault()}
+          className="prose max-w-none mb-6"
+          onCopy={preventCopy}
+          onCut={preventCopy}
+          onPaste={preventCopy}
           onContextMenu={e => e.preventDefault()}
-          onMouseDown={e => e.preventDefault()} // Prevent text selection on mouse down
-          onSelectStart={e => e.preventDefault()} // Prevent text selection for IE
+          onMouseDown={preventSelection}
+          onSelectStart={preventSelection}
         >
-          <div className={`text-lg font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+          <div 
+            className={`text-lg font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}
+            unselectable="on"
+          >
             {currentQuestionIndex + 1}. {currentQuestion.question}
           </div>
         </div>
@@ -669,7 +750,9 @@ const StudentDashboard = () => {
               }`}
               onClick={() => handleAnswerSelect(index)}
               onContextMenu={e => e.preventDefault()}
-              onMouseDown={e => e.stopPropagation()} // Allow click but prevent text selection
+              onCopy={preventCopy}
+              onMouseDown={e => e.stopPropagation()}
+              unselectable="on"
             >
               <div className={`flex items-start ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 <div className="flex-shrink-0 w-6">
@@ -723,28 +806,6 @@ const StudentDashboard = () => {
       </div>
     );
   };
-
-  // Add CSS to prevent text selection globally during exam
-  useEffect(() => {
-    if (isExamMode) {
-      document.body.style.userSelect = 'none';
-      document.body.style.webkitUserSelect = 'none';
-      document.body.style.msUserSelect = 'none';
-      document.body.style.mozUserSelect = 'none';
-    } else {
-      document.body.style.userSelect = '';
-      document.body.style.webkitUserSelect = '';
-      document.body.style.msUserSelect = '';
-      document.body.style.mozUserSelect = '';
-    }
-
-    return () => {
-      document.body.style.userSelect = '';
-      document.body.style.webkitUserSelect = '';
-      document.body.style.msUserSelect = '';
-      document.body.style.mozUserSelect = '';
-    };
-  }, [isExamMode]);
 
   const renderResultsTab = () => {
     return (
@@ -1022,45 +1083,4 @@ const StudentDashboard = () => {
           <div className={`w-full mt-2 md:mt-0 ${!isExamMode ? 'md:w-3/4' : 'md:w-full'}`}>
             <div className={`${
               isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
-            } rounded-xl shadow-lg p-4 md:p-6`}>
-              {/* Exam Mode Warning */}
-              {isExamMode && (
-                <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold">Exam in Progress</p>
-                      <p className="text-sm mt-1">Please do not leave this page or exit fullscreen mode.</p>
-                    </div>
-                    <button
-                      onClick={isFullscreen ? exitFullscreen : enterFullscreen}
-                      className="p-2 hover:bg-yellow-200 rounded-lg transition-colors"
-                      title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-                    >
-                      {isFullscreen ? <FaCompress size={20} /> : <FaExpand size={20} />}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Dynamic Content */}
-              {activeTab === 'start' && !isExamMode && renderStartExam()}
-              {activeTab === 'exam' && renderExam()}
-              {activeTab === 'results' && !isExamMode && renderResultsTab()}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Warning Banner */}
-      {isExamMode && (
-        <div className="fixed bottom-0 left-0 right-0 bg-red-600 text-white py-2 md:py-3 px-4 text-center z-50">
-          <p className="text-xs md:text-sm font-medium">
-            Warning: Leaving this page will automatically submit your exam
-          </p>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default StudentDashboard;
+            } rounded-xl shadow-lg p-4 md:p-6`
