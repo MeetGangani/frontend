@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { useTheme } from '../context/ThemeContext';
 import config from '../config/config.js';
@@ -28,6 +28,9 @@ const StudentDashboard = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const navigate = useNavigate();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  // Add a ref to track real-time connection status
+  const connectionRef = useRef(navigator.onLine);
 
   useEffect(() => {
     fetchResults();
@@ -66,21 +69,80 @@ const StudentDashboard = () => {
     }
   }, [currentExam]);
 
+  // Enhanced internet connection monitoring
+  useEffect(() => {
+    const checkConnection = () => {
+      const isConnected = navigator.onLine;
+      setIsOnline(isConnected);
+      connectionRef.current = isConnected;
+    };
+
+    const handleOnline = () => {
+      setIsOnline(true);
+      connectionRef.current = true;
+      showToast.success('Internet connection restored');
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      connectionRef.current = false;
+      showToast.error('Internet connection lost');
+    };
+
+    // Initial check
+    checkConnection();
+
+    // Check connection status periodically
+    const intervalId = setInterval(checkConnection, 1000);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Update visibility change and tab switch handling
   useEffect(() => {
     if (isExamMode && currentExam) {
       let isSubmitting = false;
 
-      const handleVisibilityChange = () => {
+      const handleVisibilityChange = async () => {
         if (document.hidden && !isSubmitting && !examSubmitting) {
           isSubmitting = true;
-          handleSubmitExam('tab_switch');
+          // Wait for connection before submitting
+          if (!connectionRef.current) {
+            let attempts = 0;
+            const maxAttempts = 30; // Wait up to 30 seconds for connection
+
+            while (!connectionRef.current && attempts < maxAttempts) {
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              attempts++;
+            }
+          }
+
+          if (connectionRef.current) {
+            await handleSubmitExam('tab_switch');
+          } else {
+            // Store submission intent in localStorage
+            localStorage.setItem('pendingSubmission', 'tab_switch');
+            showToast.error('Exam will be submitted when internet connection is restored');
+          }
         }
       };
 
-      const handleWindowBlur = () => {
+      const handleWindowBlur = async () => {
         if (!isSubmitting && !examSubmitting) {
           isSubmitting = true;
-          handleSubmitExam('window_switch');
+          if (connectionRef.current) {
+            await handleSubmitExam('window_switch');
+          } else {
+            localStorage.setItem('pendingSubmission', 'window_switch');
+            showToast.error('Exam will be submitted when internet connection is restored');
+          }
         }
       };
 
@@ -93,7 +155,16 @@ const StudentDashboard = () => {
         isSubmitting = false;
       };
     }
-  }, [isExamMode, currentExam, answers, examSubmitting]);
+  }, [isExamMode, currentExam, examSubmitting]);
+
+  // Add effect to handle pending submissions when connection is restored
+  useEffect(() => {
+    if (isOnline && localStorage.getItem('pendingSubmission')) {
+      const submissionType = localStorage.getItem('pendingSubmission');
+      localStorage.removeItem('pendingSubmission');
+      handleSubmitExam(submissionType);
+    }
+  }, [isOnline]);
 
   const fetchResults = async () => {
     try {
@@ -404,7 +475,7 @@ const StudentDashboard = () => {
   const handleSubmitExam = async (submitType = 'manual') => {
     if (examSubmitting) return;
 
-    if (!isOnline) {
+    if (!connectionRef.current && submitType === 'manual') {
       showToast.error('Please connect to the internet before submitting your exam');
       return;
     }
@@ -470,18 +541,9 @@ const StudentDashboard = () => {
     } catch (error) {
       console.error('Error submitting exam:', error);
       
-      // Store submission data if network error
-      if (error.message.includes('Network Error') || !navigator.onLine) {
-        localStorage.setItem('pendingSubmission', JSON.stringify({
-          submissionData,
-          timestamp: new Date().toISOString()
-        }));
-        showToast.warning('Network error. Your exam will be submitted when you reconnect.');
-      } else {
-        showToast.error(
-          error.response?.data?.message || 
-          'Failed to submit exam. Please try again or contact support.'
-        );
+      if (!connectionRef.current) {
+        localStorage.setItem('pendingSubmission', submitType);
+        showToast.error('Exam will be submitted when internet connection is restored');
       }
     } finally {
       setExamSubmitting(false);
@@ -868,27 +930,6 @@ const StudentDashboard = () => {
       }
     };
   }, [isExamMode]);
-
-  // Add effect to monitor internet connection
-  useEffect(() => {
-    const handleOnline = () => {
-      setIsOnline(true);
-      showToast.success('Internet connection restored');
-    };
-
-    const handleOffline = () => {
-      setIsOnline(false);
-      showToast.error('Internet connection lost');
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
 
   // Add connection status banner in exam mode
   const renderExamConnectionStatus = () => {
