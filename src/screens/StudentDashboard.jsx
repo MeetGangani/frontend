@@ -403,9 +403,13 @@ const StudentDashboard = () => {
   const handleSubmitExam = async (submitType = 'manual') => {
     if (examSubmitting) return;
     
+    
     try {
       setExamSubmitting(true);
       
+      // Exit fullscreen mode before submitting
+      await exitFullscreen(); // Ensure to exit fullscreen
+
       // Capture attempted answers
       const attemptedAnswers = Object.keys(answers).reduce((acc, key) => {
         if (answers[key] !== null && answers[key] !== undefined) {
