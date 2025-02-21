@@ -13,16 +13,15 @@ export const showToast = {
     });
   },
   warning: (message) => {
-    toast.custom((t) =>
-      React.createElement(
-        'div',
-        { className: `toast-warning ${t.visible ? 'animate-enter' : 'animate-leave'}` },
-        message
-      ),
-      {
-        id: message, // Prevents duplicate toasts
-      }
-    );
+    toast.custom((t) => (
+      <div className={`toast-warning ${t.visible ? 'animate-enter' : 'animate-leave'} bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded-lg`}>
+        <div className="flex items-center justify-between">
+          <p>{message}</p>
+        </div>
+      </div>
+    ), {
+      id: message, // Prevents duplicate toasts
+    });
   },
   loading: (message) => {
     toast.loading(message, {
