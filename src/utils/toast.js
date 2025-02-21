@@ -1,3 +1,4 @@
+import React from 'react';
 import toast from 'react-hot-toast';
 
 export const showToast = {
@@ -12,13 +13,16 @@ export const showToast = {
     });
   },
   warning: (message) => {
-    toast.custom((t) => (
-      <div className={`toast-warning ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
-        {message}
-      </div>
-    ), {
-      id: message, // Prevents duplicate toasts
-    });
+    toast.custom((t) =>
+      React.createElement(
+        'div',
+        { className: `toast-warning ${t.visible ? 'animate-enter' : 'animate-leave'}` },
+        message
+      ),
+      {
+        id: message, // Prevents duplicate toasts
+      }
+    );
   },
   loading: (message) => {
     toast.loading(message, {
