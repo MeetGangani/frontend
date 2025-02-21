@@ -297,22 +297,90 @@ const StudentDashboard = () => {
     window.dispatchEvent(event);
   };
 
-  const handleStartExam = async () => {
+  const handleStartExam = async (e) => {
+    e.preventDefault();
     try {
+      setLoading(true);
+      setError(null);
+
+      if (!ipfsHash) {
+        setError('Please enter the IPFS hash provided by your institute');
+        return;
+      }
+
+      // Check if exam was already attempted using examResults
+      const hasAttempted = examResults.some(result => result.exam.ipfsHash === ipfsHash.trim());
+      if (hasAttempted) {
+        setError('You have already attempted this exam. You cannot retake it.');
+        showToast.error('You have already attempted this exam. You cannot retake it.');
+        setIpfsHash('');
+        setLoading(false);
+        return;
+      }
+
+      // Check if the exam mode is enabled
       const response = await axios.get(`${config.API_BASE_URL}/api/exams/${ipfsHash}`, {
         withCredentials: true
       });
+
       if (!response.data.examMode) {
-        showToast.error('Exam mode is currently disabled. You cannot start the exam.');
-        return;
+        showToast.error('Exam is not started yet. Please enable the exam mode in the database.');
+        return; // Exit if exam mode is disabled
       }
-      // Proceed to start the exam
-      setCurrentExam(response.data);
-      setIsExamMode(true);
-      // Additional logic to start the exam
+
+      await enterFullscreen();
+
+      const startResponse = await axios.post(
+        `${config.API_BASE_URL}/api/exams/start`,
+        { ipfsHash: ipfsHash.trim() },
+        {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        }
+      );
+
+      if (startResponse.data) {
+        const examData = startResponse.data;
+        setCurrentExam(examData);
+        setTimeLeft(examData.timeLimit * 60);
+        setAnswers({});
+        setCurrentQuestionIndex(0);
+        setActiveTab('exam');
+        setIsExamMode(true);
+        
+        // Save exam state
+        const examState = {
+          examData: examData,
+          timeRemaining: examData.timeLimit * 60,
+          currentAnswers: {},
+          questionIndex: 0
+        };
+        localStorage.setItem('examState', JSON.stringify(examState));
+        notifyExamStateChange(true);
+      }
     } catch (error) {
-      console.error('Error fetching exam details:', error);
-      showToast.error('Failed to fetch exam details');
+      await exitFullscreen();
+      console.error('Start exam error:', error);
+      
+      // Handle specific error cases
+      if (error.response?.status === 409) {
+        const errorMsg = 'You have already attempted this exam. You cannot retake it.';
+        setError(errorMsg);
+        showToast.error(errorMsg);
+        setIpfsHash('');
+      } else if (error.response?.data?.message) {
+        setError(error.response.data.message);
+        showToast.error(error.response.data.message);
+      } else {
+        const errorMsg = 'Check Exam code OR \n You have already attempted this exam.';
+        setError(errorMsg);
+        showToast.error(errorMsg);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
