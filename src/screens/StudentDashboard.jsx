@@ -447,6 +447,7 @@ const StudentDashboard = () => {
       if (response.data) {
         // Handle successful submission
         showToast.success('Exam submitted successfully!');
+        notifyExamSubmission();
         // Switch to results tab after submission
         setIsExamMode(false);
         setCurrentExam(null);
@@ -858,6 +859,24 @@ const StudentDashboard = () => {
     };
   }, [isExamMode]);
 
+  useEffect(() => {
+    // Fetch results when the component mounts
+    fetchResults();
+
+    // Event listener for exam submission
+    const handleExamSubmitted = () => {
+      fetchResults(); // Refresh results when an exam is submitted
+    };
+
+    // Add event listener
+    window.addEventListener('examSubmitted', handleExamSubmitted);
+
+    // Cleanup event listener on component unmount
+    return () => {
+      window.removeEventListener('examSubmitted', handleExamSubmitted);
+    };
+  }, []); // Empty dependency array to run only on mount
+
   return (
     <div className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'} min-h-screen pt-16 md:pt-24`}>
       <div className="container mx-auto px-4 md:px-6">
@@ -1003,6 +1022,12 @@ const StudentDashboard = () => {
       )}
     </div>
   );
+};
+
+// Function to dispatch the event when an exam is submitted
+const notifyExamSubmission = () => {
+  const event = new CustomEvent('examSubmitted');
+  window.dispatchEvent(event);
 };
 
 export default StudentDashboard;
