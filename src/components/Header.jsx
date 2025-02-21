@@ -15,6 +15,7 @@ const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [isExamMode, setIsExamMode] = useState(false);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -26,6 +27,24 @@ const Header = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    const checkExamMode = () => {
+      const examState = localStorage.getItem('examState');
+      setIsExamMode(!!examState);
+    };
+
+    checkExamMode();
+    window.addEventListener('storage', checkExamMode);
+    
+    return () => {
+      window.removeEventListener('storage', checkExamMode);
+    };
+  }, []);
+
+  if (isExamMode) {
+    return null;
+  }
 
   const logoutHandler = async () => {
     try {

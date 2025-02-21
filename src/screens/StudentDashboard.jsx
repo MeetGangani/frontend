@@ -327,9 +327,16 @@ const StudentDashboard = () => {
         setAnswers({});
         setCurrentQuestionIndex(0);
         setActiveTab('exam');
+        setIsExamMode(true);
         
-        // Initialize exam state in localStorage
-        saveExamState({});
+        // Initialize exam state in localStorage and trigger header update
+        const examState = {
+          examId: examData._id,
+          timeLeft: examData.timeLimit * 60,
+          answers: {}
+        };
+        localStorage.setItem('examState', JSON.stringify(examState));
+        window.dispatchEvent(new Event('storage')); // Trigger storage event
       }
     } catch (error) {
       await exitFullscreen();
@@ -380,7 +387,7 @@ const StudentDashboard = () => {
     }
   };
 
-  const handleSubmitExam = async (submitType = 'manual') => {
+  const handleSubmitExam = async (reason = 'manual') => {
     if (examSubmitting) return;
     
     try {
@@ -396,7 +403,7 @@ const StudentDashboard = () => {
       const submissionData = {
         examId: currentExam._id,
         answers: attemptedAnswers,
-        isAutoSubmit: submitType !== 'manual',
+        isAutoSubmit: reason !== 'manual',
         totalQuestions: currentExam.questions.length,
         attemptedCount: Object.keys(attemptedAnswers).length,
         timeRemaining: timeLeft
@@ -434,7 +441,7 @@ const StudentDashboard = () => {
         localStorage.removeItem('examState');
         localStorage.removeItem('pendingSubmission');
         
-        switch (submitType) {
+        switch (reason) {
           case 'tab_switch':
             showToast.error(`Tab switched! Exam auto-submitted with ${Object.keys(attemptedAnswers).length} attempted questions`);
             break;
@@ -846,6 +853,17 @@ const StudentDashboard = () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [isExamMode, currentExam, answers, timeLeft, currentQuestionIndex]);
+
+  // Add cleanup effect
+  useEffect(() => {
+    return () => {
+      // Cleanup when component unmounts
+      if (!isExamMode) {
+        localStorage.removeItem('examState');
+        window.dispatchEvent(new Event('storage'));
+      }
+    };
+  }, [isExamMode]);
 
   return (
     <div className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'} min-h-screen pt-16 md:pt-24`}>
