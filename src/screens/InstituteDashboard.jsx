@@ -236,7 +236,7 @@ const InstituteDashboard = () => {
         : 'N/A';
 
       return [
-        result.student?.name || 'N/A',
+        result.student?.name || 'Deleted User',
         result.score?.toFixed(2) || '0.00',
         result.correctAnswers || '0',
         result.totalQuestions || '0',
@@ -636,7 +636,7 @@ const InstituteDashboard = () => {
                             <td className={`px-6 py-4 whitespace-nowrap ${
                               isDarkMode ? 'text-gray-300' : 'text-gray-900'
                             }`}>
-                              {result.student?.name || 'N/A'}
+                              {result.student?.name || 'Deleted User'}
                             </td>
                             <td className={`px-6 py-4 whitespace-nowrap ${
                               isDarkMode ? 'text-gray-300' : 'text-gray-900'
