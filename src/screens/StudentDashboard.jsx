@@ -710,27 +710,25 @@ const StudentDashboard = () => {
   const renderResultsTab = () => {
     return (
       <div>
-        <h2 className={`text-xl md:text-2xl font-bold mb-4 md:mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-          My Results
-        </h2>
-        
-        <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-lg shadow-lg`}>
-          {/* Refresh Button */}
-          <div className="flex justify-between items-center p-4">
-            <button
-              onClick={fetchResults} // Call fetchResults to refresh
-              disabled={loading} // Disable button while loading
-              className={`p-2 rounded-lg transition-all duration-200 ${
-                isDarkMode 
-                  ? 'bg-[#2a2f3e] hover:bg-[#3a3f4e] text-gray-300' 
-                  : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
-              } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-              title="Refresh results"
-            >
-              <FaSync className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className={`text-xl md:text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            My Results
+          </h2>
+          <button
+            onClick={fetchResults} // Call fetchResults to refresh
+            disabled={loading} // Disable button while loading
+            className={`p-2 rounded-lg transition-all duration-200 ${
+              isDarkMode 
+                ? 'bg-[#2a2f3e] hover:bg-[#3a3f4e] text-gray-300' 
+                : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+            } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            title="Refresh results"
+          >
+            <FaSync className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
 
+        <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-lg shadow-lg`}>
           {examResults && examResults.length > 0 ? (
             <div className="space-y-4">
               {examResults.map((result) => (
@@ -953,7 +951,7 @@ const StudentDashboard = () => {
                       : isDarkMode
                       ? 'text-gray-300 hover:bg-gray-800'
                       : 'text-gray-700 hover:bg-gray-100'
-                  } ${isExamMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  }`}
                 >
                   Results
                 </button>
