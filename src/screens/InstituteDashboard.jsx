@@ -601,35 +601,37 @@ const InstituteDashboard = () => {
               <div className={`p-6 border-b ${
                 isDarkMode ? 'border-gray-700' : 'border-gray-200'
               } flex justify-between items-center`}>
-                <h3 className={`text-lg font-semibold ${
-                  isDarkMode ? 'text-white' : 'text-gray-900'
-                }`}>
-                  {selectedExam?.examName} - Results
-                </h3>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleResultsRefresh}
-                    disabled={isRefreshing}
-                    className={`p-2 rounded-lg transition-all duration-200 ${
-                      isDarkMode 
-                        ? 'bg-[#2a2f3e] hover:bg-[#3a3f4e] text-gray-300' 
-                        : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
-                    } ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    title="Refresh results"
-                  >
-                    <FaSync className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  </button>
-                  <button
-                    onClick={downloadResultsAsCSV}
-                    className={`p-2 rounded-lg transition-all duration-200 ${
-                      isDarkMode 
-                        ? 'bg-[#2a2f3e] hover:bg-[#3a3f4e] text-gray-300' 
-                        : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
-                    }`}
-                    title="Download results as CSV"
-                  >
-                    <FaDownload className="w-4 h-4" />
-                  </button>
+                <div className={`flex justify-between items-center`}>
+                  <h3 className={`text-lg font-semibold ${
+                    isDarkMode ? 'text-white' : 'text-gray-900'
+                  }`}>
+                    {selectedExam?.examName} - Results
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleResultsRefresh}
+                      disabled={isRefreshing}
+                      className={`p-2 rounded-lg transition-all duration-200 ${
+                        isDarkMode 
+                          ? 'bg-[#2a2f3e] hover:bg-[#3a3f4e] text-gray-300' 
+                          : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                      } ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      title="Refresh results"
+                    >
+                      <FaSync className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    </button>
+                    <button
+                      onClick={downloadResultsAsCSV}
+                      className={`p-2 rounded-lg transition-all duration-200 ${
+                        isDarkMode 
+                          ? 'bg-[#2a2f3e] hover:bg-[#3a3f4e] text-gray-300' 
+                          : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                      }`}
+                      title="Download results as CSV"
+                    >
+                      <FaDownload className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
                 <button
                   onClick={() => setShowResultsModal(false)}
