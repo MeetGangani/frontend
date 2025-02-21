@@ -27,6 +27,7 @@ const StudentDashboard = () => {
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const navigate = useNavigate();
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
     fetchResults();
@@ -402,6 +403,11 @@ const StudentDashboard = () => {
 
   const handleSubmitExam = async (submitType = 'manual') => {
     if (examSubmitting) return;
+
+    if (!isOnline) {
+      showToast.error('Please connect to the internet before submitting your exam');
+      return;
+    }
     
     try {
       setExamSubmitting(true);
@@ -421,21 +427,6 @@ const StudentDashboard = () => {
         attemptedCount: Object.keys(attemptedAnswers).length,
         timeRemaining: timeLeft
       };
-
-      // Add offline handling
-      if (!navigator.onLine) {
-        // Store submission in localStorage for later
-        localStorage.setItem('pendingSubmission', JSON.stringify({
-          submissionData,
-          timestamp: new Date().toISOString()
-        }));
-        
-        showToast.warning('You are offline. Your exam will be submitted when you reconnect.');
-        
-        // Don't clear exam state yet
-        setExamSubmitting(false);
-        return;
-      }
 
       const response = await axios.post(
         `${config.API_BASE_URL}/api/exams/submit`,
@@ -650,7 +641,7 @@ const StudentDashboard = () => {
               <div className="w-full sm:w-auto flex flex-col items-center sm:items-end">
                 <button
                   onClick={handleSubmitExam}
-                  disabled={examSubmitting || !allAnswered}
+                  disabled={examSubmitting || !allAnswered || !isOnline}
                   className={`w-full sm:w-auto px-6 py-2 rounded transition-all ${
                     examSubmitting
                       ? 'bg-gray-400 cursor-not-allowed'
@@ -878,8 +869,57 @@ const StudentDashboard = () => {
     };
   }, [isExamMode]);
 
+  // Add effect to monitor internet connection
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      showToast.success('Internet connection restored');
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      showToast.error('Internet connection lost');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Add connection status banner in exam mode
+  const renderExamConnectionStatus = () => {
+    if (!isExamMode) return null;
+
+    return (
+      <div className={`fixed top-0 left-0 right-0 p-2 text-center text-sm font-medium z-50 ${
+        isOnline 
+          ? 'bg-green-500 text-white' 
+          : 'bg-red-500 text-white animate-pulse'
+      }`}>
+        {isOnline ? (
+          <span className="flex items-center justify-center gap-2">
+            <span className="h-2 w-2 bg-white rounded-full"></span>
+            Connected to Internet
+          </span>
+        ) : (
+          <span className="flex items-center justify-center gap-2">
+            <span className="h-2 w-2 bg-white rounded-full animate-ping"></span>
+            No Internet Connection
+          </span>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'} min-h-screen pt-16 md:pt-24`}>
+      {/* Add connection status banner */}
+      {renderExamConnectionStatus()}
+
       <div className="container mx-auto px-4 md:px-6">
         <div className="flex flex-col md:flex-row gap-4 md:gap-8">
           {/* Sidebar Navigation - Mobile Version */}
