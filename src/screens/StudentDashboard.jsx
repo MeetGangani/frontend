@@ -40,20 +40,14 @@ const StudentDashboard = () => {
           if (prevTime <= 1) {
             clearInterval(timer);
             handleSubmitExam('time_expired');
+            localStorage.removeItem('examState');
             return 0;
           }
           // Save state every 30 seconds
           if (prevTime % 30 === 0) {
             saveExamState();
           }
-          const newTime = prevTime - 1;
-          // Update time in localStorage
-          const savedState = JSON.parse(localStorage.getItem('examState') || '{}');
-          localStorage.setItem('examState', JSON.stringify({
-            ...savedState,
-            timeRemaining: newTime
-          }));
-          return newTime;
+          return prevTime - 1;
         });
       }, 1000);
     }
@@ -61,7 +55,7 @@ const StudentDashboard = () => {
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [currentExam, timeLeft, saveExamState]);
+  }, [currentExam, timeLeft]);
 
   useEffect(() => {
     if (currentExam) {
@@ -120,7 +114,6 @@ const StudentDashboard = () => {
     }
   };
 
-  // Prevent tab switching during exam
   const handleTabSwitch = (tab) => {
     if (isExamMode) {
       return; // Don't allow tab switching during exam
@@ -293,6 +286,17 @@ const StudentDashboard = () => {
     };
   }, [isExamMode, enterFullscreen, examSubmitting]);
 
+  const notifyExamStateChange = (isExamActive) => {
+    // Create a custom event with detail
+    const event = new CustomEvent('customExamState', {
+      detail: {
+        type: 'examState',
+        isActive: isExamActive
+      }
+    });
+    window.dispatchEvent(event);
+  };
+
   const handleStartExam = async (e) => {
     e.preventDefault();
     try {
@@ -337,7 +341,7 @@ const StudentDashboard = () => {
         setActiveTab('exam');
         setIsExamMode(true);
         
-        // Save complete exam state
+        // Save exam state
         const examState = {
           examData: examData,
           timeRemaining: examData.timeLimit * 60,
@@ -345,7 +349,7 @@ const StudentDashboard = () => {
           questionIndex: 0
         };
         localStorage.setItem('examState', JSON.stringify(examState));
-        window.dispatchEvent(new Event('storage'));
+        notifyExamStateChange(true);
       }
     } catch (error) {
       await exitFullscreen();
@@ -463,6 +467,12 @@ const StudentDashboard = () => {
           default:
             showToast.success('Exam submitted successfully!');
         }
+        
+        notifyExamStateChange(false);
+        setIsExamMode(false);
+        setCurrentExam(null);
+        setTimeLeft(null);
+        setActiveTab('results');
         
         await handleExamCompletion();
       }

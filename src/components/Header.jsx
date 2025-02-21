@@ -15,7 +15,10 @@ const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [isExamMode, setIsExamMode] = useState(false);
+  const [isExamMode, setIsExamMode] = useState(() => {
+    // Initialize with a function to avoid initialization issues
+    return !!localStorage.getItem('examState');
+  });
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -30,23 +33,32 @@ const Header = () => {
 
   useEffect(() => {
     const checkExamMode = () => {
-      const examState = localStorage.getItem('examState');
-      setIsExamMode(!!examState);
+      try {
+        const examState = localStorage.getItem('examState');
+        setIsExamMode(!!examState);
+      } catch (error) {
+        console.error('Error checking exam mode:', error);
+        setIsExamMode(false);
+      }
     };
 
-    // Check initial state
+    // Create a custom event handler
+    const handleExamStateChange = (event) => {
+      if (event.detail?.type === 'examState') {
+        checkExamMode();
+      }
+    };
+
+    // Initial check
     checkExamMode();
 
-    // Listen for both storage and custom event
-    const handleStorageChange = () => checkExamMode();
-    const handleExamStateChange = () => checkExamMode();
+    // Add event listeners
+    window.addEventListener('customExamState', handleExamStateChange);
+    window.addEventListener('storage', checkExamMode);
 
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('examStateChange', handleExamStateChange);
-    
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('examStateChange', handleExamStateChange);
+      window.removeEventListener('customExamState', handleExamStateChange);
+      window.removeEventListener('storage', checkExamMode);
     };
   }, []);
 
