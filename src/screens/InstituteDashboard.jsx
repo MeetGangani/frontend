@@ -289,12 +289,22 @@ const InstituteDashboard = () => {
 
   const handleToggleExamMode = async (examId) => {
     try {
+      // Fetch the current exam data to determine the current mode
+      const currentExam = uploads.find(upload => upload._id === examId);
+      const newExamMode = !currentExam.examMode; // Toggle the current state
+
       const response = await axiosInstance.put(`/api/exams/${examId}/exam-mode`, {
-        examMode: !selectedExam.examMode // Toggle the current state
+        examMode: newExamMode // Send the new state to the server
       });
+
+      // Update the uploads state to reflect the new exam mode
+      setUploads(prevUploads => 
+        prevUploads.map(upload => 
+          upload._id === examId ? { ...upload, examMode: newExamMode } : upload
+        )
+      );
+
       showToast.success(response.data.message);
-      // Optionally refresh uploads or update state
-      await fetchUploads();
     } catch (error) {
       console.error('Error toggling exam mode:', error);
       showToast.error('Failed to toggle exam mode');
