@@ -70,9 +70,22 @@ const Header = () => {
     try {
       const response = await logoutApiCall().unwrap();
       if (response.success) {
+        // Clear exam state from localStorage
+        localStorage.removeItem('examState');
+        localStorage.removeItem('studentDashboardTab');
+        
         // Clear all auth-related data
         clearAuthCookies();
         dispatch(logout());
+        
+        // Notify components about exam state change
+        const event = new CustomEvent('customExamState', {
+          detail: {
+            type: 'examState',
+            isActive: false
+          }
+        });
+        window.dispatchEvent(event);
         
         // Force a page reload to clear any cached state
         window.location.href = '/login';
@@ -80,11 +93,12 @@ const Header = () => {
     } catch (err) {
       console.error('Logout failed:', err);
       // Attempt to logout anyway
+      localStorage.removeItem('examState');
+      localStorage.removeItem('studentDashboardTab');
       clearAuthCookies();
       dispatch(logout());
       window.location.href = '/login';
-    
-    } 
+    }
   };
 
   // Generate avatar using DiceBear API
