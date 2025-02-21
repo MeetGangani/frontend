@@ -40,14 +40,20 @@ const StudentDashboard = () => {
           if (prevTime <= 1) {
             clearInterval(timer);
             handleSubmitExam('time_expired');
-            localStorage.removeItem('examState');
             return 0;
           }
           // Save state every 30 seconds
           if (prevTime % 30 === 0) {
             saveExamState();
           }
-          return prevTime - 1;
+          const newTime = prevTime - 1;
+          // Update time in localStorage
+          const savedState = JSON.parse(localStorage.getItem('examState') || '{}');
+          localStorage.setItem('examState', JSON.stringify({
+            ...savedState,
+            timeRemaining: newTime
+          }));
+          return newTime;
         });
       }, 1000);
     }
@@ -55,7 +61,7 @@ const StudentDashboard = () => {
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [currentExam, timeLeft]);
+  }, [currentExam, timeLeft, saveExamState]);
 
   useEffect(() => {
     if (currentExam) {
@@ -114,6 +120,7 @@ const StudentDashboard = () => {
     }
   };
 
+  // Prevent tab switching during exam
   const handleTabSwitch = (tab) => {
     if (isExamMode) {
       return; // Don't allow tab switching during exam

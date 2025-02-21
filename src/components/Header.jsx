@@ -34,11 +34,19 @@ const Header = () => {
       setIsExamMode(!!examState);
     };
 
+    // Check initial state
     checkExamMode();
-    window.addEventListener('storage', checkExamMode);
+
+    // Listen for both storage and custom event
+    const handleStorageChange = () => checkExamMode();
+    const handleExamStateChange = () => checkExamMode();
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('examStateChange', handleExamStateChange);
     
     return () => {
-      window.removeEventListener('storage', checkExamMode);
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('examStateChange', handleExamStateChange);
     };
   }, []);
 
