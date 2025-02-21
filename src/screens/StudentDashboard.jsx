@@ -4,7 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 import config from '../config/config.js';
 import { useNavigate } from 'react-router-dom';
 import { showToast } from '../utils/toast';
-import { FaExpand, FaCompress } from 'react-icons/fa';
+import { FaExpand, FaCompress, FaSync } from 'react-icons/fa';
 
 const StudentDashboard = () => {
   const { isDarkMode } = useTheme();
@@ -716,12 +716,18 @@ const StudentDashboard = () => {
         
         <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-lg shadow-lg`}>
           {/* Refresh Button */}
-          <div className="flex justify-end p-4">
+          <div className="flex justify-between items-center p-4">
             <button
               onClick={fetchResults} // Call fetchResults to refresh
-              className={`bg-violet-600 text-white px-4 py-2 rounded-lg hover:bg-violet-700 transition duration-200`}
+              disabled={loading} // Disable button while loading
+              className={`p-2 rounded-lg transition-all duration-200 ${
+                isDarkMode 
+                  ? 'bg-[#2a2f3e] hover:bg-[#3a3f4e] text-gray-300' 
+                  : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+              } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title="Refresh results"
             >
-              Refresh Results
+              <FaSync className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
           </div>
 
