@@ -607,11 +607,11 @@ const InstituteDashboard = () => {
                   }`}>
                     {selectedExam?.examName} - Results
                   </h3>
-                  <div className="flex items-center gap-5">
+                  <div className="flex items-center gap-2">
                     <button
                       onClick={handleResultsRefresh}
                       disabled={isRefreshing}
-                      className={`p-2 rounded-lg transition-all duration-200 ${
+                      className={`p-5 rounded-lg transition-all duration-200 ${
                         isDarkMode 
                           ? 'bg-[#2a2f3e] hover:bg-[#3a3f4e] text-gray-300' 
                           : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
