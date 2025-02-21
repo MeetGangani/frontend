@@ -479,11 +479,10 @@ const StudentDashboard = () => {
       showToast.error('Please connect to the internet before submitting your exam');
       return;
     }
-
+    
     try {
       setExamSubmitting(true);
-
-      // Prepare the attempted answers
+      
       const attemptedAnswers = Object.keys(answers).reduce((acc, key) => {
         if (answers[key] !== null && answers[key] !== undefined) {
           acc[key] = Number(answers[key]);
@@ -508,20 +507,21 @@ const StudentDashboard = () => {
           headers: {
             'Content-Type': 'application/json'
           },
-          timeout: 10000 // Add timeout to prevent infinite loading
+          // Add timeout to prevent infinite loading
+          timeout: 10000
         }
       );
 
       if (response.data) {
         localStorage.removeItem('examState');
         localStorage.removeItem('pendingSubmission');
-
+        
         switch (submitType) {
           case 'tab_switch':
-            showToast.success(`Tab switched! Exam auto-submitted with ${Object.keys(attemptedAnswers).length} attempted questions`);
+            showToast.error(`Tab switched! Exam auto-submitted with ${Object.keys(attemptedAnswers).length} attempted questions`);
             break;
           case 'window_switch':
-            showToast.success(`Window switched! Exam auto-submitted with ${Object.keys(attemptedAnswers).length} attempted questions`);
+            showToast.error(`Window switched! Exam auto-submitted with ${Object.keys(attemptedAnswers).length} attempted questions`);
             break;
           case 'time_expired':
             showToast.warning(`Time's up! Exam submitted with ${Object.keys(attemptedAnswers).length} attempted questions`);
@@ -529,20 +529,20 @@ const StudentDashboard = () => {
           default:
             showToast.success('Exam submitted successfully!');
         }
-
+        
         notifyExamStateChange(false);
         setIsExamMode(false);
         setCurrentExam(null);
         setTimeLeft(null);
         setActiveTab('results');
-
+        
         await handleExamCompletion();
       }
     } catch (error) {
       console.error('Error submitting exam:', error);
-
+      
       if (!connectionRef.current) {
-        localStorage.setItem('pendingSubmission', JSON.stringify({ submissionData }));
+        localStorage.setItem('pendingSubmission', submitType);
         showToast.error('Exam will be submitted when internet connection is restored');
       }
     } finally {
@@ -1052,7 +1052,7 @@ const StudentDashboard = () => {
                       : isDarkMode
                       ? 'text-gray-300 hover:bg-gray-800'
                       : 'text-gray-700 hover:bg-gray-100'
-                  }`}
+                  } ${isExamMode ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   Results
                 </button>
