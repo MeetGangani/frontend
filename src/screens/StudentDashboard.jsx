@@ -422,6 +422,11 @@ const StudentDashboard = () => {
         timeRemaining: timeLeft
       };
 
+      // Show a different toast message for auto submission
+      if (submitType === 'time_expired') {
+        showToast.warning(`Time's up! Your exam is being submitted automatically.`);
+      }
+
       // Add offline handling
       if (!navigator.onLine) {
         // Store submission in localStorage for later
