@@ -115,10 +115,11 @@ const StudentDashboard = () => {
   };
 
   const handleTabSwitch = (tab) => {
-    if (!isExamMode) {
-      setActiveTab(tab);
-      localStorage.setItem('studentDashboardTab', tab);
+    if (isExamMode) {
+      return; // Don't allow tab switching during exam
     }
+    setActiveTab(tab);
+    localStorage.setItem('studentDashboardTab', tab);
   };
 
   useEffect(() => {
@@ -329,14 +330,15 @@ const StudentDashboard = () => {
         setActiveTab('exam');
         setIsExamMode(true);
         
-        // Initialize exam state in localStorage and trigger header update
+        // Save complete exam state
         const examState = {
-          examId: examData._id,
-          timeLeft: examData.timeLimit * 60,
-          answers: {}
+          examData: examData,
+          timeRemaining: examData.timeLimit * 60,
+          currentAnswers: {},
+          questionIndex: 0
         };
         localStorage.setItem('examState', JSON.stringify(examState));
-        window.dispatchEvent(new Event('storage')); // Trigger storage event
+        window.dispatchEvent(new Event('storage'));
       }
     } catch (error) {
       await exitFullscreen();
@@ -387,7 +389,7 @@ const StudentDashboard = () => {
     }
   };
 
-  const handleSubmitExam = async (reason = 'manual') => {
+  const handleSubmitExam = async (submitType = 'manual') => {
     if (examSubmitting) return;
     
     try {
@@ -403,7 +405,7 @@ const StudentDashboard = () => {
       const submissionData = {
         examId: currentExam._id,
         answers: attemptedAnswers,
-        isAutoSubmit: reason !== 'manual',
+        isAutoSubmit: submitType !== 'manual',
         totalQuestions: currentExam.questions.length,
         attemptedCount: Object.keys(attemptedAnswers).length,
         timeRemaining: timeLeft
@@ -441,7 +443,7 @@ const StudentDashboard = () => {
         localStorage.removeItem('examState');
         localStorage.removeItem('pendingSubmission');
         
-        switch (reason) {
+        switch (submitType) {
           case 'tab_switch':
             showToast.error(`Tab switched! Exam auto-submitted with ${Object.keys(attemptedAnswers).length} attempted questions`);
             break;
@@ -791,48 +793,42 @@ const StudentDashboard = () => {
     }
   }, [isExamMode]);
 
-  // Update the restore exam state effect
+  // Add effect to restore exam state on mount/navigation
   useEffect(() => {
-    const savedExamState = localStorage.getItem('examState');
-    if (savedExamState) {
-      try {
-        const { exam, answers: savedAnswers, timeLeft: savedTimeLeft, startTime, currentIndex } = JSON.parse(savedExamState);
-        const elapsedSeconds = Math.floor((new Date() - new Date(startTime)) / 1000);
-        const remainingTime = Math.max(savedTimeLeft - elapsedSeconds, 0);
-        
-        if (remainingTime > 0) {
-          setCurrentExam(exam);
-          setAnswers(savedAnswers);
-          setTimeLeft(remainingTime);
-          setCurrentQuestionIndex(currentIndex || 0);
-          setActiveTab('exam');
+    const restoreExamState = () => {
+      const savedExamState = localStorage.getItem('examState');
+      if (savedExamState) {
+        try {
+          const { examData, timeRemaining, currentAnswers, questionIndex } = JSON.parse(savedExamState);
+          setCurrentExam(examData);
+          setTimeLeft(timeRemaining);
+          setAnswers(currentAnswers || {});
+          setCurrentQuestionIndex(questionIndex || 0);
           setIsExamMode(true);
-          enterFullscreen(); // Ensure fullscreen mode is activated
-        } else {
-          // If time has expired, clean up the stored state
+          setActiveTab('exam');
+        } catch (error) {
+          console.error('Error restoring exam state:', error);
           localStorage.removeItem('examState');
         }
-      } catch (error) {
-        console.error('Error restoring exam state:', error);
-        localStorage.removeItem('examState');
       }
-    }
+    };
+
+    restoreExamState();
   }, []);
 
-  // Update saveExamState function to include more state
-  const saveExamState = (updatedAnswers = answers) => {
+  // Update saveExamState function
+  const saveExamState = useCallback(() => {
     if (currentExam && isExamMode) {
-      const stateToSave = {
-        exam: currentExam,
-        answers: updatedAnswers,
-        timeLeft,
-        startTime: new Date().toISOString(),
-        currentIndex: currentQuestionIndex,
-        lastSaved: new Date().toISOString()
+      const examState = {
+        examData: currentExam,
+        timeRemaining: timeLeft,
+        currentAnswers: answers,
+        questionIndex: currentQuestionIndex
       };
-      localStorage.setItem('examState', JSON.stringify(stateToSave));
+      localStorage.setItem('examState', JSON.stringify(examState));
+      window.dispatchEvent(new Event('storage'));
     }
-  };
+  }, [currentExam, timeLeft, answers, currentQuestionIndex, isExamMode]);
 
   // Update beforeunload handler to not auto-submit on refresh
   useEffect(() => {
