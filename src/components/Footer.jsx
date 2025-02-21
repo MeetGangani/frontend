@@ -6,9 +6,9 @@ const Footer = () => {
   const { isDarkMode } = useTheme();
 
   const socialLinks = [
-    { icon: FaTwitter, url: 'https://twitter.com/nexusedu' },
-    { icon: FaGithub, url: 'https://github.com/nexusedu' },
-    { icon: FaLinkedin, url: 'https://linkedin.com/company/nexusedu' }
+    { icon: FaTwitter, url: 'https://x.com/MeetGangani25' },
+    { icon: FaGithub, url: 'https://github.com/MeetGangani' },
+    { icon: FaLinkedin, url: 'https://www.linkedin.com/in/meet-gangani-166750254' }
   ];
 
   const quickLinks = [
