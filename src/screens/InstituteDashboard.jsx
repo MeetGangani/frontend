@@ -21,6 +21,7 @@ const InstituteDashboard = () => {
     return localStorage.getItem('instituteDashboardTab') || 'upload';
   });
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [examDuration, setExamDuration] = useState(60); // Default to 60 minutes
 
   useEffect(() => {
     fetchUploads();
@@ -113,6 +114,7 @@ const InstituteDashboard = () => {
           formData.append('file', file);
           formData.append('examName', examName);
           formData.append('description', description);
+          formData.append('examDuration', examDuration);
 
           // Upload file
           const response = await axiosInstance.post('/api/upload', formData, {
@@ -358,6 +360,26 @@ const InstituteDashboard = () => {
                     isDarkMode 
                       ? 'bg-[#0A0F1C] border-gray-700 text-white placeholder-gray-500' 
                       : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400'
+                  } border focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
+                />
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-1 ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Exam Duration (in minutes)
+                </label>
+                <input
+                  type="number"
+                  value={examDuration}
+                  onChange={(e) => setExamDuration(e.target.value)}
+                  placeholder="Enter exam duration"
+                  required
+                  className={`w-full px-4 py-3 rounded-lg ${
+                    isDarkMode 
+                      ? 'bg-[#0A0F1C] border-gray-700 text-white' 
+                      : 'bg-gray-50 border-gray-200 text-gray-900'
                   } border focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
                 />
               </div>
