@@ -62,11 +62,7 @@ const StudentDashboard = () => {
   }, [currentExam, timeLeft]);
 
   useEffect(() => {
-    if (currentExam) {
-      setIsExamMode(true);
-    } else {
-      setIsExamMode(false);
-    }
+    setIsExamMode(!!currentExam);
   }, [currentExam]);
 
   // Enhanced internet connection monitoring
