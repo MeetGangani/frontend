@@ -625,54 +625,50 @@ const StudentDashboard = () => {
 
   // Update the exam rendering with submit button validation
   const renderExam = () => {
-    if (!currentExam) {
-      return (
-        <div className="text-center p-4">
-          <p className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
-            No active exam. Please start an exam first.
-          </p>
-        </div>
-      );
-    }
+    if (!currentExam) return null;
 
-    const remainingQuestions = getRemainingQuestions();
-    const allAnswered = areAllQuestionsAnswered();
+    const currentQuestion = currentExam.questions[currentQuestionIndex];
 
     return (
-      <div className={`space-y-6 ${noSelectClass}`} onCopy={e => isExamMode && e.preventDefault()}>
+      <div className={`space-y-6 ${noSelectClass}`}>
         {/* Question Number and Timer */}
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center mb-6">
           <h3 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
             Question {currentQuestionIndex + 1} of {currentExam.questions.length}
           </h3>
-          <div className={`text-lg font-medium ${timeLeft <= 300 ? 'text-red-500' : isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+          <div className={`text-lg font-medium ${
+            timeLeft <= 300 ? 'text-red-500' : isDarkMode ? 'text-white' : 'text-gray-900'
+          }`}>
             Time Left: {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
           </div>
         </div>
 
-        {/* Question */}
+        {/* Question Text */}
         <div 
-          className="prose max-w-none"
+          className="prose max-w-none mb-6"
+          onCopy={e => isExamMode && e.preventDefault()}
           onContextMenu={e => isExamMode && e.preventDefault()}
         >
-          <div className={`text-lg mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            {currentExam.questions[currentQuestionIndex].question}
+          <div className={`text-lg font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            {currentQuestionIndex + 1}. {currentQuestion.question}
           </div>
         </div>
 
         {/* Options */}
         <div className="space-y-3">
-          {currentExam.questions[currentQuestionIndex].options.map((option, index) => (
+          {currentQuestion.options.map((option, index) => (
             <div
               key={index}
               className={`p-4 rounded-lg border transition-all duration-200 cursor-pointer ${
                 answers[currentQuestionIndex] === index
-                  ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20'
+                  ? isDarkMode 
+                    ? 'border-violet-500 bg-violet-900/20' 
+                    : 'border-violet-500 bg-violet-50'
                   : isDarkMode
                   ? 'border-gray-700 hover:border-gray-600'
                   : 'border-gray-200 hover:border-gray-300'
               }`}
-              onClick={() => handleAnswerSelect(currentQuestionIndex, index)}
+              onClick={() => handleAnswerSelect(index)}
               onContextMenu={e => isExamMode && e.preventDefault()}
             >
               <div className={`flex items-start ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -718,11 +714,7 @@ const StudentDashboard = () => {
               onClick={() => setCurrentQuestionIndex(prev => 
                 Math.min(currentExam.questions.length - 1, prev + 1)
               )}
-              className={`px-6 py-2 rounded-lg text-white font-medium transition-all duration-200 ${
-                isDarkMode
-                  ? 'bg-violet-600 hover:bg-violet-700'
-                  : 'bg-violet-600 hover:bg-violet-700'
-              }`}
+              className="px-6 py-2 rounded-lg text-white font-medium transition-all duration-200 bg-violet-600 hover:bg-violet-700"
             >
               Next
             </button>
