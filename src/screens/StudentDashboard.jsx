@@ -479,10 +479,11 @@ const StudentDashboard = () => {
       showToast.error('Please connect to the internet before submitting your exam');
       return;
     }
-    
+
     try {
       setExamSubmitting(true);
-      
+
+      // Prepare the attempted answers
       const attemptedAnswers = Object.keys(answers).reduce((acc, key) => {
         if (answers[key] !== null && answers[key] !== undefined) {
           acc[key] = Number(answers[key]);
@@ -507,15 +508,14 @@ const StudentDashboard = () => {
           headers: {
             'Content-Type': 'application/json'
           },
-          // Add timeout to prevent infinite loading
-          timeout: 10000
+          timeout: 10000 // Add timeout to prevent infinite loading
         }
       );
 
       if (response.data) {
         localStorage.removeItem('examState');
         localStorage.removeItem('pendingSubmission');
-        
+
         switch (submitType) {
           case 'tab_switch':
             showToast.error(`Tab switched! Exam auto-submitted with ${Object.keys(attemptedAnswers).length} attempted questions`);
@@ -529,20 +529,20 @@ const StudentDashboard = () => {
           default:
             showToast.success('Exam submitted successfully!');
         }
-        
+
         notifyExamStateChange(false);
         setIsExamMode(false);
         setCurrentExam(null);
         setTimeLeft(null);
         setActiveTab('results');
-        
+
         await handleExamCompletion();
       }
     } catch (error) {
       console.error('Error submitting exam:', error);
-      
+
       if (!connectionRef.current) {
-        localStorage.setItem('pendingSubmission', submitType);
+        localStorage.setItem('pendingSubmission', JSON.stringify({ submissionData }));
         showToast.error('Exam will be submitted when internet connection is restored');
       }
     } finally {
