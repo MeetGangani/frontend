@@ -288,6 +288,11 @@ const InstituteDashboard = () => {
   };
 
   const handleToggleExamMode = async (examId) => {
+    if (!selectedExam) {
+      showToast.error('No exam selected. Please select an exam to toggle exam mode.');
+      return; // Exit the function if no exam is selected
+    }
+
     try {
       const response = await axiosInstance.put(`/api/exams/${examId}/exam-mode`, {
         examMode: !selectedExam.examMode // Toggle the current state
