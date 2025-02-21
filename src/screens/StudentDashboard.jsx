@@ -515,36 +515,17 @@ const StudentDashboard = () => {
       if (response.data) {
         localStorage.removeItem('examState');
         localStorage.removeItem('pendingSubmission');
-
-        switch (submitType) {
-          case 'tab_switch':
-            showToast.success(`Tab switched! Exam auto-submitted with ${Object.keys(attemptedAnswers).length} attempted questions`);
-            break;
-          case 'window_switch':
-            showToast.success(`Window switched! Exam auto-submitted with ${Object.keys(attemptedAnswers).length} attempted questions`);
-            break;
-          case 'time_expired':
-            showToast.warning(`Time's up! Exam submitted with ${Object.keys(attemptedAnswers).length} attempted questions`);
-            break;
-          default:
-            showToast.success('Exam submitted successfully!');
-        }
-
+        showToast.success('Exam submitted successfully!');
         notifyExamStateChange(false);
         setIsExamMode(false);
         setCurrentExam(null);
         setTimeLeft(null);
         setActiveTab('results');
-
         await handleExamCompletion();
       }
     } catch (error) {
       console.error('Error submitting exam:', error);
-
-      if (!connectionRef.current) {
-        localStorage.setItem('pendingSubmission', JSON.stringify({ submissionData }));
-        showToast.error('Exam will be submitted when internet connection is restored');
-      }
+      showToast.error('Failed to submit exam');
     } finally {
       setExamSubmitting(false);
     }
