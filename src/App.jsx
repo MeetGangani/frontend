@@ -78,7 +78,7 @@ const App = () => {
     <div className={isDarkMode ? 'dark' : ''}>
       <Analytics />
       <Header />
-      <main className="min-h-screen">
+       <main className="min-h-screen">
         <Routes>
           <Route path="/" element={<HomeScreen />} />
           <Route path="/about" element={<AboutScreen />} />
