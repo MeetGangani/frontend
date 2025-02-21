@@ -711,18 +711,24 @@ const StudentDashboard = () => {
         </h2>
         
         <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-lg shadow-lg`}>
+          {/* Refresh Button */}
+          <div className="flex justify-end p-4">
+            <button
+              onClick={fetchResults} // Call fetchResults to refresh
+              className={`bg-violet-600 text-white px-4 py-2 rounded-lg hover:bg-violet-700 transition duration-200`}
+            >
+              Refresh Results
+            </button>
+          </div>
+
           {examResults && examResults.length > 0 ? (
             <div className="space-y-4">
               {examResults.map((result) => (
                 <div
                   key={result._id}
-                  className={`p-4 rounded-lg ${
-                    isDarkMode ? 'bg-gray-800' : 'bg-white'
-                  } shadow`}
+                  className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow`}
                 >
-                  <h3 className={`font-semibold text-base md:text-lg mb-2 ${
-                    isDarkMode ? 'text-white' : 'text-gray-900'
-                  }`}>
+                  <h3 className={`font-semibold text-base md:text-lg mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                     {result.exam.examName}
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -750,9 +756,7 @@ const StudentDashboard = () => {
               ))}
             </div>
           ) : (
-            <div className={`p-6 text-center ${
-              isDarkMode ? 'text-gray-400' : 'text-gray-500'
-            }`}>
+            <div className={`p-6 text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
               {loading ? (
                 <div className="flex justify-center items-center">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-violet-600"></div>
