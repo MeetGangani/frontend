@@ -287,6 +287,20 @@ const InstituteDashboard = () => {
     localStorage.setItem('instituteDashboardTab', tab);
   };
 
+  const handleToggleExamMode = async (examId) => {
+    try {
+      const response = await axiosInstance.put(`/api/exams/${examId}/exam-mode`, {
+        examMode: !selectedExam.examMode // Toggle the current state
+      });
+      showToast.success(response.data.message);
+      // Optionally refresh uploads or update state
+      await fetchUploads();
+    } catch (error) {
+      console.error('Error toggling exam mode:', error);
+      showToast.error('Failed to toggle exam mode');
+    }
+  };
+
   return (
     <div className={`min-h-screen pt-20 ${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -557,6 +571,14 @@ const InstituteDashboard = () => {
                             Results Released
                           </span>
                         )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <button
+                          onClick={() => handleToggleExamMode(upload._id)}
+                          className={`px-3 py-1 bg-violet-600 text-white text-sm rounded-lg hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2`}
+                        >
+                          {upload.examMode ? 'Disable Exam Mode' : 'Enable Exam Mode'}
+                        </button>
                       </td>
                     </tr>
                   ))}
