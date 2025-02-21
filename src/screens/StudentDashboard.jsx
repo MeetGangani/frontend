@@ -250,14 +250,16 @@ const StudentDashboard = () => {
 
   const exitFullscreen = useCallback(async () => {
     try {
-      if (document.exitFullscreen) {
-        await document.exitFullscreen();
-      } else if (document.webkitExitFullscreen) {
-        await document.webkitExitFullscreen();
-      } else if (document.msExitFullscreen) {
-        await document.msExitFullscreen();
+      if (document.fullscreenElement) { // Check if the document is in fullscreen
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          await document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+          await document.msExitFullscreen();
+        }
+        setIsFullscreen(false);
       }
-      setIsFullscreen(false);
     } catch (error) {
       console.error('Exit fullscreen error:', error);
     }
@@ -324,7 +326,7 @@ const StudentDashboard = () => {
       });
 
       if (!response.data.examMode) {
-        showToast.error('Exam is not started yet. Please enable the exam mode.');
+        showToast.error('Exam is not started yet. Please enable the exam mode in the database.');
         return; // Exit if exam mode is disabled
       }
 
@@ -367,7 +369,10 @@ const StudentDashboard = () => {
       console.error('Start exam error:', error);
       
       // Handle specific error cases
-      if (error.response?.status === 409) {
+      if (error.response?.status === 404) {
+        setError('Exam not found or exam mode is disabled.');
+        showToast.error('Exam not found or exam mode is disabled.');
+      } else if (error.response?.status === 409) {
         const errorMsg = 'You have already attempted this exam. You cannot retake it.';
         setError(errorMsg);
         showToast.error(errorMsg);
