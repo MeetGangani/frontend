@@ -324,10 +324,11 @@ const StudentDashboard = () => {
       });
 
       if (!response.data.examMode) {
-        showToast.error('Exam is not started yet. Please enable the exam mode in the database.');
+        showToast.error('Exam is not started yet. Please enable the exam mode.');
         return; // Exit if exam mode is disabled
       }
 
+      // Proceed to start the exam
       await enterFullscreen();
 
       const startResponse = await axios.post(
@@ -375,7 +376,7 @@ const StudentDashboard = () => {
         setError(error.response.data.message);
         showToast.error(error.response.data.message);
       } else {
-        const errorMsg = 'Check Exam code OR \n You have already attempted this exam.';
+        const errorMsg = 'Check Exam code OR You have already attempted this exam.';
         setError(errorMsg);
         showToast.error(errorMsg);
       }
