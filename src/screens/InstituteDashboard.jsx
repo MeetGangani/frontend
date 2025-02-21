@@ -606,6 +606,31 @@ const InstituteDashboard = () => {
                 }`}>
                   {selectedExam?.examName} - Results
                 </h3>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleResultsRefresh}
+                    disabled={isRefreshing}
+                    className={`p-2 rounded-lg transition-all duration-200 ${
+                      isDarkMode 
+                        ? 'bg-[#2a2f3e] hover:bg-[#3a3f4e] text-gray-300' 
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                    } ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    title="Refresh results"
+                  >
+                    <FaSync className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  </button>
+                  <button
+                    onClick={downloadResultsAsCSV}
+                    className={`p-2 rounded-lg transition-all duration-200 ${
+                      isDarkMode 
+                        ? 'bg-[#2a2f3e] hover:bg-[#3a3f4e] text-gray-300' 
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                    }`}
+                    title="Download results as CSV"
+                  >
+                    <FaDownload className="w-4 h-4" />
+                  </button>
+                </div>
                 <button
                   onClick={() => setShowResultsModal(false)}
                   className={`${
