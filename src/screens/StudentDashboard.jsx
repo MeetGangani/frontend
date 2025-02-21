@@ -416,7 +416,7 @@ const StudentDashboard = () => {
       const submissionData = {
         examId: currentExam._id,
         answers: attemptedAnswers,
-        isAutoSubmit: submitType !== 'manual',
+        isAutoSubmit: submitType === 'time_expired',
         totalQuestions: currentExam.questions.length,
         attemptedCount: Object.keys(attemptedAnswers).length,
         timeRemaining: timeLeft
@@ -1015,6 +1015,7 @@ const StudentDashboard = () => {
             </div>
           </div>
         </div>
+
       </div>
 
       {/* Warning Banner */}
