@@ -76,6 +76,7 @@ const App = () => {
 
   return (
     <div className={isDarkMode ? 'dark' : ''}>
+      <Analytics />
       <Header />
       <main className="min-h-screen">
         <Routes>
