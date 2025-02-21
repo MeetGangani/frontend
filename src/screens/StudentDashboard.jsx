@@ -403,7 +403,6 @@ const StudentDashboard = () => {
   const handleSubmitExam = async (submitType = 'manual') => {
     if (examSubmitting) return;
     
-    
     try {
       setExamSubmitting(true);
       
@@ -448,6 +447,12 @@ const StudentDashboard = () => {
         // Handle successful submission
         showToast.success('Exam submitted successfully!');
         notifyExamSubmission();
+
+        // Clear all local storage data related to the exam
+        localStorage.removeItem('examState');
+        localStorage.removeItem('studentDashboardTab');
+        localStorage.removeItem('pendingSubmission'); // If you have this key
+
         // Switch to results tab after submission
         setIsExamMode(false);
         setCurrentExam(null);
