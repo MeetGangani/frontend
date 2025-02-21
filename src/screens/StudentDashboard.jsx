@@ -518,10 +518,10 @@ const StudentDashboard = () => {
 
         switch (submitType) {
           case 'tab_switch':
-            showToast.error(`Tab switched! Exam auto-submitted with ${Object.keys(attemptedAnswers).length} attempted questions`);
+            showToast.success(`Tab switched! Exam auto-submitted with ${Object.keys(attemptedAnswers).length} attempted questions`);
             break;
           case 'window_switch':
-            showToast.error(`Window switched! Exam auto-submitted with ${Object.keys(attemptedAnswers).length} attempted questions`);
+            showToast.success(`Window switched! Exam auto-submitted with ${Object.keys(attemptedAnswers).length} attempted questions`);
             break;
           case 'time_expired':
             showToast.warning(`Time's up! Exam submitted with ${Object.keys(attemptedAnswers).length} attempted questions`);
@@ -1052,7 +1052,7 @@ const StudentDashboard = () => {
                       : isDarkMode
                       ? 'text-gray-300 hover:bg-gray-800'
                       : 'text-gray-700 hover:bg-gray-100'
-                  } ${isExamMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  }`}
                 >
                   Results
                 </button>
