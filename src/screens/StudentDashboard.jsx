@@ -250,16 +250,14 @@ const StudentDashboard = () => {
 
   const exitFullscreen = useCallback(async () => {
     try {
-      if (document.fullscreenElement) { // Check if the document is in fullscreen
-        if (document.exitFullscreen) {
-          await document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) {
-          await document.webkitExitFullscreen();
-        } else if (document.msExitFullscreen) {
-          await document.msExitFullscreen();
-        }
-        setIsFullscreen(false);
+      if (document.exitFullscreen) {
+        await document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        await document.webkitExitFullscreen();
+      } else if (document.msExitFullscreen) {
+        await document.msExitFullscreen();
       }
+      setIsFullscreen(false);
     } catch (error) {
       console.error('Exit fullscreen error:', error);
     }
@@ -321,14 +319,15 @@ const StudentDashboard = () => {
       }
 
       // Check if the exam mode is enabled
-      const response = await axios.get(`${config.API_BASE_URL}/api/exams/${ipfsHash}`, {
+      const examCheckResponse = await axios.get(`${config.API_BASE_URL}/api/exams/${ipfsHash}`, {
         withCredentials: true
       });
 
       // Log the response for debugging
-      console.log('Exam mode response:', response.data);
+      console.log('Exam mode response:', examCheckResponse.data);
 
-      if (!response.data || !response.data.examMode) {
+      // Check if examMode is true
+      if (!examCheckResponse.data || !examCheckResponse.data.examMode) {
         showToast.error('Exam is not started yet. Please enable the exam mode in the database.');
         return; // Exit if exam mode is disabled
       }
