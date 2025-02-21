@@ -297,6 +297,13 @@ const InstituteDashboard = () => {
       const response = await axiosInstance.put(`/api/exams/${examId}/exam-mode`, {
         examMode: !selectedExam.examMode // Toggle the current state
       });
+
+      // Update the selectedExam state to reflect the new exam mode
+      setSelectedExam((prev) => ({
+        ...prev,
+        examMode: !prev.examMode // Toggle the examMode
+      }));
+
       showToast.success(response.data.message);
       // Optionally refresh uploads or update state
       await fetchUploads();
@@ -587,7 +594,7 @@ const InstituteDashboard = () => {
                             handleSelectExam(upload); // Set the selected exam
                             handleToggleExamMode(upload._id); // Toggle exam mode
                           }}
-                          className={`px-3 py-1 bg-violet-600 text-white text-sm rounded-lg hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2`}
+                          className={`px-3 py-1 ${upload.examMode ? 'bg-red-600' : 'bg-green-600'} text-white text-sm rounded-lg hover:bg-opacity-80 focus:outline-none focus:ring-2 focus:ring-offset-2`}
                         >
                           {upload.examMode ? 'Disable Exam Mode' : 'Enable Exam Mode'}
                         </button>
