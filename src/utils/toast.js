@@ -11,6 +11,15 @@ export const showToast = {
       id: message, // Prevents duplicate toasts
     });
   },
+  warning: (message) => {
+    toast.custom((t) => (
+      <div className={`toast-warning ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
+        {message}
+      </div>
+    ), {
+      id: message, // Prevents duplicate toasts
+    });
+  },
   loading: (message) => {
     toast.loading(message, {
       id: message,
