@@ -155,7 +155,6 @@ const InstituteDashboard = () => {
 
   const handleViewResults = async (examId) => {
     try {
-      setLoading(true);
       const response = await axiosInstance.get(`/api/exams/results/${examId}`);
       setExamResults(response.data);
       setSelectedExam(uploads.find(u => u._id === examId));
@@ -164,8 +163,6 @@ const InstituteDashboard = () => {
       console.error('Error fetching results:', error);
       showToast.error('Failed to fetch exam results');
       setError('Failed to fetch exam results');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -589,6 +586,18 @@ const InstituteDashboard = () => {
               </table>
             </div>
           </motion.div>
+        )}
+
+        {showResultsModal && (
+          <div className="results-modal">
+            <h2>Exam Results</h2>
+            <ul>
+              {examResults.map((result) => (
+                <li key={result.id}>{result.studentName}: {result.score}</li>
+              ))}
+            </ul>
+            <button onClick={() => setShowResultsModal(false)}>Close</button>
+          </div>
         )}
       </div>
     </div>
