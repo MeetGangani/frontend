@@ -18,7 +18,6 @@ const StudentDashboard = () => {
   const [examSubmitting, setExamSubmitting] = useState(false);
   const [ipfsHash, setIpfsHash] = useState('');
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [examDuration, setExamDuration] = useState(60); // Default to 60 minutes
 
   // Initialize activeTab after isExamMode is declared
   const [activeTab, setActiveTab] = useState(() => {
@@ -61,7 +60,6 @@ const StudentDashboard = () => {
   useEffect(() => {
     if (currentExam) {
       setIsExamMode(true);
-      setTimeLeft(currentExam.timeLimit * 60); // Set time left based on duration in seconds
     } else {
       setIsExamMode(false);
     }
@@ -301,22 +299,76 @@ const StudentDashboard = () => {
 
   const handleStartExam = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
-
     try {
-      const response = await axios.post(`${config.API_BASE_URL}/api/exams/start`, {
-        ipfsHash: ipfsHash.trim(),
-        duration: examDuration // Pass duration to the backend
-      });
+      setLoading(true);
+      setError(null);
+
+      if (!ipfsHash) {
+        setError('Please enter the IPFS hash provided by your institute');
+        return;
+      }
+
+      // Check if exam was already attempted using examResults
+      const hasAttempted = examResults.some(result => result.exam.ipfsHash === ipfsHash.trim());
+      if (hasAttempted) {
+        setError('You have already attempted this exam. You cannot retake it.');
+        showToast.error('You have already attempted this exam. You cannot retake it.');
+        setIpfsHash('');
+        setLoading(false);
+        return;
+      }
+
+      await enterFullscreen();
+
+      const response = await axios.post(
+        `${config.API_BASE_URL}/api/exams/start`,
+        { ipfsHash: ipfsHash.trim() },
+        {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        }
+      );
 
       if (response.data) {
-        setCurrentExam(response.data);
-        setTimeLeft(response.data.timeLimit * 60); // Set time left based on duration in seconds
+        const examData = response.data;
+        setCurrentExam(examData);
+        setTimeLeft(examData.timeLimit * 60);
+        setAnswers({});
+        setCurrentQuestionIndex(0);
+        setActiveTab('exam');
+        setIsExamMode(true);
+        
+        // Save exam state
+        const examState = {
+          examData: examData,
+          timeRemaining: examData.timeLimit * 60,
+          currentAnswers: {},
+          questionIndex: 0
+        };
+        localStorage.setItem('examState', JSON.stringify(examState));
+        notifyExamStateChange(true);
       }
     } catch (error) {
-      console.error('Error starting exam:', error);
-      showToast.error('Failed to start exam');
+      await exitFullscreen();
+      console.error('Start exam error:', error);
+      
+      // Handle specific error cases
+      if (error.response?.status === 409) {
+        const errorMsg = 'You have already attempted this exam. You cannot retake it.';
+        setError(errorMsg);
+        showToast.error(errorMsg);
+        setIpfsHash('');
+      } else if (error.response?.data?.message) {
+        setError(error.response.data.message);
+        showToast.error(error.response.data.message);
+      } else {
+        const errorMsg = 'Check Exam code OR \n You have already attempted this exam.';
+        setError(errorMsg);
+        showToast.error(errorMsg);
+      }
     } finally {
       setLoading(false);
     }
@@ -607,24 +659,364 @@ const StudentDashboard = () => {
                         : 'bg-gray-300 cursor-not-allowed'
                   }`}
                 >
-                  Submit Exam
+                  {examSubmitting 
+                    ? 'Submitting...' 
+                    : allAnswered
+                      ? 'Submit Exam'
+                      : `Answer All Questions (${remainingQuestions} left)`
+                  }
                 </button>
+                {!allAnswered && (
+                  <span className="text-xs text-red-500 mt-1">
+                    Please answer all questions before submitting
+                  </span>
+                )}
               </div>
-            ) : null}
+            ) : (
+              <button
+                onClick={() => setCurrentQuestionIndex(prev => 
+                  Math.min(currentExam.questions.length - 1, prev + 1)
+                )}
+                className="w-full sm:w-auto px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded"
+              >
+                Next
+              </button>
+            )}
           </div>
+
+          {/* Question Navigation Grid */}
+          <div className="mt-8">
+            <h4 className={`text-sm font-medium mb-2 ${
+              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+            }`}>
+              Question Navigation
+            </h4>
+            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
+              {currentExam.questions.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentQuestionIndex(index)}
+                  className={`p-2 text-sm rounded relative ${
+                    currentQuestionIndex === index
+                      ? 'bg-violet-600 text-white'
+                      : answers[index] !== undefined
+                        ? isDarkMode
+                          ? 'bg-violet-900/50 text-violet-100'
+                          : 'bg-violet-100 text-violet-900'
+                        : isDarkMode
+                          ? 'bg-gray-800 text-gray-300'
+                          : 'bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  {index + 1}
+                  {answers[index] !== undefined && (
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full"></span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Progress Summary */}
+          <div className={`mt-4 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            Answered: {Object.keys(answers).length} / {currentExam.questions.length}
+          </div>
+        </div>
+
+        {/* Warning Banner */}
+        {isExamMode && (
+          <div className="fixed bottom-0 left-0 right-0 bg-red-600 text-white py-2 md:py-3 px-4 text-center z-50">
+            <p className="text-xs md:text-sm font-medium">
+              Warning: Leaving this page will automatically submit your exam
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderResultsTab = () => {
+    return (
+      <div>
+        <h2 className={`text-xl md:text-2xl font-bold mb-4 md:mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+          My Results
+        </h2>
+        
+        <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-lg shadow-lg`}>
+          {examResults && examResults.length > 0 ? (
+            <div className="space-y-4">
+              {examResults.map((result) => (
+                <div
+                  key={result._id}
+                  className={`p-4 rounded-lg ${
+                    isDarkMode ? 'bg-gray-800' : 'bg-white'
+                  } shadow`}
+                >
+                  <h3 className={`font-semibold text-base md:text-lg mb-2 ${
+                    isDarkMode ? 'text-white' : 'text-gray-900'
+                  }`}>
+                    {result.exam.examName}
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Score</p>
+                      <p className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        {result.score !== null && result.score !== undefined
+                          ? `${Number(result.score).toFixed(2)}%`
+                          : 'Pending'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Correct Answers</p>
+                      <p className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        {result.correctAnswers !== null && result.correctAnswers !== undefined
+                          ? `${result.correctAnswers}/${result.totalQuestions}`
+                          : 'Pending'}
+                      </p>
+                    </div>
+                  </div>
+                  <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-2`}>
+                    Submitted: {new Date(result.submittedAt).toLocaleString()}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className={`p-6 text-center ${
+              isDarkMode ? 'text-gray-400' : 'text-gray-500'
+            }`}>
+              {loading ? (
+                <div className="flex justify-center items-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-violet-600"></div>
+                </div>
+              ) : (
+                'No exam results found'
+              )}
+            </div>
+          )}
         </div>
       </div>
     );
   };
 
+  // Add a cleanup function for exam mode
+  useEffect(() => {
+    if (!isExamMode) {
+      // Cleanup when exam mode is disabled
+      setCurrentExam(null);
+      setAnswers({});
+      setTimeLeft(null);
+      setCurrentQuestionIndex(0);
+    }
+  }, [isExamMode]);
+
+  // Add effect to restore exam state on mount/navigation
+  useEffect(() => {
+    const restoreExamState = () => {
+      const savedExamState = localStorage.getItem('examState');
+      if (savedExamState) {
+        try {
+          const { examData, timeRemaining, currentAnswers, questionIndex } = JSON.parse(savedExamState);
+          setCurrentExam(examData);
+          setTimeLeft(timeRemaining);
+          setAnswers(currentAnswers || {});
+          setCurrentQuestionIndex(questionIndex || 0);
+          setIsExamMode(true);
+          setActiveTab('exam');
+        } catch (error) {
+          console.error('Error restoring exam state:', error);
+          localStorage.removeItem('examState');
+        }
+      }
+    };
+
+    restoreExamState();
+  }, []);
+
+  // Update saveExamState function
+  const saveExamState = useCallback(() => {
+    if (currentExam && isExamMode) {
+      const examState = {
+        examData: currentExam,
+        timeRemaining: timeLeft,
+        currentAnswers: answers,
+        questionIndex: currentQuestionIndex
+      };
+      localStorage.setItem('examState', JSON.stringify(examState));
+      window.dispatchEvent(new Event('storage'));
+    }
+  }, [currentExam, timeLeft, answers, currentQuestionIndex, isExamMode]);
+
+  // Update beforeunload handler to not auto-submit on refresh
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isExamMode && currentExam) {
+        // Save current state before refresh
+        saveExamState();
+        
+        // Show warning message
+        e.preventDefault();
+        e.returnValue = 'Are you sure you want to leave? Your exam progress will be saved.';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isExamMode, currentExam, answers, timeLeft, currentQuestionIndex]);
+
+  // Add cleanup effect
+  useEffect(() => {
+    return () => {
+      // Cleanup when component unmounts
+      if (!isExamMode) {
+        localStorage.removeItem('examState');
+        window.dispatchEvent(new Event('storage'));
+      }
+    };
+  }, [isExamMode]);
+
   return (
-    <div className="container mx-auto p-4">
-      {activeTab === 'start' && renderStartExam()}
-      {activeTab === 'exam' && renderExam()}
-      {activeTab === 'results' && (
-        <div className="text-center p-4">
-          <p className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
-            Exam results will be displayed here.
+    <div className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'} min-h-screen pt-16 md:pt-24`}>
+      <div className="container mx-auto px-4 md:px-6">
+        <div className="flex flex-col md:flex-row gap-4 md:gap-8">
+          {/* Sidebar Navigation - Mobile Version */}
+          {!isExamMode && (
+            <div className="md:hidden mb-4 sticky top-24 z-30 bg-inherit">
+              <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-xl shadow-lg p-4`}>
+                <nav className="flex gap-2 overflow-x-auto">
+                  <button
+                    onClick={() => handleTabSwitch('start')}
+                    className={`whitespace-nowrap px-4 py-2 rounded-lg transition-all duration-200 ${
+                      activeTab === 'start'
+                        ? 'bg-violet-600 text-white font-medium'
+                        : isDarkMode
+                        ? 'text-gray-300 hover:bg-gray-800'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    Start Exam
+                  </button>
+                  <button
+                    onClick={() => handleTabSwitch('exam')}
+                    className={`whitespace-nowrap px-4 py-2 rounded-lg transition-all duration-200 ${
+                      activeTab === 'exam'
+                        ? 'bg-violet-600 text-white font-medium'
+                        : isDarkMode
+                        ? 'text-gray-300 hover:bg-gray-800'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    Exam
+                  </button>
+                  <button
+                    onClick={() => handleTabSwitch('results')}
+                    className={`whitespace-nowrap px-4 py-2 rounded-lg transition-all duration-200 ${
+                      activeTab === 'results'
+                        ? 'bg-violet-600 text-white font-medium'
+                        : isDarkMode
+                        ? 'text-gray-300 hover:bg-gray-800'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    Results
+                  </button>
+                </nav>
+              </div>
+            </div>
+          )}
+
+          {/* Desktop Sidebar */}
+          <div className={`hidden md:w-1/4 md:block ${isExamMode ? 'md:hidden' : ''}`}>
+            <div className={`${
+              isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
+            } rounded-xl shadow-lg p-5 sticky top-24`}>
+              <h2 className={`text-xl font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                Navigation
+              </h2>
+              <nav className="space-y-2">
+                <button
+                  onClick={() => handleTabSwitch('start')}
+                  disabled={isExamMode}
+                  className={`w-full px-4 py-3 rounded-lg transition-all duration-200 text-left ${
+                    activeTab === 'start'
+                      ? 'bg-violet-600 text-white font-medium'
+                      : isDarkMode
+                      ? 'text-gray-300 hover:bg-gray-800'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  } ${isExamMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  Start Exam
+                </button>
+                <button
+                  onClick={() => handleTabSwitch('exam')}
+                  className={`w-full px-4 py-3 rounded-lg transition-all duration-200 text-left ${
+                    activeTab === 'exam'
+                      ? 'bg-violet-600 text-white font-medium'
+                      : isDarkMode
+                      ? 'text-gray-300 hover:bg-gray-800'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  Exam
+                </button>
+                <button
+                  onClick={() => handleTabSwitch('results')}
+                  disabled={isExamMode}
+                  className={`w-full px-4 py-3 rounded-lg transition-all duration-200 text-left ${
+                    activeTab === 'results'
+                      ? 'bg-violet-600 text-white font-medium'
+                      : isDarkMode
+                      ? 'text-gray-300 hover:bg-gray-800'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  } ${isExamMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  Results
+                </button>
+              </nav>
+            </div>
+          </div>
+
+          {/* Main Content Area */}
+          <div className={`w-full mt-2 md:mt-0 ${!isExamMode ? 'md:w-3/4' : 'md:w-full'}`}>
+            <div className={`${
+              isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
+            } rounded-xl shadow-lg p-4 md:p-6`}>
+              {/* Exam Mode Warning */}
+              {isExamMode && (
+                <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold">Exam in Progress</p>
+                      <p className="text-sm mt-1">Please do not leave this page or exit fullscreen mode.</p>
+                    </div>
+                    <button
+                      onClick={isFullscreen ? exitFullscreen : enterFullscreen}
+                      className="p-2 hover:bg-yellow-200 rounded-lg transition-colors"
+                      title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                    >
+                      {isFullscreen ? <FaCompress size={20} /> : <FaExpand size={20} />}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Dynamic Content */}
+              {activeTab === 'start' && !isExamMode && renderStartExam()}
+              {activeTab === 'exam' && renderExam()}
+              {activeTab === 'results' && !isExamMode && renderResultsTab()}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Warning Banner */}
+      {isExamMode && (
+        <div className="fixed bottom-0 left-0 right-0 bg-red-600 text-white py-2 md:py-3 px-4 text-center z-50">
+          <p className="text-xs md:text-sm font-medium">
+            Warning: Leaving this page will automatically submit your exam
           </p>
         </div>
       )}
