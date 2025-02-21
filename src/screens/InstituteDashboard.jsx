@@ -155,14 +155,17 @@ const InstituteDashboard = () => {
 
   const handleViewResults = async (examId) => {
     try {
+      setLoading(true);
       const response = await axiosInstance.get(`/api/exams/results/${examId}`);
-      setExamResults(response.data);
-      setSelectedExam(uploads.find(u => u._id === examId));
-      setShowResultsModal(true);
+      setExamResults(response.data); // Set the fetched results
+      setSelectedExam(uploads.find(u => u._id === examId)); // Set the selected exam
+      setShowResultsModal(true); // Show the results modal
     } catch (error) {
       console.error('Error fetching results:', error);
       showToast.error('Failed to fetch exam results');
       setError('Failed to fetch exam results');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -285,38 +288,17 @@ const InstituteDashboard = () => {
   };
 
   const handleToggleExamMode = async (examId) => {
-    // Check if selectedExam is null
-    if (!selectedExam) {
-      showToast.error('No exam selected. Please select an exam to toggle exam mode.');
-      return; // Exit the function if no exam is selected
-    }
-
     try {
-      // Determine the new exam mode
-      const newExamMode = !selectedExam.examMode; 
       const response = await axiosInstance.put(`/api/exams/${examId}/exam-mode`, {
-        examMode: newExamMode // Send the new state to the server
+        examMode: !selectedExam.examMode // Toggle the current state
       });
-
-      // Update the selectedExam state to reflect the new exam mode
-      setSelectedExam((prev) => ({
-        ...prev,
-        examMode: newExamMode // Update to the new exam mode
-      }));
-
-      // Show success message based on the new state
-      showToast.success(newExamMode ? 'Exam mode enabled successfully.' : 'Exam mode disabled successfully.');
-
+      showToast.success(response.data.message);
       // Optionally refresh uploads or update state
-      await fetchUploads(); // Ensure the uploads are refreshed to reflect the new state
+      await fetchUploads();
     } catch (error) {
       console.error('Error toggling exam mode:', error);
       showToast.error('Failed to toggle exam mode');
     }
-  };
-
-  const handleSelectExam = (exam) => {
-    setSelectedExam(exam); // Set the selected exam
   };
 
   return (
@@ -562,20 +544,38 @@ const InstituteDashboard = () => {
                         {upload.totalQuestions}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <button
-                          onClick={() => handleViewResults(upload._id)}
-                          className="text-violet-500 hover:text-violet-600 focus:outline-none"
-                        >
-                          View Results
-                        </button>
+                        {upload.status === 'approved' && (
+                          <button
+                            onClick={() => handleViewResults(upload._id)} // Call the function to view results
+                            className="px-3 py-1 bg-violet-600 text-white text-sm rounded-lg hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2"
+                          >
+                            View Results
+                          </button>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {upload.status === 'approved' && !upload.resultsReleased && (
+                          <button
+                            onClick={() => handleReleaseResults(upload._id)}
+                            className="px-3 py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                          >
+                            Release Results
+                          </button>
+                        )}
+                        {upload.resultsReleased && (
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            isDarkMode 
+                              ? 'bg-green-900/20 text-green-300' 
+                              : 'bg-green-100 text-green-800'
+                          }`}>
+                            Results Released
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <button
-                          onClick={() => {
-                            handleSelectExam(upload); // Set the selected exam
-                            handleToggleExamMode(upload._id); // Toggle exam mode
-                          }}
-                          className={`px-3 py-1 ${upload.examMode ? 'bg-red-600' : 'bg-green-600'} text-white text-sm rounded-lg hover:bg-opacity-80 focus:outline-none focus:ring-2 focus:ring-offset-2`}
+                          onClick={() => handleToggleExamMode(upload._id)}
+                          className={`px-3 py-1 bg-violet-600 text-white text-sm rounded-lg hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2`}
                         >
                           {upload.examMode ? 'Disable Exam Mode' : 'Enable Exam Mode'}
                         </button>
@@ -588,15 +588,96 @@ const InstituteDashboard = () => {
           </motion.div>
         )}
 
+        {/* Results Modal */}
         {showResultsModal && (
-          <div className="results-modal">
-            <h2>Exam Results</h2>
-            <ul>
-              {examResults.map((result) => (
-                <li key={result.id}>{result.studentName}: {result.score}</li>
-              ))}
-            </ul>
-            <button onClick={() => setShowResultsModal(false)}>Close</button>
+          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className={`${
+                isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
+              } rounded-xl shadow-lg max-w-4xl w-full max-h-[90vh] flex flex-col`}
+            >
+              <div className={`p-6 border-b ${
+                isDarkMode ? 'border-gray-700' : 'border-gray-200'
+              } flex justify-between items-center`}>
+                <h3 className={`text-lg font-semibold ${
+                  isDarkMode ? 'text-white' : 'text-gray-900'
+                }`}>
+                  {selectedExam?.examName} - Results
+                </h3>
+                <button
+                  onClick={() => setShowResultsModal(false)}
+                  className={`${
+                    isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-500'
+                  }`}
+                >
+                  <span className="sr-only">Close</span>
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-6">
+                {examResults.length === 0 ? (
+                  <div className={`p-4 rounded-lg ${
+                    isDarkMode 
+                      ? 'bg-blue-900/20 text-blue-300' 
+                      : 'bg-blue-50 text-blue-700'
+                  }`}>
+                    No results available yet.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className={`min-w-full divide-y ${
+                      isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
+                    }`}>
+                      <thead className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'} sticky top-0`}>
+                        <tr>
+                          {['Student Name', 'Score', 'Correct Answers', 'Submission Date'].map((header) => (
+                            <th key={header} className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                              isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                            }`}>
+                              {header}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className={`divide-y ${
+                        isDarkMode 
+                          ? 'divide-gray-700 bg-[#1a1f2e]' 
+                          : 'divide-gray-200 bg-white'
+                      }`}>
+                        {examResults.map((result) => (
+                          <tr key={result._id}>
+                            <td className={`px-6 py-4 whitespace-nowrap ${
+                              isDarkMode ? 'text-gray-300' : 'text-gray-900'
+                            }`}>
+                              {result.student?.name || 'Deleted User'}
+                            </td>
+                            <td className={`px-6 py-4 whitespace-nowrap ${
+                              isDarkMode ? 'text-gray-300' : 'text-gray-900'
+                            }`}>
+                              {result.score?.toFixed(2) || '0.00'}%
+                            </td>
+                            <td className={`px-6 py-4 whitespace-nowrap ${
+                              isDarkMode ? 'text-gray-300' : 'text-gray-900'
+                            }`}>
+                              {result.correctAnswers} / {result.totalQuestions}
+                            </td>
+                            <td className={`px-6 py-4 whitespace-nowrap ${
+                              isDarkMode ? 'text-gray-300' : 'text-gray-900'
+                            }`}>
+                              {new Date(result.submittedAt).toLocaleString()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </motion.div>
           </div>
         )}
       </div>
