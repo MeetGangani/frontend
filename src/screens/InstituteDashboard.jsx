@@ -288,7 +288,7 @@ const InstituteDashboard = () => {
   };
 
   const handleToggleExamMode = async (examId) => {
-    console.log('Before toggle:', selectedExam.examMode);
+    // Check if selectedExam is null
     if (!selectedExam) {
       showToast.error('No exam selected. Please select an exam to toggle exam mode.');
       return; // Exit the function if no exam is selected
@@ -309,7 +309,7 @@ const InstituteDashboard = () => {
 
       // Show success message based on the new state
       showToast.success(newExamMode ? 'Exam mode enabled successfully.' : 'Exam mode disabled successfully.');
-      console.log('after toggle:', selectedExam.examMode);
+
       // Optionally refresh uploads or update state
       await fetchUploads(); // Ensure the uploads are refreshed to reflect the new state
     } catch (error) {
