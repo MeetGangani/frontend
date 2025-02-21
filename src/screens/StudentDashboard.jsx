@@ -748,7 +748,7 @@ const StudentDashboard = () => {
                   ? 'border-gray-700 hover:border-gray-600'
                   : 'border-gray-200 hover:border-gray-300'
               }`}
-              onClick={() => handleAnswerSelect(index)}
+              onClick={() => handleAnswerSelect(currentQuestionIndex, index)}
               onContextMenu={e => e.preventDefault()}
               onCopy={preventCopy}
               onMouseDown={e => e.stopPropagation()}
@@ -765,7 +765,7 @@ const StudentDashboard = () => {
         </div>
 
         {/* Navigation Buttons */}
-        <div className="flex justify-between mt-6 select-none">
+        <div className="flex justify-between mt-6">
           <button
             onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
             disabled={currentQuestionIndex === 0}
@@ -1083,4 +1083,16 @@ const StudentDashboard = () => {
           <div className={`w-full mt-2 md:mt-0 ${!isExamMode ? 'md:w-3/4' : 'md:w-full'}`}>
             <div className={`${
               isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
-            } rounded-xl shadow-lg p-4 md:p-6`
+            } rounded-xl shadow-lg p-4 md:p-6`}>
+              {activeTab === 'start' && renderStartExam()}
+              {activeTab === 'exam' && renderExam()}
+              {activeTab === 'results' && renderResultsTab()}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default StudentDashboard;
