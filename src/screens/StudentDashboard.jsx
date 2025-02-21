@@ -406,6 +406,7 @@ const StudentDashboard = () => {
     try {
       setExamSubmitting(true);
       
+      // Capture attempted answers
       const attemptedAnswers = Object.keys(answers).reduce((acc, key) => {
         if (answers[key] !== null && answers[key] !== undefined) {
           acc[key] = Number(answers[key]);
@@ -416,7 +417,7 @@ const StudentDashboard = () => {
       const submissionData = {
         examId: currentExam._id,
         answers: attemptedAnswers,
-        isAutoSubmit: submitType === 'time_expired',
+        isAutoSubmit: submitType === 'time_expired', // Set to true if auto-submit
         totalQuestions: currentExam.questions.length,
         attemptedCount: Object.keys(attemptedAnswers).length,
         timeRemaining: timeLeft
@@ -427,21 +428,6 @@ const StudentDashboard = () => {
         showToast.warning(`Time's up! Your exam is being submitted automatically.`);
       }
 
-      // Add offline handling
-      if (!navigator.onLine) {
-        // Store submission in localStorage for later
-        localStorage.setItem('pendingSubmission', JSON.stringify({
-          submissionData,
-          timestamp: new Date().toISOString()
-        }));
-        
-        showToast.warning('You are offline. Your exam will be submitted when you reconnect.');
-        
-        // Don't clear exam state yet
-        setExamSubmitting(false);
-        return;
-      }
-
       const response = await axios.post(
         `${config.API_BASE_URL}/api/exams/submit`,
         submissionData,
@@ -450,52 +436,29 @@ const StudentDashboard = () => {
           headers: {
             'Content-Type': 'application/json'
           },
-          // Add timeout to prevent infinite loading
           timeout: 10000
         }
       );
 
       if (response.data) {
-        localStorage.removeItem('examState');
-        localStorage.removeItem('pendingSubmission');
-        
-        switch (submitType) {
-          case 'tab_switch':
-            showToast.error(`Tab switched! Exam auto-submitted with ${Object.keys(attemptedAnswers).length} attempted questions`);
-            break;
-          case 'window_switch':
-            showToast.error(`Window switched! Exam auto-submitted with ${Object.keys(attemptedAnswers).length} attempted questions`);
-            break;
-          case 'time_expired':
-            showToast.warning(`Time's up! Exam submitted with ${Object.keys(attemptedAnswers).length} attempted questions`);
-            break;
-          default:
-            showToast.success('Exam submitted successfully!');
-        }
-        
-        notifyExamStateChange(false);
+        // Handle successful submission
+        showToast.success('Exam submitted successfully!');
+        // Switch to results tab after submission
         setIsExamMode(false);
         setCurrentExam(null);
+        setAnswers({});
         setTimeLeft(null);
-        setActiveTab('results');
-        
-        await handleExamCompletion();
+        setActiveTab('results'); // Switch to results tab
       }
     } catch (error) {
       console.error('Error submitting exam:', error);
-      
-      // Store submission data if network error
-      if (error.message.includes('Network Error') || !navigator.onLine) {
-        localStorage.setItem('pendingSubmission', JSON.stringify({
-          submissionData,
-          timestamp: new Date().toISOString()
-        }));
-        showToast.warning('Network error. Your exam will be submitted when you reconnect.');
+      // Log the error response for debugging
+      if (error.response) {
+        console.error('Response data:', error.response.data);
+        console.error('Response status:', error.response.status);
+        showToast.error(`Failed to submit exam: ${error.response.data.message || 'Please try again or contact support.'}`);
       } else {
-        showToast.error(
-          error.response?.data?.message || 
-          'Failed to submit exam. Please try again or contact support.'
-        );
+        showToast.error('Failed to submit exam. Please check your network connection.');
       }
     } finally {
       setExamSubmitting(false);
