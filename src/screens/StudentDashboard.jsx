@@ -325,10 +325,7 @@ const StudentDashboard = () => {
         withCredentials: true
       });
 
-      // Log the response for debugging
-      console.log('Exam mode response:', response.data);
-
-      if (!response.data || !response.data.examMode) {
+      if (!response.data.examMode) {
         showToast.error('Exam is not started yet. Please enable the exam mode in the database.');
         return; // Exit if exam mode is disabled
       }
