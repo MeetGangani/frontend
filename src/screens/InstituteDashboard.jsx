@@ -306,6 +306,10 @@ const InstituteDashboard = () => {
     }
   };
 
+  const handleSelectExam = (exam) => {
+    setSelectedExam(exam); // Set the selected exam
+  };
+
   return (
     <div className={`min-h-screen pt-20 ${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -579,7 +583,10 @@ const InstituteDashboard = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <button
-                          onClick={() => handleToggleExamMode(upload._id)}
+                          onClick={() => {
+                            handleSelectExam(upload); // Set the selected exam
+                            handleToggleExamMode(upload._id); // Toggle exam mode
+                          }}
                           className={`px-3 py-1 bg-violet-600 text-white text-sm rounded-lg hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2`}
                         >
                           {upload.examMode ? 'Disable Exam Mode' : 'Enable Exam Mode'}
