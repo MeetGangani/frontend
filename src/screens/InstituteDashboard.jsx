@@ -295,17 +295,20 @@ const InstituteDashboard = () => {
 
     try {
       // Toggle the exam mode
+      const newExamMode = !selectedExam.examMode; // Determine the new exam mode
       const response = await axiosInstance.put(`/api/exams/${examId}/exam-mode`, {
-        examMode: !selectedExam.examMode // Toggle the current state
+        examMode: newExamMode // Send the new state to the server
       });
 
       // Update the selectedExam state to reflect the new exam mode
       setSelectedExam((prev) => ({
         ...prev,
-        examMode: !prev.examMode // Toggle the examMode
+        examMode: newExamMode // Update to the new exam mode
       }));
 
-      showToast.success(response.data.message);
+      // Show success message based on the new state
+      showToast.success(newExamMode ? 'Exam mode enabled successfully.' : 'Exam mode disabled successfully.');
+
       // Optionally refresh uploads or update state
       await fetchUploads(); // Ensure the uploads are refreshed to reflect the new state
     } catch (error) {
