@@ -444,7 +444,7 @@ const StudentDashboard = () => {
         isAutoSubmit: submitType === 'time_expired', // Set to true if auto-submit
         totalQuestions: currentExam.questions.length,
         attemptedCount: Object.keys(attemptedAnswers).length,
-        timeRemaining: timeLeft
+        timeRemaining: timeLeft 
       };
 
       // Show a different toast message for auto submission
