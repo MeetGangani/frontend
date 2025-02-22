@@ -289,27 +289,75 @@ const InstituteDashboard = () => {
 
   const handleToggleExamMode = async (examId) => {
     try {
-      // Fetch the current exam data to determine the current mode
+      // Find the current exam data
       const currentExam = uploads.find(upload => upload._id === examId);
+      if (!currentExam) return;
+
       const newExamMode = !currentExam.examMode; // Toggle the current state
 
-      const response = await axiosInstance.put(`/api/exams/${examId}/exam-mode`, {
-        examMode: newExamMode // Send the new state to the server
-      });
-
-      // Update the uploads state to reflect the new exam mode
+      // Optimistically update the UI
       setUploads(prevUploads => 
         prevUploads.map(upload => 
           upload._id === examId ? { ...upload, examMode: newExamMode } : upload
         )
       );
 
+      const response = await axiosInstance.put(`/api/exams/${examId}/exam-mode`, {
+        examMode: newExamMode
+      });
+
+      // Show success message
       showToast.success(response.data.message);
+
+      // Fetch the latest data to ensure sync with server
+      const updatedResponse = await axiosInstance.get('/api/file-requests/my-uploads');
+      if (updatedResponse.data) {
+        setUploads(updatedResponse.data);
+      }
     } catch (error) {
       console.error('Error toggling exam mode:', error);
       showToast.error('Failed to toggle exam mode');
+      
+      // Revert the optimistic update in case of error
+      setUploads(prevUploads => 
+        prevUploads.map(upload => 
+          upload._id === examId ? { ...upload, examMode: !newExamMode } : upload
+        )
+      );
     }
   };
+
+  // Add a refresh function to fetch latest uploads
+  const refreshUploads = async () => {
+    try {
+      const response = await axiosInstance.get('/api/file-requests/my-uploads');
+      if (response.data) {
+        setUploads(response.data);
+      }
+    } catch (error) {
+      console.error('Error refreshing uploads:', error);
+      showToast.error('Failed to refresh uploads');
+    }
+  };
+
+  // Add useEffect to refresh uploads periodically or when tab becomes active
+  useEffect(() => {
+    const refreshInterval = setInterval(refreshUploads, 30000); // Refresh every 30 seconds
+
+    // Refresh when tab becomes active
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshUploads();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(refreshInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
 
   return (
     <div className={`min-h-screen pt-20 ${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'}`}>
