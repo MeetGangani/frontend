@@ -424,11 +424,8 @@ const StudentDashboard = () => {
   };
 
   const handleSubmitExam = async (submitType = 'manual') => {
-    if (examSubmitting) return;
-    
+    setExamSubmitting(true);
     try {
-      setExamSubmitting(true);
-      
       // Exit fullscreen mode before submitting
       await exitFullscreen(); // Ensure to exit fullscreen
 
@@ -482,6 +479,15 @@ const StudentDashboard = () => {
         setAnswers({});
         setTimeLeft(null);
         setActiveTab('results'); // Switch to results tab
+
+        // Notify header about exam state change
+        const event = new CustomEvent('customExamState', {
+          detail: {
+            type: 'examState',
+            isActive: false
+          }
+        });
+        window.dispatchEvent(event);
       }
     } catch (error) {
       console.error('Error submitting exam:', error);
