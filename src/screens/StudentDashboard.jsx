@@ -523,7 +523,7 @@ const StudentDashboard = () => {
             }
           );
 
-          if (response.data) {
+          if (response.data) { 
             localStorage.removeItem('examState');
             localStorage.removeItem('pendingSubmission');
             showToast.success('Pending exam submitted successfully!');
