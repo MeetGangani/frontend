@@ -424,11 +424,8 @@ const StudentDashboard = () => {
   };
 
   const handleSubmitExam = async (submitType = 'manual') => {
-    if (examSubmitting) return;
-    
+    setExamSubmitting(true);
     try {
-      setExamSubmitting(true);
-      
       // Exit fullscreen mode before submitting
       await exitFullscreen(); // Ensure to exit fullscreen
 
@@ -468,11 +465,18 @@ const StudentDashboard = () => {
 
       if (response.data) {
         // Handle successful submission
+        localStorage.removeItem('examState');
+        const event = new CustomEvent('customExamState', {
+          detail: {
+            type: 'examState',
+            isActive: false
+          }
+        });
+        window.dispatchEvent(event);
         showToast.success('Exam submitted successfully!');
         notifyExamSubmission();
 
         // Clear all local storage data related to the exam
-        localStorage.removeItem('examState');
         localStorage.removeItem('studentDashboardTab');
         localStorage.removeItem('pendingSubmission'); // If you have this key
 
