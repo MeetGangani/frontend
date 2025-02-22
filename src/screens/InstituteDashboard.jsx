@@ -582,6 +582,15 @@ const InstituteDashboard = () => {
                           </span>
                         )}
                       </td>
+                      <td className={`px-6 py-4 whitespace-nowrap`}>
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          upload.examMode
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {upload.examMode ? 'Active' : 'Not Started'}
+                        </span>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <button
                           onClick={() => handleToggleExamMode(upload._id)}

@@ -308,6 +308,19 @@ const StudentDashboard = () => {
         return;
       }
 
+      // First, check if exam mode is enabled
+      const examModeResponse = await axios.get(
+        `${config.API_BASE_URL}/api/exams/check-mode/${ipfsHash.trim()}`,
+        { withCredentials: true }
+      );
+
+      if (!examModeResponse.data.examMode) {
+        setError('This exam has not been started by the institute yet. Please wait for the institute to enable exam mode.');
+        showToast.error('Exam has not been started yet');
+        setLoading(false);
+        return;
+      }
+
       // Check if exam was already attempted using examResults
       const hasAttempted = examResults.some(result => result.exam.ipfsHash === ipfsHash.trim());
       if (hasAttempted) {
