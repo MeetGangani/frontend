@@ -46,11 +46,11 @@ const InstituteDashboard = () => {
       const response = await axiosInstance.get('/api/upload/my-uploads');
       if (response.data) {
         setUploads(response.data);
-        localStorage.setItem('examUploads', JSON.stringify(response.data));
       }
     } catch (error) {
       console.error('Error fetching uploads:', error);
       showToast.error(error.response?.data?.message || 'Failed to fetch uploads');
+      setError(error.response?.data?.message || 'Failed to fetch uploads');
     } finally {
       setLoading(false);
     }
@@ -288,52 +288,26 @@ const InstituteDashboard = () => {
   };
 
   const handleToggleExamMode = async (examId) => {
-    let currentExamMode = false;
-    let isLoading = false;
-    
     try {
-      if (isLoading) return; // Prevent multiple clicks
-      isLoading = true;
-
-      // Find the current exam data
+      // Fetch the current exam data to determine the current mode
       const currentExam = uploads.find(upload => upload._id === examId);
-      if (!currentExam) return;
+      const newExamMode = !currentExam.examMode; // Toggle the current state
 
-      currentExamMode = currentExam.examMode;
-      
-      // Optimistically update the UI
+      const response = await axiosInstance.put(`/api/exams/${examId}/exam-mode`, {
+        examMode: newExamMode // Send the new state to the server
+      });
+
+      // Update the uploads state to reflect the new exam mode
       setUploads(prevUploads => 
         prevUploads.map(upload => 
-          upload._id === examId ? { ...upload, examMode: !currentExamMode } : upload
+          upload._id === examId ? { ...upload, examMode: newExamMode } : upload
         )
       );
 
-      // Make the API call to toggle exam mode
-      const response = await axiosInstance.put(`/api/exams/${examId}/exam-mode`, {
-        examMode: !currentExamMode
-      });
-
-      // Show success message
       showToast.success(response.data.message);
-
-      // Update local storage to persist the state
-      const updatedUploads = uploads.map(upload => 
-        upload._id === examId ? { ...upload, examMode: !currentExamMode } : upload
-      );
-      localStorage.setItem('examUploads', JSON.stringify(updatedUploads));
-
     } catch (error) {
       console.error('Error toggling exam mode:', error);
       showToast.error('Failed to toggle exam mode');
-      
-      // Revert the optimistic update in case of error
-      setUploads(prevUploads => 
-        prevUploads.map(upload => 
-          upload._id === examId ? { ...upload, examMode: currentExamMode } : upload
-        )
-      );
-    } finally {
-      isLoading = false;
     }
   };
 
