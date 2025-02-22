@@ -608,7 +608,9 @@ const InstituteDashboard = () => {
                           {upload.examMode ? 'Disable Exam Mode' : 'Enable Exam Mode'}
                         </button>
                         {upload.status !== 'approved' && (
-                          <span className="text-xs text-red-500">Cannot toggle exam mode until approved</span>
+                          <div className="mt-1 text-xs text-red-500 bg-red-100 p-1 rounded-md">
+                            Cannot toggle exam mode until approved
+                          </div>
                         )}
                       </td>
                     </tr>
