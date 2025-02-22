@@ -102,7 +102,7 @@ const StudentDashboard = () => {
         { withCredentials: true }
       );
       
-      // Ensure we have an array, even if empty
+      console.log('Fetched exam results:', response.data);
       setExamResults(Array.isArray(response.data) ? response.data : []);
       setError(null);
     } catch (error) {
@@ -308,6 +308,25 @@ const StudentDashboard = () => {
         return;
       }
 
+      // Check if exam was already attempted using examResults
+      const hasAttempted = examResults.some(result => {
+        // Log for debugging
+        console.log('Comparing:', {
+          resultHash: result.exam?.ipfsHash,
+          currentHash: ipfsHash.trim(),
+          match: result.exam?.ipfsHash === ipfsHash.trim()
+        });
+        return result.exam?.ipfsHash === ipfsHash.trim();
+      });
+
+      if (hasAttempted) {
+        setError('You have already attempted this exam. You cannot retake it.');
+        showToast.error('You have already attempted this exam. You cannot retake it.');
+        setIpfsHash('');
+        setLoading(false);
+        return;
+      }
+
       // First, check if exam mode is enabled
       const examModeResponse = await axios.get(
         `${config.API_BASE_URL}/api/exams/check-mode/${ipfsHash.trim()}`,
@@ -317,16 +336,6 @@ const StudentDashboard = () => {
       if (!examModeResponse.data.examMode) {
         setError('This exam has not been started by the institute yet. Please wait for the institute to enable exam mode.');
         showToast.error('Exam has not been started yet');
-        setLoading(false);
-        return;
-      }
-
-      // Check if exam was already attempted using examResults
-      const hasAttempted = examResults.some(result => result.exam.ipfsHash === ipfsHash.trim());
-      if (hasAttempted) {
-        setError('You have already attempted this exam. You cannot retake it.');
-        showToast.error('You have already attempted this exam. You cannot retake it.');
-        setIpfsHash('');
         setLoading(false);
         return;
       }
@@ -369,21 +378,22 @@ const StudentDashboard = () => {
       await exitFullscreen();
       console.error('Start exam error:', error);
       
-      // Handle specific error cases
       if (error.response) {
         if (error.response.status === 404) {
           setError('Exam not found. Please check the IPFS hash.');
           showToast.error('Exam not found. Please check the IPFS hash.');
+        } else if (error.response.status === 409) {
+          setError('You have already attempted this exam. You cannot retake it.');
+          showToast.error('You have already attempted this exam. You cannot retake it.');
+          setIpfsHash('');
         } else if (error.response.data?.message) {
           setError(error.response.data.message);
           showToast.error(error.response.data.message);
         } else {
-          const errorMsg = 'An unexpected error occurred. Please try again.';
-          setError(errorMsg);
-          showToast.error(errorMsg);
+          setError('An unexpected error occurred. Please try again.');
+          showToast.error('An unexpected error occurred. Please try again.');
         }
       } else {
-        // Handle network errors or other unexpected errors
         setError('Network error. Please check your connection and try again.');
         showToast.error('Network error. Please check your connection and try again.');
       }
