@@ -288,32 +288,32 @@ const InstituteDashboard = () => {
   };
 
   const handleToggleExamMode = async (examId) => {
+    let currentExamMode = false; // Initialize the variable outside try block
+    
     try {
       // Find the current exam data
       const currentExam = uploads.find(upload => upload._id === examId);
       if (!currentExam) return;
 
-      const newExamMode = !currentExam.examMode; // Toggle the current state
-
+      currentExamMode = currentExam.examMode; // Store the current state
+      
       // Optimistically update the UI
       setUploads(prevUploads => 
         prevUploads.map(upload => 
-          upload._id === examId ? { ...upload, examMode: newExamMode } : upload
+          upload._id === examId ? { ...upload, examMode: !currentExamMode } : upload
         )
       );
 
       const response = await axiosInstance.put(`/api/exams/${examId}/exam-mode`, {
-        examMode: newExamMode
+        examMode: !currentExamMode
       });
 
       // Show success message
       showToast.success(response.data.message);
 
       // Fetch the latest data to ensure sync with server
-      const updatedResponse = await axiosInstance.get('/api/file-requests/my-uploads');
-      if (updatedResponse.data) {
-        setUploads(updatedResponse.data);
-      }
+      refreshUploads();
+
     } catch (error) {
       console.error('Error toggling exam mode:', error);
       showToast.error('Failed to toggle exam mode');
@@ -321,7 +321,7 @@ const InstituteDashboard = () => {
       // Revert the optimistic update in case of error
       setUploads(prevUploads => 
         prevUploads.map(upload => 
-          upload._id === examId ? { ...upload, examMode: !newExamMode } : upload
+          upload._id === examId ? { ...upload, examMode: currentExamMode } : upload
         )
       );
     }
