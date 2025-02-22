@@ -288,9 +288,15 @@ const InstituteDashboard = () => {
   };
 
   const handleToggleExamMode = async (examId) => {
+    const currentExam = uploads.find(upload => upload._id === examId);
+    
+    // Check if the exam is approved
+    if (!currentExam || currentExam.status !== 'approved') {
+      showToast.error('Exam mode can only be toggled for approved exams.');
+      return;
+    }
+
     try {
-      // Fetch the current exam data to determine the current mode
-      const currentExam = uploads.find(upload => upload._id === examId);
       const newExamMode = !currentExam.examMode; // Toggle the current state
 
       const response = await axiosInstance.put(`/api/exams/${examId}/exam-mode`, {
@@ -594,12 +600,16 @@ const InstituteDashboard = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <button
                           onClick={() => handleToggleExamMode(upload._id)}
+                          disabled={upload.status !== 'approved'}
                           className={`px-3 py-1 text-white text-sm rounded-lg hover:bg-opacity-80 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                             upload.examMode ? 'bg-red-600' : 'bg-green-600'
-                          }`}
+                          } ${upload.status !== 'approved' ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                           {upload.examMode ? 'Disable Exam Mode' : 'Enable Exam Mode'}
                         </button>
+                        {upload.status !== 'approved' && (
+                          <span className="text-xs text-red-500">Cannot toggle exam mode until approved</span>
+                        )}
                       </td>
                     </tr>
                   ))}
