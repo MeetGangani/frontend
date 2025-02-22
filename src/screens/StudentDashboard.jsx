@@ -370,13 +370,13 @@ const StudentDashboard = () => {
       
       // Handle specific error cases
       if (error.response?.status === 404) {
-        setError('Exam not found or exam mode is disabled.');
-        showToast.error('Exam not found or exam mode is disabled.');
+        setError('Exam not found. Please check the IPFS hash.');
+        showToast.error('Exam not found. Please check the IPFS hash.');
       } else if (error.response?.data?.message) {
         setError(error.response.data.message);
         showToast.error(error.response.data.message);
       } else {
-        const errorMsg = 'Check Exam code OR You have already attempted this exam.';
+        const errorMsg = 'An unexpected error occurred. Please try again.';
         setError(errorMsg);
         showToast.error(errorMsg);
       }

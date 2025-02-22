@@ -504,9 +504,9 @@ const InstituteDashboard = () => {
               <table className={`min-w-full divide-y ${
                 isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
               }`}>
-                <thead className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'} sticky top-0`}>
+                <thead className={isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'}>
                   <tr>
-                    {['Exam Name', 'Description', 'Status', 'Uploaded Date', 'Total Questions', 'Result Status', 'Exam Actions'].map((header) => (
+                    {['Exam Name', 'Description', 'Status', 'Uploaded Date', 'Total Questions', 'Results', 'Actions', 'Exam Mode', 'Toggle Exam Mode'].map((header) => (
                       <th key={header} className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
                         isDarkMode ? 'text-gray-400' : 'text-gray-500'
                       }`}>
