@@ -437,6 +437,7 @@ const StudentDashboard = () => {
         return acc;
       }, {});
 
+      
       const submissionData = {
         examId: currentExam._id,
         answers: attemptedAnswers,
