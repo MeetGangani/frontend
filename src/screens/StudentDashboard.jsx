@@ -345,7 +345,8 @@ const StudentDashboard = () => {
         }
       );
 
-      if (response.data) {
+      // Check if the response is valid
+      if (response.status === 200) {
         const examData = response.data;
         setCurrentExam(examData);
         setTimeLeft(examData.timeLimit * 60);
@@ -369,16 +370,22 @@ const StudentDashboard = () => {
       console.error('Start exam error:', error);
       
       // Handle specific error cases
-      if (error.response?.status === 404) {
-        setError('Exam not found. Please check the IPFS hash.');
-        showToast.error('Exam not found. Please check the IPFS hash.');
-      } else if (error.response?.data?.message) {
-        setError(error.response.data.message);
-        showToast.error(error.response.data.message);
+      if (error.response) {
+        if (error.response.status === 404) {
+          setError('Exam not found. Please check the IPFS hash.');
+          showToast.error('Exam not found. Please check the IPFS hash.');
+        } else if (error.response.data?.message) {
+          setError(error.response.data.message);
+          showToast.error(error.response.data.message);
+        } else {
+          const errorMsg = 'An unexpected error occurred. Please try again.';
+          setError(errorMsg);
+          showToast.error(errorMsg);
+        }
       } else {
-        const errorMsg = 'An unexpected error occurred. Please try again.';
-        setError(errorMsg);
-        showToast.error(errorMsg);
+        // Handle network errors or other unexpected errors
+        setError('Network error. Please check your connection and try again.');
+        showToast.error('Network error. Please check your connection and try again.');
       }
     } finally {
       setLoading(false);
