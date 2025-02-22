@@ -250,8 +250,12 @@ const StudentDashboard = () => {
 
   const exitFullscreen = useCallback(async () => {
     try {
-      if (document.fullscreenElement) { // Check if in fullscreen
+      if (document.exitFullscreen) {
         await document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        await document.webkitExitFullscreen();
+      } else if (document.msExitFullscreen) {
+        await document.msExitFullscreen();
       }
       setIsFullscreen(false);
     } catch (error) {
@@ -314,24 +318,9 @@ const StudentDashboard = () => {
         return;
       }
 
-      // Check if the exam mode is enabled
-      const examCheckResponse = await axios.get(`${config.API_BASE_URL}/api/exams/${ipfsHash}`, {
-        withCredentials: true
-      });
-
-      // Log the response for debugging
-      console.log('Exam mode response:', examCheckResponse.data);
-
-      // Check if examMode is true
-      if (!examCheckResponse.data || !examCheckResponse.data.examMode) {
-        showToast.error('Exam is not started yet. Please enable the exam mode in the database.');
-        return; // Exit if exam mode is disabled
-      }
-
-      // Proceed to start the exam
       await enterFullscreen();
 
-      const startResponse = await axios.post(
+      const response = await axios.post(
         `${config.API_BASE_URL}/api/exams/start`,
         { ipfsHash: ipfsHash.trim() },
         {
@@ -343,8 +332,8 @@ const StudentDashboard = () => {
         }
       );
 
-      if (startResponse.data) {
-        const examData = startResponse.data;
+      if (response.data) {
+        const examData = response.data;
         setCurrentExam(examData);
         setTimeLeft(examData.timeLimit * 60);
         setAnswers({});
@@ -367,10 +356,7 @@ const StudentDashboard = () => {
       console.error('Start exam error:', error);
       
       // Handle specific error cases
-      if (error.response?.status === 404) {
-        setError('Exam not found or exam mode is disabled.');
-        showToast.error('Exam not found or exam mode is disabled.');
-      } else if (error.response?.status === 409) {
+      if (error.response?.status === 409) {
         const errorMsg = 'You have already attempted this exam. You cannot retake it.';
         setError(errorMsg);
         showToast.error(errorMsg);
@@ -379,7 +365,7 @@ const StudentDashboard = () => {
         setError(error.response.data.message);
         showToast.error(error.response.data.message);
       } else {
-        const errorMsg = 'Check Exam code OR You have already attempted this exam.';
+        const errorMsg = 'Check Exam code OR \n You have already attempted this exam.';
         setError(errorMsg);
         showToast.error(errorMsg);
       }
