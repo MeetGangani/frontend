@@ -313,10 +313,12 @@ const AdminDashboard = () => {
     <div className={`min-h-screen pt-20 ${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'}`}>
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-6 relative z-0">
-          <div className={`flex space-x-4 border-b transition-none ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+          <div className={`flex flex-wrap gap-2 sm:gap-4 border-b transition-none ${
+            isDarkMode ? 'border-gray-700' : 'border-gray-200'
+          }`}>
             <button
               onClick={() => handleTabSwitch('dashboard')}
-              className={`px-4 py-2 font-medium transition-none ${
+              className={`px-3 sm:px-4 py-2 font-medium transition-none text-sm sm:text-base ${
                 activeTab === 'dashboard'
                   ? isDarkMode
                     ? 'text-violet-400 border-b-2 border-violet-400'
@@ -330,7 +332,7 @@ const AdminDashboard = () => {
             </button>
             <button
               onClick={() => handleTabSwitch('users')}
-              className={`px-4 py-2 font-medium transition-none ${
+              className={`px-3 sm:px-4 py-2 font-medium transition-none text-sm sm:text-base ${
                 activeTab === 'users'
                   ? isDarkMode
                     ? 'text-violet-400 border-b-2 border-violet-400'
@@ -384,99 +386,102 @@ const AdminDashboard = () => {
                 No pending requests
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className={isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'}>
-                    <tr>
-                      {['Exam Name', 'Institute', 'Status', 'Questions', 'Date', 'Actions'].map((header) => (
-                        <th key={header} className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                          isDarkMode ? 'text-gray-300' : 'text-gray-500'
-                        }`}>
-                          {header}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className={`divide-y ${
-                    isDarkMode ? 'divide-gray-700 text-gray-300' : 'divide-gray-200'
-                  }`}>
-                    {requests.map((request) => (
-                      <tr key={request._id} className={
-                        isDarkMode 
-                          ? 'hover:bg-[#2a2f3e] text-gray-200' 
-                          : 'hover:bg-gray-50'
-                      }>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={isDarkMode ? 'text-gray-200' : 'text-gray-900'}>
-                            {request.examName}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={isDarkMode ? 'text-gray-200' : 'text-gray-900'}>
-                            {request.institute?.name}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            request.status === 'pending'
-                              ? isDarkMode 
-                                ? 'bg-yellow-900 text-yellow-200' 
-                                : 'bg-yellow-100 text-yellow-800'
-                              : request.status === 'approved'
-                              ? isDarkMode 
-                                ? 'bg-green-900 text-green-200' 
-                                : 'bg-green-100 text-green-800'
-                              : isDarkMode 
-                                ? 'bg-red-900 text-red-200' 
-                                : 'bg-red-100 text-red-800'
-                          }`}>
-                            {request.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={isDarkMode ? 'text-gray-200' : 'text-gray-900'}>
-                            {request.totalQuestions}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={isDarkMode ? 'text-gray-200' : 'text-gray-900'}>
-                            {new Date(request.createdAt).toLocaleDateString()}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {request.status === 'pending' && (
-                            <div className="flex space-x-2">
-                              <button
-                                onClick={() => handleApprove(request)}
-                                className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors"
-                              >
-                                Approve
-                              </button>
-                              <button
-                                onClick={() => handleReject(request)}
-                                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-colors"
-                              >
-                                Reject
-                              </button>
-                            </div>
-                          )}
-                        </td>
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <div className="inline-block min-w-full align-middle">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'}`}>
+                      <tr>
+                        {['Exam Name', 'Institute', 'Status', 'Questions', 'Date', 'Actions'].map((header) => (
+                          <th
+                            key={header}
+                            className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-medium uppercase tracking-wider whitespace-nowrap"
+                          >
+                            {header}
+                          </th>
+                        ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className={`divide-y ${
+                      isDarkMode ? 'divide-gray-700 text-gray-300' : 'divide-gray-200'
+                    }`}>
+                      {requests.map((request) => (
+                        <tr key={request._id} className={
+                          isDarkMode 
+                            ? 'hover:bg-[#2a2f3e] text-gray-200' 
+                            : 'hover:bg-gray-50'
+                        }>
+                          <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm whitespace-nowrap">
+                            <span className={isDarkMode ? 'text-gray-200' : 'text-gray-900'}>
+                              {request.examName}
+                            </span>
+                          </td>
+                          <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm whitespace-nowrap">
+                            <span className={isDarkMode ? 'text-gray-200' : 'text-gray-900'}>
+                              {request.institute?.name}
+                            </span>
+                          </td>
+                          <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm whitespace-nowrap">
+                            <span className={`px-2 py-1 text-xs rounded-full ${
+                              request.status === 'pending'
+                                ? isDarkMode 
+                                  ? 'bg-yellow-900 text-yellow-200' 
+                                  : 'bg-yellow-100 text-yellow-800'
+                                : request.status === 'approved'
+                                ? isDarkMode 
+                                  ? 'bg-green-900 text-green-200' 
+                                  : 'bg-green-100 text-green-800'
+                                : isDarkMode 
+                                  ? 'bg-red-900 text-red-200' 
+                                  : 'bg-red-100 text-red-800'
+                            }`}>
+                              {request.status}
+                            </span>
+                          </td>
+                          <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm whitespace-nowrap">
+                            <span className={isDarkMode ? 'text-gray-200' : 'text-gray-900'}>
+                              {request.totalQuestions}
+                            </span>
+                          </td>
+                          <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm whitespace-nowrap">
+                            <span className={isDarkMode ? 'text-gray-200' : 'text-gray-900'}>
+                              {new Date(request.createdAt).toLocaleDateString()}
+                            </span>
+                          </td>
+                          <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm whitespace-nowrap">
+                            {request.status === 'pending' && (
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() => handleApprove(request)}
+                                  className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors"
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={() => handleReject(request)}
+                                  className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-colors"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>
         ) : (
-          <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-200px)]">
+          <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 h-auto lg:h-[calc(100vh-200px)]">
             {/* Create User Form */}
             <div className="w-full lg:w-[400px]">
               <div className={`rounded-lg shadow-md ${
                 isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
               } sticky top-0`}>
-                <div className="p-4 lg:p-6">
-                  <h2 className={`text-xl font-semibold mb-6 ${
+                <div className="p-3 sm:p-4 lg:p-6">
+                  <h2 className={`text-lg sm:text-xl font-semibold mb-4 sm:mb-6 ${
                     isDarkMode ? 'text-white' : 'text-gray-900'
                   }`}>Create New User</h2>
                   <AdminUserCreate onUserCreated={fetchUsers} />
@@ -611,7 +616,7 @@ const AdminDashboard = () => {
                   isDarkMode 
                     ? 'bg-[#1a1f2e] text-white' 
                     : 'bg-white text-gray-900'
-                } rounded-lg max-w-md w-full shadow-xl relative mx-auto`}
+                } rounded-lg w-[95%] sm:max-w-md shadow-xl relative mx-auto`}
               >
                 <div className={`flex justify-between items-center p-6 border-b ${
                   isDarkMode ? 'border-gray-700' : 'border-gray-200'
@@ -632,7 +637,7 @@ const AdminDashboard = () => {
                   )}
                 </div>
 
-                <div className="p-6">
+                <div className="p-3 sm:p-6">
                   <div className="mb-4">
                     <label className={`block text-sm font-medium mb-1 ${
                       isDarkMode ? 'text-gray-300' : 'text-gray-700'
@@ -644,7 +649,7 @@ const AdminDashboard = () => {
                       value={adminComment}
                       onChange={(e) => setAdminComment(e.target.value)}
                       disabled={actionLoading}
-                      className={`w-full px-3 py-2 rounded-lg shadow-sm ${
+                      className={`w-full px-3 py-2 rounded-lg shadow-sm text-sm sm:text-base ${
                         isDarkMode 
                           ? 'bg-[#2a2f3e] border-gray-700 text-white' 
                           : 'bg-white border-gray-300 text-gray-900'
