@@ -434,10 +434,10 @@ const StudentDashboard = () => {
         if (answers[key] !== null && answers[key] !== undefined) {
           acc[key] = Number(answers[key]);
         }
-        return acc;
+        return acc;    
       }, {});
 
-      
+
       const submissionData = {
         examId: currentExam._id,
         answers: attemptedAnswers,
