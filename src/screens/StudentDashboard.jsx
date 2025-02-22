@@ -310,7 +310,6 @@ const StudentDashboard = () => {
 
       // Check if exam was already attempted using examResults
       const hasAttempted = examResults.some(result => {
-        // Log for debugging
         console.log('Comparing:', {
           resultHash: result.exam?.ipfsHash,
           currentHash: ipfsHash.trim(),
@@ -382,10 +381,6 @@ const StudentDashboard = () => {
         if (error.response.status === 404) {
           setError('Exam not found. Please check the IPFS hash.');
           showToast.error('Exam not found. Please check the IPFS hash.');
-        } else if (error.response.status === 409) {
-          setError('You have already attempted this exam. You cannot retake it.');
-          showToast.error('You have already attempted this exam. You cannot retake it.');
-          setIpfsHash('');
         } else if (error.response.data?.message) {
           setError(error.response.data.message);
           showToast.error(error.response.data.message);
