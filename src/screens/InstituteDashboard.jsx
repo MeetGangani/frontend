@@ -288,77 +288,28 @@ const InstituteDashboard = () => {
   };
 
   const handleToggleExamMode = async (examId) => {
-    let currentExamMode = false; // Initialize the variable outside try block
-    
     try {
-      // Find the current exam data
+      // Fetch the current exam data to determine the current mode
       const currentExam = uploads.find(upload => upload._id === examId);
-      if (!currentExam) return;
+      const newExamMode = !currentExam.examMode; // Toggle the current state
 
-      currentExamMode = currentExam.examMode; // Store the current state
-      
-      // Optimistically update the UI
+      const response = await axiosInstance.put(`/api/exams/${examId}/exam-mode`, {
+        examMode: newExamMode // Send the new state to the server
+      });
+
+      // Update the uploads state to reflect the new exam mode
       setUploads(prevUploads => 
         prevUploads.map(upload => 
-          upload._id === examId ? { ...upload, examMode: !currentExamMode } : upload
+          upload._id === examId ? { ...upload, examMode: newExamMode } : upload
         )
       );
 
-      // Make the API call to toggle exam mode
-      const response = await axiosInstance.put(`/api/exams/${examId}/exam-mode`, {
-        examMode: !currentExamMode
-      });
-
-      // Show success message
       showToast.success(response.data.message);
-
-      // Fetch the latest data to ensure sync with server
-      await fetchUploads(); // Ensure the uploads are refreshed to reflect the latest state
-
     } catch (error) {
       console.error('Error toggling exam mode:', error);
       showToast.error('Failed to toggle exam mode');
-      
-      // Revert the optimistic update in case of error
-      setUploads(prevUploads => 
-        prevUploads.map(upload => 
-          upload._id === examId ? { ...upload, examMode: currentExamMode } : upload // Revert to the original state
-        )
-      );
     }
   };
-
-  // Update refreshUploads to use the correct endpoint
-  const refreshUploads = async () => {
-    try {
-      const response = await axiosInstance.get('/api/upload/my-uploads'); // Changed from file-requests to upload
-      if (response.data) {
-        setUploads(response.data);
-      }
-    } catch (error) {
-      console.error('Error refreshing uploads:', error);
-      showToast.error('Failed to refresh uploads');
-    }
-  };
-
-  // Add useEffect to refresh uploads periodically
-  useEffect(() => {
-    const refreshInterval = setInterval(refreshUploads, 30000); // Refresh every 30 seconds
-
-    // Refresh when tab becomes active
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        refreshUploads();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      clearInterval(refreshInterval);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, []);
 
   return (
     <div className={`min-h-screen pt-20 ${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'}`}>
