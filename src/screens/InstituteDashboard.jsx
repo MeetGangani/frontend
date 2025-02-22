@@ -288,32 +288,32 @@ const InstituteDashboard = () => {
   };
 
   const handleToggleExamMode = async (examId) => {
+    let currentExamMode = false;
+    
     try {
       // Find the current exam data
       const currentExam = uploads.find(upload => upload._id === examId);
       if (!currentExam) return;
 
-      const newExamMode = !currentExam.examMode; // Toggle the current state
-
+      currentExamMode = currentExam.examMode;
+      
       // Optimistically update the UI
       setUploads(prevUploads => 
         prevUploads.map(upload => 
-          upload._id === examId ? { ...upload, examMode: newExamMode } : upload
+          upload._id === examId ? { ...upload, examMode: !currentExamMode } : upload
         )
       );
 
       const response = await axiosInstance.put(`/api/exams/${examId}/exam-mode`, {
-        examMode: newExamMode
+        examMode: !currentExamMode
       });
 
       // Show success message
       showToast.success(response.data.message);
 
-      // Fetch the latest data to ensure sync with server
-      const updatedResponse = await axiosInstance.get('/api/file-requests/my-uploads');
-      if (updatedResponse.data) {
-        setUploads(updatedResponse.data);
-      }
+      // Fetch the latest data
+      await fetchUploads();
+
     } catch (error) {
       console.error('Error toggling exam mode:', error);
       showToast.error('Failed to toggle exam mode');
@@ -321,16 +321,16 @@ const InstituteDashboard = () => {
       // Revert the optimistic update in case of error
       setUploads(prevUploads => 
         prevUploads.map(upload => 
-          upload._id === examId ? { ...upload, examMode: !newExamMode } : upload // Use the newExamMode defined earlier
+          upload._id === examId ? { ...upload, examMode: currentExamMode } : upload
         )
       );
     }
   };
 
-  // Add a refresh function to fetch latest uploads
+  // Update refreshUploads to use the correct endpoint
   const refreshUploads = async () => {
     try {
-      const response = await axiosInstance.get('/api/file-requests/my-uploads');
+      const response = await axiosInstance.get('/api/upload/my-uploads'); // Changed from file-requests to upload
       if (response.data) {
         setUploads(response.data);
       }
@@ -340,7 +340,7 @@ const InstituteDashboard = () => {
     }
   };
 
-  // Add useEffect to refresh uploads periodically or when tab becomes active
+  // Add useEffect to refresh uploads periodically
   useEffect(() => {
     const refreshInterval = setInterval(refreshUploads, 30000); // Refresh every 30 seconds
 
