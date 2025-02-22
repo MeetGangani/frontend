@@ -389,8 +389,8 @@ const StudentDashboard = () => {
           showToast.error('An unexpected error occurred. Please try again.');
         }
       } else {
-        setError('Network error. Please check your connection and try again.');
-        showToast.error('Network error. Please check your connection and try again.');
+        setError('Invalid Exam Code');
+        showToast.error('Invalid Exam Code');
       }
     } finally {
       setLoading(false);
