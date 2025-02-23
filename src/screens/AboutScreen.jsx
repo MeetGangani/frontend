@@ -59,6 +59,12 @@ const AboutScreen = () => {
       github: 'https://github.com/MeetGangani',
       linkedin: 'https://www.linkedin.com/in/meet-gangani-166750254'
     },
+{
+      name: 'Abhay Hindocha',
+      role: 'Full Stack Developer & Deployment Specialist',
+      github: 'https://github.com/Abhayhindocha',
+      linkedin: 'https://www.linkedin.com/in/hindocha-abhay-48a610268'
+    },
 
     {
       name: 'Isha Jivani',
@@ -66,6 +72,12 @@ const AboutScreen = () => {
       github: 'https://github.com/ishajivani',
       linkedin: 'https://www.linkedin.com/in/isha-jivani-012a112b3'
     },
+    {
+      name: 'Stuti Patel',
+      role: 'Frontend Developer',
+      github: 'https://github.com/stutipatel',
+      linkedin: 'https://www.linkedin.com/in/stuti-ghiyal11060210060000011'
+    }
     
   ];
 
