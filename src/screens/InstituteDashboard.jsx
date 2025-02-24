@@ -317,6 +317,17 @@ const InstituteDashboard = () => {
     }
   };
 
+  // Add validation for exam duration
+  const handleExamDurationChange = (e) => {
+    const value = parseInt(e.target.value);
+    // Ensure value is not negative and is a valid number
+    if (value < 0 || isNaN(value)) {
+      setExamDuration(0);
+    } else {
+      setExamDuration(value);
+    }
+  };
+
   return (
     <div className={`min-h-screen pt-20 ${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -403,7 +414,8 @@ const InstituteDashboard = () => {
                 <input
                   type="number"
                   value={examDuration}
-                  onChange={(e) => setExamDuration(e.target.value)}
+                  onChange={handleExamDurationChange}
+                  min="0"
                   placeholder="Enter exam duration"
                   required
                   className={`w-full px-4 py-3 rounded-lg ${
@@ -412,6 +424,11 @@ const InstituteDashboard = () => {
                       : 'bg-gray-50 border-gray-200 text-gray-900'
                   } border focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
                 />
+                <p className={`mt-1 text-sm ${
+                  isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                }`}>
+                  Minimum duration: 0 minutes
+                </p>
               </div>
 
               <div>
