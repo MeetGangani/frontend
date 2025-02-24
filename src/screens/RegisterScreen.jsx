@@ -129,22 +129,18 @@ const RegisterScreen = () => {
       showToast.success('Registration successful');
       navigate('/');
     } catch (err) {
-      // Enhanced error handling with CORS specific error
-      if (err.message?.includes('CORS')) {
-        showToast.error('Connection error. Please try again later.');
-        console.error('CORS Error:', err);
+      // Show the specific error message from the backend
+      if (err?.data?.message) {
+        // Server error message (e.g., "User already exists")
+        showToast.error(err.data.message);
       } else if (!navigator.onLine) {
         showToast.error('No internet connection. Please check your network.');
       } else if (err.name === 'TypeError' && err.message === 'Failed to fetch') {
         showToast.error('Unable to connect to the server. Please try again later.');
       } else {
-        showToast.error(
-          err?.data?.message || 
-          err?.error || 
-          'Unable to complete registration. Please try again.'
-        );
+        showToast.error('Registration failed. Please try again.');
       }
-      console.error('Registration error:', err);
+      console.error('Registration error:', err); // For debugging
     }
   };
 
