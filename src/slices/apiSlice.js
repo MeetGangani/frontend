@@ -6,15 +6,10 @@ import { logout } from './authSlice';
 export const baseUrl = 'https://backdeploy-9bze.onrender.com';
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: process.env.REACT_APP_API_URL || 'https://backdeploy-9bze.onrender.com',
+  baseUrl: 'https://backdeploy-9bze.onrender.com',
   credentials: 'include',
-  prepareHeaders: (headers, { getState }) => {
-    const token = getState()?.auth?.userInfo?.token;
-    if (token) {
-      headers.set('authorization', `Bearer ${token}`);
-    }
+  prepareHeaders: (headers) => {
     headers.set('Accept', 'application/json');
-    // Don't set X-Forwarded-Proto header, let the server handle HTTPS
     return headers;
   }
 });
