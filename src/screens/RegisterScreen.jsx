@@ -138,7 +138,7 @@ const RegisterScreen = () => {
       } else if (err.name === 'TypeError' && err.message === 'Failed to fetch') {
         showToast.error('Unable to connect to the server. Please try again later.');
       } else {
-        showToast.error('Registration failed. Please try again.');
+        showToast.error('User already exists');
       }
       console.error('Registration error:', err); // For debugging
     }
