@@ -489,8 +489,8 @@ const AdminDashboard = () => {
           </div>
         ) : (
           <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 h-auto lg:h-[calc(100vh-200px)]">
-            {/* Create User Form */}
-            <div className="w-full lg:w-[400px]">
+            {/* Create User Form - Fixed width */}
+            <div className="w-full lg:w-[400px] flex-shrink-0">
               <div className={`rounded-lg shadow-md ${
                 isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
               } sticky top-0`}>
@@ -503,14 +503,15 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            {/* Users Table */}
-            <div className="flex-1 h-full">
+            {/* Users Table - Maintain width during refresh */}
+            <div className="flex-1 h-full min-w-0">
               <div className={`rounded-lg shadow-md ${
                 isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
               } h-full flex flex-col`}>
                 <div className="p-4 lg:p-6 flex flex-col h-full">
+                  {/* Header section */}
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       <h2 className={`text-xl font-semibold ${
                         isDarkMode ? 'text-white' : 'text-gray-900'
                       }`}>
@@ -519,7 +520,7 @@ const AdminDashboard = () => {
                       <button
                         onClick={handleUserListRefresh}
                         disabled={isRefreshing}
-                        className={`p-2 rounded-lg transition-all duration-200 ${
+                        className={`p-2 rounded-lg transition-all duration-200 flex-shrink-0 ${
                           isDarkMode 
                             ? 'bg-[#2a2f3e] hover:bg-[#3a3f4e] text-gray-300' 
                             : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
@@ -529,7 +530,8 @@ const AdminDashboard = () => {
                         <FaSync className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                       </button>
                     </div>
-                    <div className="relative w-full sm:w-auto">
+                    {/* Search input */}
+                    <div className="relative w-full sm:w-auto flex-shrink-0">
                       <input
                         type="text"
                         placeholder="Search by email or type..."
@@ -546,15 +548,16 @@ const AdminDashboard = () => {
                       }`} />
                     </div>
                   </div>
-                  
-                  {userLoading ? (
-                    <div className="flex-1 flex justify-center items-center">
-                      <Loader />
-                    </div>
-                  ) : userError ? (
-                    <div className="text-red-500 p-4">{userError}</div>
-                  ) : (
-                    <div className="flex-1 overflow-hidden">
+
+                  {/* Table container with minimum height */}
+                  <div className="flex-1 overflow-hidden min-h-[400px]">
+                    {userLoading ? (
+                      <div className="flex justify-center items-center h-full">
+                        <Loader />
+                      </div>
+                    ) : userError ? (
+                      <div className="text-red-500 p-4">{userError}</div>
+                    ) : (
                       <div className="h-full overflow-auto">
                         <table className="min-w-full divide-y divide-gray-200">
                           <thead className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} sticky top-0 z-10`}>
@@ -606,8 +609,8 @@ const AdminDashboard = () => {
                           </tbody>
                         </table>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

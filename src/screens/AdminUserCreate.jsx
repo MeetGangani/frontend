@@ -54,7 +54,7 @@ const AdminUserCreate = ({ onUserCreated }) => {
   };
 
   return (
-    <div className="max-w-md w-full">
+    <div className="w-full">
       {/* <h2 className={`text-3xl font-semibold mb-8 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
         Create New User
       </h2> */}
@@ -62,7 +62,7 @@ const AdminUserCreate = ({ onUserCreated }) => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         onSubmit={handleSubmit}
-        className="space-y-8"
+        className="space-y-6"
       >
         <div>
           <label className={`block text-base font-medium mb-3 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
