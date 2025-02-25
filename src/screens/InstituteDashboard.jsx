@@ -6,7 +6,7 @@ import axiosInstance from '../utils/axiosConfig';
 import { FaSync, FaDownload } from 'react-icons/fa';
 
 const InstituteDashboard = () => {
-  const { isDarkMode } = useTheme();
+  const { isDarkMode } = useTheme(); 
   const [file, setFile] = useState(null);
   const [examName, setExamName] = useState('');
   const [description, setDescription] = useState('');
