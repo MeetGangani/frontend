@@ -50,6 +50,20 @@ export const usersApiSlice = apiSlice.injectEndpoints({
         credentials: 'include'
       }),
     }),
+    sendOtp: builder.mutation({
+      query: (data) => ({
+        url: `${USERS_URL}/send-otp`,
+        method: 'POST',
+        body: data,
+      }),
+    }),
+    verifyOtp: builder.mutation({
+      query: (data) => ({
+        url: `${USERS_URL}/verify-otp`,
+        method: 'POST',
+        body: data,
+      }),
+    }),
   }),
 });
 
@@ -60,4 +74,6 @@ export const {
   useUpdateUserMutation,
   useGoogleAuthMutation,
   useCheckAuthQuery,
+  useSendOtpMutation,
+  useVerifyOtpMutation,
 } = usersApiSlice;
