@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { useRegisterMutation } from '../slices/usersApiSlice';
+import { useRegisterMutation, useSendOtpMutation, useVerifyOtpMutation } from '../slices/usersApiSlice';
 import { setCredentials } from '../slices/authSlice';
 import { motion } from 'framer-motion';
 import { FaBrain, FaEnvelope, FaLock, FaUser, FaGithub, FaEye, FaEyeSlash } from 'react-icons/fa';
@@ -13,8 +13,11 @@ import { showToast } from '../utils/toast';
 
 const RegisterScreen = () => {
   const { isDarkMode } = useTheme();
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [showOtpInput, setShowOtpInput] = useState(false);
+  const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordStrength, setPasswordStrength] = useState({
@@ -35,6 +38,8 @@ const RegisterScreen = () => {
   const location = useLocation();
 
   const [register, { isLoading }] = useRegisterMutation();
+  const [sendOtp] = useSendOtpMutation();
+  const [verifyOtp] = useVerifyOtpMutation();
 
   const { userInfo } = useSelector((state) => state.auth);
 
@@ -155,6 +160,33 @@ const RegisterScreen = () => {
     }
   };
 
+  // Handle email verification
+  const handleSendOTP = async (e) => {
+    e.preventDefault();
+    
+    try {
+      await sendOtp({ email }).unwrap();
+      setShowOtpInput(true);
+      showToast.success('OTP sent to your email');
+    } catch (err) {
+      showToast.error(err?.data?.message || 'Failed to send OTP');
+    }
+  };
+
+  // Handle OTP verification
+  const handleVerifyOTP = async (e) => {
+    e.preventDefault();
+    
+    try {
+      await verifyOtp({ email, otp }).unwrap();
+      setIsEmailVerified(true);
+      setShowOtpInput(false);
+      showToast.success('Email verified successfully');
+    } catch (err) {
+      showToast.error(err?.data?.message || 'Invalid OTP');
+    }
+  };
+
   return (
     <div className={`min-h-screen relative flex items-center justify-center pt-28 pb-12 px-4 sm:px-6 lg:px-8 ${
       isDarkMode ? 'bg-[#0A0F1C]' : 'bg-white'
@@ -237,204 +269,250 @@ const RegisterScreen = () => {
           </div>
 
           <form 
-            onSubmit={submitHandler} 
+            onSubmit={!isEmailVerified ? handleSendOTP : submitHandler} 
             className={`relative space-y-6 ${
               isDarkMode 
                 ? 'bg-gray-900/50 border-gray-800' 
                 : 'bg-white/50 border-gray-200'
             } backdrop-blur-xl p-6 sm:p-8 rounded-lg shadow-xl border`}
           >
-            <div className="space-y-5">
-              <div>
-                <label htmlFor="name" className={`block text-sm font-medium ${
-                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                }`}>
-                  Full Name
-                </label>
-                <div className="mt-1 relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FaUser className={`h-5 w-5 ${
-                      isDarkMode ? 'text-gray-500' : 'text-gray-400'
-                    }`} />
-                  </div>
-                  <input
-                    id="name"
-                    type="text"
-                    required
-                    className={`block w-full pl-10 pr-3 py-2 border ${
-                      isDarkMode 
-                        ? 'border-gray-700 bg-gray-800/50 text-white placeholder-gray-500' 
-                        : 'border-gray-300 bg-white/50 text-gray-900 placeholder-gray-400'
-                    } rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
-                    placeholder="Enter your name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="email" className={`block text-sm font-medium ${
-                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                }`}>
-                  Email Address
-                </label>
-                <div className="mt-1 relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FaEnvelope className={`h-5 w-5 ${
-                      isDarkMode ? 'text-gray-500' : 'text-gray-400'
-                    }`} />
-                  </div>
-                  <input
-                    id="email"
-                    type="email"
-                    required
-                    className={`block w-full pl-10 pr-3 py-2 border ${
-                      isDarkMode 
-                        ? 'border-gray-700 bg-gray-800/50 text-white placeholder-gray-500' 
-                        : 'border-gray-300 bg-white/50 text-gray-900 placeholder-gray-400'
-                    } rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="password" className={`block text-sm font-medium ${
-                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                }`}>
-                  Password
-                </label>
-                <div className="mt-1 space-y-2">
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <FaLock className={`h-5 w-5 ${
-                        isDarkMode ? 'text-gray-500' : 'text-gray-400'
-                      }`} />
-                    </div>
-                    <input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      required
-                      className={`block w-full pl-10 pr-12 py-2 border ${
-                        isDarkMode 
-                          ? 'border-gray-700 bg-gray-800/50 text-white placeholder-gray-500' 
-                          : 'border-gray-300 bg-white/50 text-gray-900 placeholder-gray-400'
-                      } rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
-                      placeholder="Create a password"
-                      value={password}
-                      onChange={(e) => {
-                        setPassword(e.target.value);
-                        checkPasswordStrength(e.target.value);
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    >
-                      {showPassword ? (
-                        <FaEye className={`h-5 w-5 ${
-                          isDarkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
-                        } cursor-pointer transition-colors`} />
-                      ) : (
-                        <FaEyeSlash className={`h-5 w-5 ${
-                          isDarkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
-                        } cursor-pointer transition-colors`} />
-                      )}
-                    </button>
-                  </div>
-
-                  {/* Password Strength Indicator */}
-                  {password && (
-                    <div className="space-y-2">
-                      <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full ${getStrengthColor()} transition-all duration-300`}
-                          style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
-                        />
-                      </div>
-
-                      {/* Password Requirements */}
-                      <div className={`text-xs space-y-1 ${
-                        isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                      }`}>
-                        <p className={passwordStrength.requirements.length ? 'text-green-500' : ''}>
-                          ✓ At least 8 characters
-                        </p>
-                        <p className={passwordStrength.requirements.uppercase ? 'text-green-500' : ''}>
-                          ✓ At least one uppercase letter
-                        </p>
-                        <p className={passwordStrength.requirements.lowercase ? 'text-green-500' : ''}>
-                          ✓ At least one lowercase letter
-                        </p>
-                        <p className={passwordStrength.requirements.number ? 'text-green-500' : ''}>
-                          ✓ At least one number
-                        </p>
-                        <p className={passwordStrength.requirements.special ? 'text-green-500' : ''}>
-                          ✓ At least one special character
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="confirmPassword" className={`block text-sm font-medium ${
-                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                }`}>
-                  Confirm Password
-                </label>
-                <div className="mt-1 relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FaLock className={`h-5 w-5 ${
-                      isDarkMode ? 'text-gray-500' : 'text-gray-400'
-                    }`} />
-                  </div>
-                  <input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    required
-                    className={`block w-full pl-10 pr-12 py-2 border ${
-                      isDarkMode 
-                        ? 'border-gray-700 bg-gray-800/50 text-white placeholder-gray-500' 
-                        : 'border-gray-300 bg-white/50 text-gray-900 placeholder-gray-400'
-                    } rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
-                    placeholder="Confirm your password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  >
-                    {showConfirmPassword ? (
-                      <FaEye className={`h-5 w-5 ${
-                        isDarkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
-                      } cursor-pointer transition-colors`} />
-                    ) : (
-                      <FaEyeSlash className={`h-5 w-5 ${
-                        isDarkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
-                      } cursor-pointer transition-colors`} />
-                    )}
-                  </button>
-                </div>
+            {/* Email Input */}
+            <div>
+              <label htmlFor="email" className={`block text-sm font-medium ${
+                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+              }`}>
+                Email Address
+              </label>
+              <div className="mt-1 relative">
+                <input
+                  id="email"
+                  type="email"
+                  required
+                  disabled={isEmailVerified}
+                  className={`block w-full pl-10 pr-3 py-2 border ${
+                    isDarkMode 
+                      ? 'border-gray-700 bg-gray-800/50 text-white placeholder-gray-500' 
+                      : 'border-gray-300 bg-white/50 text-gray-900 placeholder-gray-400'
+                  } rounded-lg`}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
               </div>
             </div>
 
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              type="submit"
-              disabled={isLoading || !isPasswordValid() || !password || !confirmPassword}
-              className="w-full flex justify-center py-3 px-4 rounded-lg text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-150"
-            >
-              {isLoading ? 'Creating Account...' : 'Create Account'}
-            </motion.button>
+            {/* OTP Input - Show only when OTP is sent */}
+            {showOtpInput && !isEmailVerified && (
+              <div>
+                <label htmlFor="otp" className={`block text-sm font-medium ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Enter OTP
+                </label>
+                <div className="mt-1 relative">
+                  <input
+                    id="otp"
+                    type="text"
+                    required
+                    maxLength={6}
+                    className={`block w-full pl-10 pr-3 py-2 border ${
+                      isDarkMode 
+                        ? 'border-gray-700 bg-gray-800/50 text-white' 
+                        : 'border-gray-300 bg-white/50 text-gray-900'
+                    } rounded-lg`}
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleVerifyOTP}
+                  className="mt-2 w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-violet-600 hover:bg-violet-700"
+                >
+                  Verify OTP
+                </button>
+              </div>
+            )}
+
+            {/* Show rest of the form only after email verification */}
+            {isEmailVerified && (
+              <>
+                <div className="space-y-5">
+                  <div>
+                    <label htmlFor="name" className={`block text-sm font-medium ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      Full Name
+                    </label>
+                    <div className="mt-1 relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <FaUser className={`h-5 w-5 ${
+                          isDarkMode ? 'text-gray-500' : 'text-gray-400'
+                        }`} />
+                      </div>
+                      <input
+                        id="name"
+                        type="text"
+                        required
+                        className={`block w-full pl-10 pr-3 py-2 border ${
+                          isDarkMode 
+                            ? 'border-gray-700 bg-gray-800/50 text-white placeholder-gray-500' 
+                            : 'border-gray-300 bg-white/50 text-gray-900 placeholder-gray-400'
+                        } rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
+                        placeholder="Enter your name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="password" className={`block text-sm font-medium ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      Password
+                    </label>
+                    <div className="mt-1 space-y-2">
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <FaLock className={`h-5 w-5 ${
+                            isDarkMode ? 'text-gray-500' : 'text-gray-400'
+                          }`} />
+                        </div>
+                        <input
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          required
+                          className={`block w-full pl-10 pr-12 py-2 border ${
+                            isDarkMode 
+                              ? 'border-gray-700 bg-gray-800/50 text-white placeholder-gray-500' 
+                              : 'border-gray-300 bg-white/50 text-gray-900 placeholder-gray-400'
+                          } rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
+                          placeholder="Create a password"
+                          value={password}
+                          onChange={(e) => {
+                            setPassword(e.target.value);
+                            checkPasswordStrength(e.target.value);
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                        >
+                          {showPassword ? (
+                            <FaEye className={`h-5 w-5 ${
+                              isDarkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+                            } cursor-pointer transition-colors`} />
+                          ) : (
+                            <FaEyeSlash className={`h-5 w-5 ${
+                              isDarkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+                            } cursor-pointer transition-colors`} />
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Password Strength Indicator */}
+                      {password && (
+                        <div className="space-y-2">
+                          <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full ${getStrengthColor()} transition-all duration-300`}
+                              style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
+                            />
+                          </div>
+
+                          {/* Password Requirements */}
+                          <div className={`text-xs space-y-1 ${
+                            isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                          }`}>
+                            <p className={passwordStrength.requirements.length ? 'text-green-500' : ''}>
+                              ✓ At least 8 characters
+                            </p>
+                            <p className={passwordStrength.requirements.uppercase ? 'text-green-500' : ''}>
+                              ✓ At least one uppercase letter
+                            </p>
+                            <p className={passwordStrength.requirements.lowercase ? 'text-green-500' : ''}>
+                              ✓ At least one lowercase letter
+                            </p>
+                            <p className={passwordStrength.requirements.number ? 'text-green-500' : ''}>
+                              ✓ At least one number
+                            </p>
+                            <p className={passwordStrength.requirements.special ? 'text-green-500' : ''}>
+                              ✓ At least one special character
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="confirmPassword" className={`block text-sm font-medium ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      Confirm Password
+                    </label>
+                    <div className="mt-1 relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <FaLock className={`h-5 w-5 ${
+                          isDarkMode ? 'text-gray-500' : 'text-gray-400'
+                        }`} />
+                      </div>
+                      <input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        required
+                        className={`block w-full pl-10 pr-12 py-2 border ${
+                          isDarkMode 
+                            ? 'border-gray-700 bg-gray-800/50 text-white placeholder-gray-500' 
+                            : 'border-gray-300 bg-white/50 text-gray-900 placeholder-gray-400'
+                        } rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
+                        placeholder="Confirm your password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      >
+                        {showConfirmPassword ? (
+                          <FaEye className={`h-5 w-5 ${
+                            isDarkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+                          } cursor-pointer transition-colors`} />
+                        ) : (
+                          <FaEyeSlash className={`h-5 w-5 ${
+                            isDarkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+                          } cursor-pointer transition-colors`} />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  type="submit"
+                  disabled={isLoading || !isPasswordValid() || !password || !confirmPassword}
+                  className="w-full flex justify-center py-3 px-4 rounded-lg text-white bg-gradient-to-r from-violet-600 to-indigo-600"
+                >
+                  {isLoading ? 'Creating Account...' : 'Create Account'}
+                </motion.button>
+              </>
+            )}
+
+            {/* Initial verify email button */}
+            {!isEmailVerified && !showOtpInput && (
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                type="submit"
+                className="w-full flex justify-center py-3 px-4 rounded-lg text-white bg-gradient-to-r from-violet-600 to-indigo-600"
+              >
+                Verify Email
+              </motion.button>
+            )}
           </form>
         </div>
 
