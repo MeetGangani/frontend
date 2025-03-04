@@ -49,7 +49,7 @@ export const {
   setError, 
   clearError,
   updateUserInfo 
-} = authSlice.actions;
+} = authSlice.actions; 
 
 // Selectors
 export const selectIsAuthenticated = (state) => state.auth.isAuthenticated;
