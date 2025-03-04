@@ -324,7 +324,7 @@ const RegisterScreen = () => {
                         onChange={(e) => {
                           const value = e.target.value;
                           if (value.match(/^[0-9]$/)) {
-                            const newOtp = otp.split('');
+                            const newOtp = [...otp];
                             newOtp[index] = value;
                             setOtp(newOtp.join(''));
                             // Auto-focus next input
@@ -338,21 +338,44 @@ const RegisterScreen = () => {
                         }}
                         onKeyDown={(e) => {
                           // Handle backspace
-                          if (e.key === 'Backspace' && !otp[index] && index > 0) {
-                            const prevInput = e.target.previousElementSibling;
-                            if (prevInput) {
-                              prevInput.focus();
-                            }
-                            const newOtp = otp.split('');
-                            newOtp[index - 1] = '';
+                          if (e.key === 'Backspace') {
+                            e.preventDefault();
+                            const newOtp = [...otp];
+                            newOtp[index] = '';
                             setOtp(newOtp.join(''));
+                            // Move focus to previous input
+                            if (index > 0) {
+                              const prevInput = e.target.previousElementSibling;
+                              if (prevInput) {
+                                prevInput.focus();
+                              }
+                            }
                           }
+                          // Handle left arrow
+                          else if (e.key === 'ArrowLeft' && index > 0) {
+                            e.target.previousElementSibling?.focus();
+                          }
+                          // Handle right arrow
+                          else if (e.key === 'ArrowRight' && index < 5) {
+                            e.target.nextElementSibling?.focus();
+                          }
+                        }}
+                        onFocus={(e) => {
+                          // Select text on focus
+                          e.target.select();
                         }}
                         onPaste={(e) => {
                           e.preventDefault();
                           const pastedData = e.clipboardData.getData('text').slice(0, 6);
                           if (pastedData.match(/^[0-9]{1,6}$/)) {
-                            setOtp(pastedData.padEnd(6, ''));
+                            const newOtp = pastedData.padEnd(6, '').split('');
+                            setOtp(newOtp.join(''));
+                            // Focus the next empty input
+                            const inputs = e.target.parentElement.getElementsByTagName('input');
+                            const nextEmptyIndex = pastedData.length;
+                            if (nextEmptyIndex < 6) {
+                              inputs[nextEmptyIndex]?.focus();
+                            }
                           }
                         }}
                       />
