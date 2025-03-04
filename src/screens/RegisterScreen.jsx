@@ -308,28 +308,69 @@ const RegisterScreen = () => {
                 }`}>
                   Enter OTP
                 </label>
-                <div className="mt-1 relative">
-                  <input
-                    id="otp"
-                    type="text"
-                    required
-                    maxLength={6}
-                    className={`block w-full pl-10 pr-3 py-2 border ${
-                      isDarkMode 
-                        ? 'border-gray-700 bg-gray-800/50 text-white' 
-                        : 'border-gray-300 bg-white/50 text-gray-900'
-                    } rounded-lg`}
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                  />
+                <div className="mt-1">
+                  <div className="flex gap-2 justify-between">
+                    {[...Array(6)].map((_, index) => (
+                      <input
+                        key={index}
+                        type="text"
+                        maxLength={1}
+                        className={`w-12 h-12 text-center text-xl font-semibold border ${
+                          isDarkMode 
+                            ? 'border-gray-700 bg-gray-800/50 text-white' 
+                            : 'border-gray-300 bg-white/50 text-gray-900'
+                        } rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
+                        value={otp[index] || ''}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value.match(/^[0-9]$/)) {
+                            const newOtp = otp.split('');
+                            newOtp[index] = value;
+                            setOtp(newOtp.join(''));
+                            // Auto-focus next input
+                            if (index < 5 && value) {
+                              const nextInput = e.target.nextElementSibling;
+                              if (nextInput) {
+                                nextInput.focus();
+                              }
+                            }
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          // Handle backspace
+                          if (e.key === 'Backspace' && !otp[index] && index > 0) {
+                            const prevInput = e.target.previousElementSibling;
+                            if (prevInput) {
+                              prevInput.focus();
+                            }
+                            const newOtp = otp.split('');
+                            newOtp[index - 1] = '';
+                            setOtp(newOtp.join(''));
+                          }
+                        }}
+                        onPaste={(e) => {
+                          e.preventDefault();
+                          const pastedData = e.clipboardData.getData('text').slice(0, 6);
+                          if (pastedData.match(/^[0-9]{1,6}$/)) {
+                            setOtp(pastedData.padEnd(6, ''));
+                          }
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleVerifyOTP}
+                    disabled={otp.length !== 6}
+                    className={`mt-4 w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white 
+                      ${otp.length === 6 
+                        ? 'bg-violet-600 hover:bg-violet-700' 
+                        : 'bg-violet-400 cursor-not-allowed'
+                      } transition-colors duration-200`}
+                  >
+                    Verify OTP
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleVerifyOTP}
-                  className="mt-2 w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-violet-600 hover:bg-violet-700"
-                >
-                  Verify OTP
-                </button>
               </div>
             )}
 
