@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useTheme } from '../context/ThemeContext';
@@ -7,6 +7,8 @@ import { FaArrowLeft, FaPlus, FaTrash, FaImage, FaCheck, FaTimes, FaEdit } from 
 import axios from 'axios';
 import { showToast } from '../utils/toast';
 import config from '../config/config';
+import axiosInstance from '../utils/axiosConfig';
+import { toast } from 'react-hot-toast';
 
 const InstituteExamCreationScreen = () => {
   const { isDarkMode } = useTheme();
@@ -15,7 +17,8 @@ const InstituteExamCreationScreen = () => {
   
   // Step tracking
   const [currentStep, setCurrentStep] = useState(1); // 1: Metadata, 2: Questions
-  
+  const [submitting, setSubmitting] = useState(false);
+
   // Exam metadata
   const [examMetadata, setExamMetadata] = useState({
     examName: '',
@@ -548,87 +551,72 @@ const InstituteExamCreationScreen = () => {
   };
   
   // Update the submitExam function to use the deployed backend URL
+  // Update the submitExam function to better handle image data
   const submitExam = async () => {
     try {
-      setIsSubmitting(true);
+      setSubmitting(true);
       
-      // Validate that we have all required questions
-      if (questions.length < examMetadata.numberOfQuestions) {
-        showToast.error(`Please add all ${examMetadata.numberOfQuestions} questions before submitting`);
-        setIsSubmitting(false);
+      // Validate exam data
+      if (!examMetadata.examName.trim()) {
+        toast.error('Please enter an exam name');
+        setSubmitting(false);
         return;
       }
       
-      // Prepare the exam data
+      if (questions.length === 0) {
+        toast.error('Please add at least one question');
+        setSubmitting(false);
+        return;
+      }
+      
+      // Prepare exam data - simplify the structure to avoid circular references
       const examData = {
-        examName: examMetadata.examName,
-        subject: examMetadata.subject,
-        description: examMetadata.description,
-        timeLimit: examMetadata.timeLimit,
-        passingPercentage: examMetadata.passingPercentage,
-        questions: questions.map(q => {
-          // Format each question based on its type
-          const formattedQuestion = {
-            questionText: q.questionText,
-            questionImage: q.questionImage,
-            questionType: q.questionType,
-            options: q.options.map(opt => ({
-              text: opt.text,
-              image: opt.image
-            }))
-          };
-          
-          // Add the correct answer(s) based on question type
-          if (q.questionType === 'single') {
-            formattedQuestion.correctOption = q.correctOption;
-          } else {
-            formattedQuestion.correctOptions = q.correctOptions;
-          }
-          
-          return formattedQuestion;
-        })
+        examName: examMetadata.examName.trim(),
+        description: examMetadata.description.trim(),
+        subject: examMetadata.subject.trim(),
+        timeLimit: parseInt(examMetadata.timeLimit),
+        passingPercentage: parseInt(examMetadata.passingPercentage),
+        questions: questions.map(q => ({
+          questionText: q.questionText || '',
+          questionImage: q.questionImage || null,
+          questionType: q.questionType || 'single',
+          options: q.options.map(opt => ({
+            text: opt.text || '',
+            image: opt.image || null
+          })),
+          correctOption: q.questionType === 'single' ? q.correctOption : -1,
+          correctOptions: q.questionType === 'multiple' ? q.correctOptions : []
+        }))
       };
       
-      // Convert to binary format
-      const jsonString = JSON.stringify(examData);
-      const encoder = new TextEncoder();
-      const binaryData = encoder.encode(jsonString);
+      console.log('Sending exam data:', JSON.stringify(examData));
       
-      // Create form data
-      const formData = new FormData();
-      formData.append('examData', new Blob([binaryData], { type: 'application/octet-stream' }));
-      
-      // Submit to API using the deployed backend URL
-      const response = await axios.post(
-        `${config.API_BASE_URL}/api/exams/create-binary`,
-        formData,
-        { 
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          },
-          withCredentials: true 
+      // Send to server with increased timeout
+      const response = await axiosInstance.post('/api/exams/create-binary', examData, {
+        timeout: 120000, // 2 minutes timeout for large payloads
+        headers: {
+          'Content-Type': 'application/json'
         }
-      );
+      });
       
-      showToast.success('Exam created successfully');
+      toast.success('Exam created successfully!');
       navigate('/institute/dashboard');
     } catch (error) {
       console.error('Error creating exam:', error);
       
-      // More detailed error handling
       if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
-        showToast.error(error.response.data?.message || `Server error: ${error.response.status}`);
+        console.error('Error response data:', error.response.data);
+        console.error('Error response status:', error.response.status);
+        toast.error(error.response.data.message || `Server error: ${error.response.status}`);
       } else if (error.request) {
-        // The request was made but no response was received
-        showToast.error('No response from server. Please check your internet connection.');
+        console.error('No response received:', error.request);
+        toast.error('Server did not respond. Please try again later.');
       } else {
-        // Something happened in setting up the request that triggered an Error
-        showToast.error(`Error: ${error.message}`);
+        console.error('Error message:', error.message);
+        toast.error('Failed to create exam: ' + error.message);
       }
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
   };
   

@@ -305,7 +305,7 @@ const InstituteDashboard = () => {
 
   // Navigate to exam creation screen
   const navigateToExamCreation = () => {
-    navigate("/institute/create-exam");
+    navigate('/institute/exam/create');
   };
 
   return (
@@ -934,7 +934,7 @@ const handleTabChange = (tab) => {
 };
 
 const navigateToExamCreation = () => {
-  navigate("/institute/create-exam");
+  navigate('/institute/exam/create');
 };
 
 const handleViewResults = async (examId) => {
