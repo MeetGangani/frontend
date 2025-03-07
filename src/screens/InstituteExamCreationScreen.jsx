@@ -189,7 +189,7 @@ const InstituteExamCreationScreen = () => {
       const formData = new FormData();
       formData.append('images', file);
       
-      // Upload to server
+      // Upload to server using the deployed backend URL
       const response = await axios.post(
         `${config.API_BASE_URL}/api/exams/upload-images`,
         formData,
@@ -210,7 +210,7 @@ const InstituteExamCreationScreen = () => {
       
     } catch (error) {
       console.error('Error uploading image:', error);
-      showToast.error('Failed to upload image');
+      showToast.error('Failed to upload image: ' + (error.response?.data?.message || error.message));
     } finally {
       setIsUploading(false);
     }
@@ -243,7 +243,7 @@ const InstituteExamCreationScreen = () => {
       const formData = new FormData();
       formData.append('images', file);
       
-      // Upload to server
+      // Upload to server using the deployed backend URL
       const response = await axios.post(
         `${config.API_BASE_URL}/api/exams/upload-images`,
         formData,
@@ -270,7 +270,7 @@ const InstituteExamCreationScreen = () => {
       
     } catch (error) {
       console.error('Error uploading image:', error);
-      showToast.error('Failed to upload image');
+      showToast.error('Failed to upload image: ' + (error.response?.data?.message || error.message));
     } finally {
       setIsUploading(false);
     }
@@ -547,7 +547,7 @@ const InstituteExamCreationScreen = () => {
     }
   };
   
-  // Update the submitExam function to connect with the backend
+  // Update the submitExam function to use the deployed backend URL
   const submitExam = async () => {
     try {
       setIsSubmitting(true);
@@ -598,7 +598,7 @@ const InstituteExamCreationScreen = () => {
       const formData = new FormData();
       formData.append('examData', new Blob([binaryData], { type: 'application/octet-stream' }));
       
-      // Submit to API
+      // Submit to API using the deployed backend URL
       const response = await axios.post(
         `${config.API_BASE_URL}/api/exams/create-binary`,
         formData,
@@ -614,7 +614,19 @@ const InstituteExamCreationScreen = () => {
       navigate('/institute/dashboard');
     } catch (error) {
       console.error('Error creating exam:', error);
-      showToast.error(error.response?.data?.message || 'Failed to create exam');
+      
+      // More detailed error handling
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        showToast.error(error.response.data?.message || `Server error: ${error.response.status}`);
+      } else if (error.request) {
+        // The request was made but no response was received
+        showToast.error('No response from server. Please check your internet connection.');
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        showToast.error(`Error: ${error.message}`);
+      }
     } finally {
       setIsSubmitting(false);
     }

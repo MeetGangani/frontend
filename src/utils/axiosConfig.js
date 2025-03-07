@@ -1,20 +1,25 @@
 import axios from 'axios';
+import config from '../config/config';
 
 const axiosInstance = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'https://backdeploy-9bze.onrender.com',
+  baseURL: config.API_BASE_URL,
   withCredentials: true,
   headers: {
-    'Content-Type': 'application/json'
-  }
+    'Content-Type': 'application/json',
+  },
 });
 
-// Add request interceptor to add auth token
+// Add a request interceptor to include the token in all requests
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('userToken'); // or however you store your token
+    // Get the token from localStorage
+    const token = localStorage.getItem(config.TOKEN_KEY);
+    
+    // If token exists, add it to the headers
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
     return config;
   },
   (error) => {

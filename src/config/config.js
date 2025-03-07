@@ -1,10 +1,10 @@
 const config = {
-  API_BASE_URL: process.env.NODE_ENV === 'production' 
-    ? 'https://backdeploy-9bze.onrender.com'
-    : 'http://localhost:5000',
+  API_BASE_URL: 'https://backdeploy-9bze.onrender.com',
   FRONTEND_URL: process.env.NODE_ENV === 'production'
     ? 'https://nexusedu-jade.vercel.app'
-    : 'http://localhost:3000'
+    : 'http://localhost:3000',
+  TOKEN_KEY: 'userToken',
+  USER_INFO: 'userInfo',
 };
 
 export default config; 
