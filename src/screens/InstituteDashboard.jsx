@@ -305,7 +305,7 @@ const InstituteDashboard = () => {
 
   // Navigate to exam creation screen
   const navigateToExamCreation = () => {
-    navigate("/institute/exam/create");
+    navigate("/institute/create-exam");
   };
 
   return (
@@ -539,6 +539,20 @@ const InstituteDashboard = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">My Exams</h2>
+              <button
+                onClick={navigateToExamCreation}
+                className={`px-4 py-2 rounded-lg font-medium flex items-center ${
+                  isDarkMode
+                    ? 'bg-violet-700 hover:bg-violet-600 text-white'
+                    : 'bg-violet-600 hover:bg-violet-700 text-white'
+                }`}
+              >
+                <FaPlus className="mr-2" />
+                Create New Exam
+              </button>
+            </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 shadow-md rounded-lg overflow-hidden">
                 <thead className={isDarkMode ? "bg-[#0A0F1C]" : "bg-gray-50"}>
@@ -920,7 +934,7 @@ const handleTabChange = (tab) => {
 };
 
 const navigateToExamCreation = () => {
-  navigate("/institute/exam/create");
+  navigate("/institute/create-exam");
 };
 
 const handleViewResults = async (examId) => {

@@ -175,24 +175,45 @@ const InstituteExamCreationScreen = () => {
   };
   
   // Handle question image upload
-  const handleQuestionImageUpload = (e) => {
+  const handleQuestionImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
-      showToast.error('Image size should be less than 5MB');
-      return;
-    }
-    
-    const reader = new FileReader();
-    reader.onloadend = () => {
+    try {
+      setIsUploading(true);
+      
+      // Create a preview URL
+      const previewUrl = URL.createObjectURL(file);
+      
+      // Create form data
+      const formData = new FormData();
+      formData.append('images', file);
+      
+      // Upload to server
+      const response = await axios.post(
+        `${config.API_BASE_URL}/api/exams/upload-images`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          },
+          withCredentials: true
+        }
+      );
+      
+      // Update the current question with the image URL
       setCurrentQuestion({
         ...currentQuestion,
-        questionImage: file,
-        questionImagePreview: reader.result
+        questionImage: response.data.imageUrls[0],
+        questionImagePreview: previewUrl
       });
-    };
-    reader.readAsDataURL(file);
+      
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      showToast.error('Failed to upload image');
+    } finally {
+      setIsUploading(false);
+    }
   };
   
   // Remove question image
@@ -208,30 +229,51 @@ const InstituteExamCreationScreen = () => {
   };
   
   // Handle option image upload
-  const handleOptionImageUpload = (e, index) => {
+  const handleOptionImageUpload = async (e, optionIndex) => {
     const file = e.target.files[0];
     if (!file) return;
     
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
-      showToast.error('Image size should be less than 5MB');
-      return;
-    }
-    
-    const reader = new FileReader();
-    reader.onloadend = () => {
+    try {
+      setIsUploading(true);
+      
+      // Create a preview URL
+      const previewUrl = URL.createObjectURL(file);
+      
+      // Create form data
+      const formData = new FormData();
+      formData.append('images', file);
+      
+      // Upload to server
+      const response = await axios.post(
+        `${config.API_BASE_URL}/api/exams/upload-images`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          },
+          withCredentials: true
+        }
+      );
+      
+      // Update the option with the image URL
       const updatedOptions = [...currentQuestion.options];
-      updatedOptions[index] = {
-        ...updatedOptions[index],
-        image: file,
-        imagePreview: reader.result
+      updatedOptions[optionIndex] = {
+        ...updatedOptions[optionIndex],
+        image: response.data.imageUrls[0],
+        imagePreview: previewUrl
       };
       
       setCurrentQuestion({
         ...currentQuestion,
         options: updatedOptions
       });
-    };
-    reader.readAsDataURL(file);
+      
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      showToast.error('Failed to upload image');
+    } finally {
+      setIsUploading(false);
+    }
   };
   
   // Remove option image
@@ -505,41 +547,56 @@ const InstituteExamCreationScreen = () => {
     }
   };
   
-  // Submit the exam
+  // Update the submitExam function to connect with the backend
   const submitExam = async () => {
-    if (questions.length !== examMetadata.numberOfQuestions) {
-      showToast.error(`Please add exactly ${examMetadata.numberOfQuestions} questions`);
-      return;
-    }
-    
-    setIsSubmitting(true);
-    
     try {
-      // Convert exam data to binary format
+      setIsSubmitting(true);
+      
+      // Validate that we have all required questions
+      if (questions.length < examMetadata.numberOfQuestions) {
+        showToast.error(`Please add all ${examMetadata.numberOfQuestions} questions before submitting`);
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Prepare the exam data
       const examData = {
-        ...examMetadata,
-        questions: questions.map(q => ({
-          questionText: q.questionText,
-          questionImage: q.questionImage,
-          options: q.options.map(opt => ({
-            text: opt.text,
-            image: opt.image
-          })),
-          correctOption: q.correctOption,
-          correctOptions: q.correctOptions
-        })),
-        totalQuestions: questions.length
+        examName: examMetadata.examName,
+        subject: examMetadata.subject,
+        description: examMetadata.description,
+        timeLimit: examMetadata.timeLimit,
+        passingPercentage: examMetadata.passingPercentage,
+        questions: questions.map(q => {
+          // Format each question based on its type
+          const formattedQuestion = {
+            questionText: q.questionText,
+            questionImage: q.questionImage,
+            questionType: q.questionType,
+            options: q.options.map(opt => ({
+              text: opt.text,
+              image: opt.image
+            }))
+          };
+          
+          // Add the correct answer(s) based on question type
+          if (q.questionType === 'single') {
+            formattedQuestion.correctOption = q.correctOption;
+          } else {
+            formattedQuestion.correctOptions = q.correctOptions;
+          }
+          
+          return formattedQuestion;
+        })
       };
       
-      // Convert to binary format (JSON string to Uint8Array)
+      // Convert to binary format
       const jsonString = JSON.stringify(examData);
       const encoder = new TextEncoder();
       const binaryData = encoder.encode(jsonString);
       
-      // Create FormData to send binary data
+      // Create form data
       const formData = new FormData();
-      const blob = new Blob([binaryData], { type: 'application/octet-stream' });
-      formData.append('examData', blob, 'exam.bin');
+      formData.append('examData', new Blob([binaryData], { type: 'application/octet-stream' }));
       
       // Submit to API
       const response = await axios.post(
