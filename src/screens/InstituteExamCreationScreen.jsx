@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useTheme } from '../context/ThemeContext';
 import { motion } from 'framer-motion';
-import { FaArrowLeft, FaPlus, FaTrash, FaImage, FaCheck, FaTimes } from 'react-icons/fa';
+import { FaArrowLeft, FaPlus, FaTrash, FaImage, FaCheck, FaTimes, FaEdit } from 'react-icons/fa';
 import axios from 'axios';
 import { showToast } from '../utils/toast';
 import config from '../config/config';
@@ -23,7 +23,7 @@ const InstituteExamCreationScreen = () => {
     description: '',
     timeLimit: 60, // in minutes
     passingPercentage: 60,
-    instructions: ''
+    numberOfQuestions: 5 // Default to 5 questions
   });
   
   // Questions state
@@ -32,13 +32,15 @@ const InstituteExamCreationScreen = () => {
     questionText: '',
     questionImage: null,
     questionImagePreview: null,
+    questionType: 'single', // 'single' or 'multiple'
     options: [
       { text: '', image: null, imagePreview: null },
       { text: '', image: null, imagePreview: null },
       { text: '', image: null, imagePreview: null },
       { text: '', image: null, imagePreview: null }
     ],
-    correctOption: 0
+    correctOption: 0, // For single choice questions
+    correctOptions: [] // For multiple choice questions
   });
   
   // Loading states
@@ -49,15 +51,36 @@ const InstituteExamCreationScreen = () => {
   const questionImageRef = useRef(null);
   const optionImageRefs = useRef([]);
   
+  // Add a state to track if we're editing a question
+  const [editingQuestionIndex, setEditingQuestionIndex] = useState(null);
+  
+  // Add a state to track how many questions have been added
+  const [questionsRemaining, setQuestionsRemaining] = useState(5);
+  
   // Handle metadata input changes
   const handleMetadataChange = (e) => {
     const { name, value } = e.target;
-    setExamMetadata({
-      ...examMetadata,
-      [name]: name === 'timeLimit' || name === 'passingPercentage' 
-        ? parseInt(value) || 0 
-        : value
-    });
+    
+    // For number inputs, convert to number
+    if (name === 'timeLimit' || name === 'passingPercentage' || name === 'numberOfQuestions') {
+      const numValue = parseInt(value, 10) || 0;
+      
+      setExamMetadata({
+        ...examMetadata,
+        [name]: numValue
+      });
+      
+      // Update questionsRemaining when numberOfQuestions changes
+      if (name === 'numberOfQuestions') {
+        const remaining = Math.max(0, numValue - questions.length);
+        setQuestionsRemaining(remaining);
+      }
+    } else {
+      setExamMetadata({
+        ...examMetadata,
+        [name]: value
+      });
+    }
   };
   
   // Validate metadata before proceeding to questions
@@ -85,6 +108,9 @@ const InstituteExamCreationScreen = () => {
   const proceedToQuestions = () => {
     if (validateMetadata()) {
       setCurrentStep(2);
+      // Calculate remaining questions based on the current questions array and metadata
+      const remaining = Math.max(0, examMetadata.numberOfQuestions - questions.length);
+      setQuestionsRemaining(remaining);
     }
   };
   
@@ -109,12 +135,43 @@ const InstituteExamCreationScreen = () => {
     });
   };
   
-  // Handle correct option selection
-  const handleCorrectOptionChange = (index) => {
+  // Handle question type change
+  const handleQuestionTypeChange = (type) => {
     setCurrentQuestion({
       ...currentQuestion,
-      correctOption: index
+      questionType: type,
+      // Reset correct answers when changing question type
+      correctOption: type === 'single' ? 0 : -1,
+      correctOptions: type === 'multiple' ? [] : []
     });
+  };
+  
+  // Handle correct option change
+  const handleCorrectOptionChange = (index) => {
+    if (currentQuestion.questionType === 'single') {
+      // For single choice, just set the correctOption
+      setCurrentQuestion({
+        ...currentQuestion,
+        correctOption: index
+      });
+    } else {
+      // For multiple choice, toggle the option in the correctOptions array
+      const updatedCorrectOptions = [...currentQuestion.correctOptions];
+      
+      if (updatedCorrectOptions.includes(index)) {
+        // Remove if already selected
+        const optionIndex = updatedCorrectOptions.indexOf(index);
+        updatedCorrectOptions.splice(optionIndex, 1);
+      } else {
+        // Add if not selected
+        updatedCorrectOptions.push(index);
+      }
+      
+      setCurrentQuestion({
+        ...currentQuestion,
+        correctOptions: updatedCorrectOptions
+      });
+    }
   };
   
   // Handle question image upload
@@ -198,83 +255,38 @@ const InstituteExamCreationScreen = () => {
   
   // Validate current question
   const validateQuestion = () => {
-    if (!currentQuestion.questionText.trim() && !currentQuestion.questionImage) {
+    if (!currentQuestion.questionText.trim() && !currentQuestion.questionImagePreview) {
       showToast.error('Question text or image is required');
       return false;
     }
     
-    for (let i = 0; i < currentQuestion.options.length; i++) {
-      const option = currentQuestion.options[i];
-      if (!option.text.trim() && !option.image) {
-        showToast.error(`Option ${i + 1} text or image is required`);
-        return false;
+    let hasEmptyOption = false;
+    currentQuestion.options.forEach(option => {
+      if (!option.text.trim() && !option.imagePreview) {
+        hasEmptyOption = true;
       }
+    });
+    
+    if (hasEmptyOption) {
+      showToast.error('All options must have text or an image');
+      return false;
+    }
+    
+    // Check if at least one correct option is selected
+    if (currentQuestion.questionType === 'single' && currentQuestion.correctOption === -1) {
+      showToast.error('Please select a correct answer');
+      return false;
+    }
+    
+    if (currentQuestion.questionType === 'multiple' && currentQuestion.correctOptions.length === 0) {
+      showToast.error('Please select at least one correct answer');
+      return false;
     }
     
     return true;
   };
   
-  // Add current question to questions list
-  const addQuestion = async () => {
-    if (validateQuestion()) {
-      setIsUploading(true);
-      
-      try {
-        // In a real implementation, you would upload images to your server here
-        // For now, we'll just simulate a delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Format the question for adding to the list
-        const formattedQuestion = {
-          questionText: currentQuestion.questionText,
-          questionImage: currentQuestion.questionImagePreview,
-          options: currentQuestion.options.map((option, idx) => ({
-            text: option.text,
-            image: option.imagePreview,
-            isCorrect: idx === currentQuestion.correctOption
-          })),
-          correctOption: currentQuestion.correctOption
-        };
-        
-        // Add to questions list
-        setQuestions([...questions, formattedQuestion]);
-        
-        // Reset current question form
-        setCurrentQuestion({
-          questionText: '',
-          questionImage: null,
-          questionImagePreview: null,
-          options: [
-            { text: '', image: null, imagePreview: null },
-            { text: '', image: null, imagePreview: null },
-            { text: '', image: null, imagePreview: null },
-            { text: '', image: null, imagePreview: null }
-          ],
-          correctOption: 0
-        });
-        
-        // Reset file inputs
-        if (questionImageRef.current) {
-          questionImageRef.current.value = '';
-        }
-        
-        optionImageRefs.current.forEach(ref => {
-          if (ref) {
-            ref.value = '';
-          }
-        });
-        
-        showToast.success('Question added successfully');
-      } catch (error) {
-        console.error('Error adding question:', error);
-        showToast.error('Failed to add question. Please try again.');
-      } finally {
-        setIsUploading(false);
-      }
-    }
-  };
-  
-  // Edit a question
+  // Add a function to edit a question
   const editQuestion = (index) => {
     const questionToEdit = questions[index];
     
@@ -282,24 +294,121 @@ const InstituteExamCreationScreen = () => {
       questionText: questionToEdit.questionText || '',
       questionImage: null,
       questionImagePreview: questionToEdit.questionImage || null,
+      questionType: questionToEdit.questionType || 'single',
       options: questionToEdit.options.map(option => ({
         text: option.text || '',
         image: null,
         imagePreview: option.image || null
       })),
-      correctOption: questionToEdit.correctOption
+      correctOption: questionToEdit.correctOption || 0,
+      correctOptions: questionToEdit.correctOptions || []
     });
     
-    // Remove the question from the list
-    const updatedQuestions = [...questions];
-    updatedQuestions.splice(index, 1);
-    setQuestions(updatedQuestions);
+    setEditingQuestionIndex(index);
+  };
+  
+  // Modify the addQuestion function to handle editing
+  const addQuestion = async () => {
+    // Check if we're at the limit and not editing
+    if (questions.length >= examMetadata.numberOfQuestions && editingQuestionIndex === null) {
+      showToast.error(`You can only add ${examMetadata.numberOfQuestions} questions`);
+      return;
+    }
     
-    // Scroll to the question form
-    window.scrollTo({
-      top: document.querySelector('.add-question-form').offsetTop - 100,
-      behavior: 'smooth'
+    // Validate question
+    if (!currentQuestion.questionText.trim() && !currentQuestion.questionImagePreview) {
+      showToast.error('Question text or image is required');
+      return;
+    }
+    
+    let hasEmptyOption = false;
+    currentQuestion.options.forEach(option => {
+      if (!option.text.trim() && !option.imagePreview) {
+        hasEmptyOption = true;
+      }
     });
+    
+    if (hasEmptyOption) {
+      showToast.error('All options must have text or an image');
+      return;
+    }
+    
+    setIsUploading(true);
+    
+    try {
+      // Process images if needed
+      const processedQuestion = {...currentQuestion};
+      
+      // Upload question image if it exists and is a File object
+      if (processedQuestion.questionImage && processedQuestion.questionImage instanceof File) {
+        const questionImageUrl = await uploadImage(processedQuestion.questionImage);
+        processedQuestion.questionImage = questionImageUrl;
+      }
+      
+      // Upload option images if they exist and are File objects
+      for (let i = 0; i < processedQuestion.options.length; i++) {
+        if (processedQuestion.options[i].image && processedQuestion.options[i].image instanceof File) {
+          const optionImageUrl = await uploadImage(processedQuestion.options[i].image);
+          processedQuestion.options[i].image = optionImageUrl;
+        }
+      }
+      
+      // Update questions array
+      if (editingQuestionIndex !== null) {
+        // We're editing an existing question
+        const updatedQuestions = [...questions];
+        updatedQuestions[editingQuestionIndex] = processedQuestion;
+        setQuestions(updatedQuestions);
+        setEditingQuestionIndex(null);
+        showToast.success('Question updated successfully');
+      } else {
+        // We're adding a new question
+        setQuestions([...questions, processedQuestion]);
+        showToast.success('Question added successfully');
+      }
+      
+      // Reset current question
+      setCurrentQuestion({
+        questionText: '',
+        questionImage: null,
+        questionImagePreview: null,
+        questionType: 'single',
+        options: [
+          { text: '', image: null, imagePreview: null },
+          { text: '', image: null, imagePreview: null },
+          { text: '', image: null, imagePreview: null },
+          { text: '', image: null, imagePreview: null }
+        ],
+        correctOption: 0,
+        correctOptions: []
+      });
+      
+      // Reset file inputs
+      if (questionImageRef.current) {
+        questionImageRef.current.value = '';
+      }
+      
+      optionImageRefs.current.forEach(ref => {
+        if (ref) {
+          ref.value = '';
+        }
+      });
+      
+      // After successfully adding/updating a question, check if we've reached the limit
+      if (editingQuestionIndex === null) {
+        const newQuestionsCount = questions.length + 1;
+        if (newQuestionsCount >= examMetadata.numberOfQuestions) {
+          setQuestionsRemaining(0);
+        } else {
+          setQuestionsRemaining(examMetadata.numberOfQuestions - newQuestionsCount);
+        }
+      }
+    } catch (error) {
+      console.error('Error processing question:', error);
+      showToast.error('Failed to process question images');
+    } finally {
+      setIsUploading(false);
+    }
   };
   
   // Delete a question
@@ -308,6 +417,10 @@ const InstituteExamCreationScreen = () => {
       const updatedQuestions = [...questions];
       updatedQuestions.splice(index, 1);
       setQuestions(updatedQuestions);
+      
+      // Increment questionsRemaining when a question is deleted
+      setQuestionsRemaining(prev => prev + 1);
+      
       showToast.success('Question deleted');
     }
   };
@@ -394,35 +507,54 @@ const InstituteExamCreationScreen = () => {
   
   // Submit the exam
   const submitExam = async () => {
-    if (questions.length === 0) {
-      showToast.error('Please add at least one question');
+    if (questions.length !== examMetadata.numberOfQuestions) {
+      showToast.error(`Please add exactly ${examMetadata.numberOfQuestions} questions`);
       return;
     }
     
     setIsSubmitting(true);
     
     try {
-      // Format the exam data
+      // Convert exam data to binary format
       const examData = {
         ...examMetadata,
         questions: questions.map(q => ({
           questionText: q.questionText,
           questionImage: q.questionImage,
-          options: q.options,
-          correctOption: q.correctOption
+          options: q.options.map(opt => ({
+            text: opt.text,
+            image: opt.image
+          })),
+          correctOption: q.correctOption,
+          correctOptions: q.correctOptions
         })),
         totalQuestions: questions.length
       };
       
+      // Convert to binary format (JSON string to Uint8Array)
+      const jsonString = JSON.stringify(examData);
+      const encoder = new TextEncoder();
+      const binaryData = encoder.encode(jsonString);
+      
+      // Create FormData to send binary data
+      const formData = new FormData();
+      const blob = new Blob([binaryData], { type: 'application/octet-stream' });
+      formData.append('examData', blob, 'exam.bin');
+      
       // Submit to API
       const response = await axios.post(
-        `${config.API_BASE_URL}/api/exams/create`,
-        examData,
-        { withCredentials: true }
+        `${config.API_BASE_URL}/api/exams/create-binary`,
+        formData,
+        { 
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          },
+          withCredentials: true 
+        }
       );
       
       showToast.success('Exam created successfully');
-      navigate('/institute/exams');
+      navigate('/institute/dashboard');
     } catch (error) {
       console.error('Error creating exam:', error);
       showToast.error(error.response?.data?.message || 'Failed to create exam');
@@ -434,6 +566,67 @@ const InstituteExamCreationScreen = () => {
   // Go back to metadata step
   const goBackToMetadata = () => {
     setCurrentStep(1);
+  };
+  
+  // Update the button text based on whether we're editing or adding
+  const getActionButtonText = () => {
+    if (editingQuestionIndex !== null) {
+      return isUploading ? (
+        <>
+          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Updating...
+        </>
+      ) : (
+        <>
+          <FaCheck className="mr-2" />
+          Update Question
+        </>
+      );
+    } else {
+      return isUploading ? (
+        <>
+          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Adding...
+        </>
+      ) : (
+        <>
+          <FaPlus className="mr-2" />
+          Add Question
+        </>
+      );
+    }
+  };
+  
+  // Add a cancel edit button
+  const cancelEdit = () => {
+    setEditingQuestionIndex(null);
+    
+    // Reset the current question form
+    setCurrentQuestion({
+      questionText: '',
+      questionImage: null,
+      questionImagePreview: null,
+      questionType: 'single',
+      options: [
+        { text: '', image: null, imagePreview: null },
+        { text: '', image: null, imagePreview: null },
+        { text: '', image: null, imagePreview: null },
+        { text: '', image: null, imagePreview: null }
+      ],
+      correctOption: 0,
+      correctOptions: []
+    });
+    
+    // Check if we've already added all questions
+    if (questions.length >= examMetadata.numberOfQuestions) {
+      setQuestionsRemaining(0);
+    }
   };
   
   return (
@@ -611,22 +804,24 @@ const InstituteExamCreationScreen = () => {
               />
             </div>
             
-            {/* Instructions */}
+            {/* Number of Questions */}
             <div className="mt-6">
               <label className="block text-sm font-medium mb-2">
-                Instructions
+                Number of Questions*
               </label>
-              <textarea
-                name="instructions"
-                value={examMetadata.instructions}
+              <input
+                type="number"
+                name="numberOfQuestions"
+                value={examMetadata.numberOfQuestions}
                 onChange={handleMetadataChange}
-                rows="4"
+                min="1"
+                max="20"
                 className={`w-full px-4 py-2 rounded-lg border ${
                   isDarkMode 
                     ? 'bg-gray-800 border-gray-700 text-white' 
                     : 'bg-white border-gray-300 text-gray-900'
                 } focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
-                placeholder="Enter instructions for students"
+                required
               />
             </div>
             
@@ -650,6 +845,33 @@ const InstituteExamCreationScreen = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
+            {/* Questions Progress */}
+            <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-xl shadow-lg p-6 mb-8`}>
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold">
+                  Questions Progress
+                </h2>
+                <div className={`px-4 py-2 rounded-lg ${
+                  questionsRemaining === 0
+                    ? isDarkMode ? 'bg-green-900/50 text-green-300' : 'bg-green-100 text-green-800'
+                    : isDarkMode ? 'bg-blue-900/50 text-blue-300' : 'bg-blue-100 text-blue-800'
+                }`}>
+                  {questionsRemaining === 0 
+                    ? 'All questions added!' 
+                    : `${questionsRemaining} question${questionsRemaining !== 1 ? 's' : ''} remaining`}
+                </div>
+              </div>
+              
+              <div className="mt-4 w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                <div 
+                  className="bg-violet-600 h-2.5 rounded-full" 
+                  style={{ 
+                    width: `${Math.min(100, (questions.length / examMetadata.numberOfQuestions) * 100)}%` 
+                  }}
+                ></div>
+              </div>
+            </div>
+            
             {/* Questions List */}
             {questions.length > 0 && (
               <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-xl shadow-lg p-6 mb-8`}>
@@ -666,62 +888,78 @@ const InstituteExamCreationScreen = () => {
                       } flex justify-between items-start`}
                     >
                       <div className="flex-1">
-                        <div className="flex items-center">
-                          <span className="font-bold mr-2">Q{index + 1}:</span>
-                          <div>
-                            {question.questionText && (
-                              <p>{question.questionText}</p>
-                            )}
-                            {question.questionImagePreview && (
-                              <div className="mt-2">
-                                <img 
-                                  src={question.questionImagePreview} 
-                                  alt="Question" 
-                                  className="h-20 object-contain rounded-md"
-                                />
-                              </div>
-                            )}
+                        <div className="font-medium mb-2">Question {index + 1}</div>
+                        <div className="mb-2">{question.questionText}</div>
+                        {question.questionImage && (
+                          <img 
+                            src={question.questionImage} 
+                            alt={`Question ${index + 1}`} 
+                            className="h-32 object-contain mb-2 rounded-md"
+                          />
+                        )}
+                        <div className="mt-2">
+                          <div className="font-medium mb-1">
+                            Options: 
+                            <span className="text-xs ml-2 px-2 py-0.5 rounded bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                              {question.questionType === 'single' ? 'Single Choice' : 'Multiple Choice'}
+                            </span>
                           </div>
-                        </div>
-                        
-                        <div className="mt-2 grid grid-cols-2 gap-2">
-                          {question.options.map((option, optIndex) => (
-                            <div 
-                              key={optIndex}
-                              className={`p-2 rounded ${
-                                question.correctOption === optIndex
-                                  ? isDarkMode ? 'bg-green-900/50' : 'bg-green-100'
-                                  : isDarkMode ? 'bg-gray-700' : 'bg-gray-200'
-                              }`}
-                            >
-                              <div className="flex items-center">
-                                <span className={`mr-2 ${
-                                  question.correctOption === optIndex
-                                    ? 'text-green-500'
-                                    : ''
-                                }`}>
-                                  {String.fromCharCode(65 + optIndex)}:
-                                </span>
-                                <div>
-                                  {option.text && (
-                                    <span>{option.text}</span>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {question.options.map((option, optIndex) => (
+                              <div 
+                                key={optIndex}
+                                className={`p-2 rounded ${
+                                  question.questionType === 'single'
+                                    ? question.correctOption === optIndex
+                                      ? isDarkMode ? 'bg-green-900/30 border border-green-700' : 'bg-green-50 border border-green-200'
+                                      : isDarkMode ? 'bg-gray-700' : 'bg-white border border-gray-200'
+                                    : question.correctOptions.includes(optIndex)
+                                      ? isDarkMode ? 'bg-green-900/30 border border-green-700' : 'bg-green-50 border border-green-200'
+                                      : isDarkMode ? 'bg-gray-700' : 'bg-white border border-gray-200'
+                                }`}
+                              >
+                                <div className="flex items-center">
+                                  <span className={`font-medium mr-2 ${
+                                    question.questionType === 'single'
+                                      ? question.correctOption === optIndex
+                                        ? isDarkMode ? 'text-green-400' : 'text-green-700'
+                                        : ''
+                                      : question.correctOptions.includes(optIndex)
+                                        ? isDarkMode ? 'text-green-400' : 'text-green-700'
+                                        : ''
+                                  }`}>
+                                    {String.fromCharCode(65 + optIndex)}
+                                  </span>
+                                  {question.questionType === 'single' && question.correctOption === optIndex && (
+                                    <span className={`text-xs px-2 py-0.5 rounded ${
+                                      isDarkMode ? 'bg-green-800 text-green-200' : 'bg-green-100 text-green-800'
+                                    }`}>
+                                      Correct
+                                    </span>
                                   )}
-                                  {option.imagePreview && (
-                                    <div className="mt-1">
-                                      <img 
-                                        src={option.imagePreview} 
-                                        alt={`Option ${String.fromCharCode(65 + optIndex)}`} 
-                                        className="h-12 object-contain rounded-md"
-                                      />
-                                    </div>
+                                  {question.questionType === 'multiple' && question.correctOptions.includes(optIndex) && (
+                                    <span className={`text-xs px-2 py-0.5 rounded ${
+                                      isDarkMode ? 'bg-green-800 text-green-200' : 'bg-green-100 text-green-800'
+                                    }`}>
+                                      Correct
+                                    </span>
                                   )}
                                 </div>
+                                <div>{option.text}</div>
+                                {option.image && (
+                                  <img 
+                                    src={option.image} 
+                                    alt={`Option ${String.fromCharCode(65 + optIndex)}`} 
+                                    className="h-20 object-contain mt-1 rounded-md"
+                                  />
+                                )}
                               </div>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
                       </div>
                       
+                      {/* Always show edit/delete buttons for existing questions */}
                       <div className="flex space-x-2 ml-4">
                         <button
                           onClick={() => editQuestion(index)}
@@ -732,7 +970,7 @@ const InstituteExamCreationScreen = () => {
                           }`}
                           title="Edit question"
                         >
-                          <FaPlus className="rotate-45" />
+                          <FaEdit />
                         </button>
                         <button
                           onClick={() => deleteQuestion(index)}
@@ -752,230 +990,353 @@ const InstituteExamCreationScreen = () => {
               </div>
             )}
             
-            {/* Add New Question Form */}
-            <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-xl shadow-lg p-6`}>
-              <h2 className="text-2xl font-bold mb-6">
-                {questions.length > 0 ? 'Add Another Question' : 'Add Your First Question'}
-              </h2>
-              
-              {/* Question Text and Image */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium mb-2">
-                  Question Text or Image*
-                </label>
-                <textarea
-                  value={currentQuestion.questionText}
-                  onChange={handleQuestionTextChange}
-                  rows="3"
-                  className={`w-full px-4 py-2 rounded-lg border ${
-                    isDarkMode 
-                      ? 'bg-gray-800 border-gray-700 text-white' 
-                      : 'bg-white border-gray-300 text-gray-900'
-                  } focus:ring-2 focus:ring-violet-500 focus:border-transparent mb-2`}
-                  placeholder="Enter question text"
-                />
+            {/* Show question form only if we haven't added all required questions or if we're editing */}
+            {(questionsRemaining > 0 || editingQuestionIndex !== null) ? (
+              <div id="question-form" className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-xl shadow-lg p-6`}>
+                <h2 className="text-2xl font-bold mb-6">
+                  {editingQuestionIndex !== null 
+                    ? `Edit Question ${editingQuestionIndex + 1}` 
+                    : `Add Question ${examMetadata.numberOfQuestions - questionsRemaining + 1}`}
+                </h2>
                 
-                <div className="flex items-center mt-2">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleQuestionImageUpload}
-                    ref={questionImageRef}
-                    className="hidden"
-                    id="question-image-upload"
-                  />
-                  <label
-                    htmlFor="question-image-upload"
-                    className={`flex items-center px-4 py-2 rounded-lg cursor-pointer ${
-                      isDarkMode 
-                        ? 'bg-gray-800 hover:bg-gray-700 text-gray-300' 
-                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                    }`}
-                  >
-                    <FaImage className="mr-2" />
-                    {currentQuestion.questionImage ? 'Change Image' : 'Add Image'}
+                {/* Question form content */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium mb-2">
+                    Question Text or Image*
                   </label>
+                  <textarea
+                    value={currentQuestion.questionText}
+                    onChange={handleQuestionTextChange}
+                    rows="3"
+                    className={`w-full px-4 py-2 rounded-lg border ${
+                      isDarkMode 
+                        ? 'bg-gray-800 border-gray-700 text-white' 
+                        : 'bg-white border-gray-300 text-gray-900'
+                    } focus:ring-2 focus:ring-violet-500 focus:border-transparent mb-2`}
+                    placeholder="Enter question text"
+                  />
                   
-                  {currentQuestion.questionImagePreview && (
-                    <div className="ml-4 flex items-center">
-                      <img 
-                        src={currentQuestion.questionImagePreview} 
-                        alt="Question Preview" 
-                        className="h-16 object-contain rounded-md"
-                      />
-                      <button
-                        type="button"
-                        onClick={removeQuestionImage}
-                        className={`ml-2 p-1 rounded-full ${
-                          isDarkMode 
-                            ? 'bg-red-900/50 hover:bg-red-800 text-red-300' 
-                            : 'bg-red-100 hover:bg-red-200 text-red-700'
-                        }`}
-                        title="Remove image"
-                      >
-                        <FaTimes />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              {/* Options */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium mb-4">
-                  Options*
-                </label>
-                
-                <div className="space-y-4">
-                  {currentQuestion.options.map((option, index) => (
-                    <div 
-                      key={index}
-                      className={`p-4 rounded-lg ${
-                        isDarkMode ? 'bg-gray-800' : 'bg-gray-50'
+                  <div className="flex items-center mt-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleQuestionImageUpload}
+                      ref={questionImageRef}
+                      className="hidden"
+                      id="question-image-upload"
+                    />
+                    <label
+                      htmlFor="question-image-upload"
+                      className={`flex items-center px-4 py-2 rounded-lg cursor-pointer ${
+                        isDarkMode 
+                          ? 'bg-gray-800 hover:bg-gray-700 text-gray-300' 
+                          : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                       }`}
                     >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center">
-                          <span className="font-medium mr-2">
-                            Option {String.fromCharCode(65 + index)}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleCorrectOptionChange(index)}
-                            className={`ml-2 p-1 rounded-full ${
-                              currentQuestion.correctOption === index
-                                ? isDarkMode 
-                                  ? 'bg-green-900 text-green-300' 
-                                  : 'bg-green-500 text-white'
-                               
-                                : isDarkMode 
-                                  ? 'bg-gray-700 text-gray-400' 
-                                  : 'bg-gray-200 text-gray-500'
-                            }`}
-                            title={currentQuestion.correctOption === index ? "Correct answer" : "Mark as correct"}
-                          >
-                            <FaCheck className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-                      
-                      <input
-                        type="text"
-                        value={option.text}
-                        onChange={(e) => handleOptionTextChange(index, e.target.value)}
-                        className={`w-full px-4 py-2 rounded-lg border ${
-                          isDarkMode 
-                            ? 'bg-gray-700 border-gray-600 text-white' 
-                            : 'bg-white border-gray-300 text-gray-900'
-                        } focus:ring-2 focus:ring-violet-500 focus:border-transparent mb-2`}
-                        placeholder={`Enter option ${String.fromCharCode(65 + index)} text`}
-                      />
-                      
-                      <div className="flex items-center mt-2">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handleOptionImageUpload(e, index)}
-                          ref={(el) => optionImageRefs.current[index] = el}
-                          className="hidden"
-                          id={`option-image-upload-${index}`}
+                      <FaImage className="mr-2" />
+                      {currentQuestion.questionImage ? 'Change Image' : 'Add Image'}
+                    </label>
+                    
+                    {currentQuestion.questionImagePreview && (
+                      <div className="ml-4 flex items-center">
+                        <img 
+                          src={currentQuestion.questionImagePreview} 
+                          alt="Question Preview" 
+                          className="h-16 object-contain rounded-md"
                         />
-                        <label
-                          htmlFor={`option-image-upload-${index}`}
-                          className={`flex items-center px-3 py-1 rounded-lg cursor-pointer ${
+                        <button
+                          type="button"
+                          onClick={removeQuestionImage}
+                          className={`ml-2 p-1 rounded-full ${
                             isDarkMode 
-                              ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
-                              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                          } text-sm`}
+                              ? 'bg-red-900/50 hover:bg-red-800 text-red-300' 
+                              : 'bg-red-100 hover:bg-red-200 text-red-700'
+                          }`}
+                          title="Remove image"
                         >
-                          <FaImage className="mr-1" />
-                          {option.image ? 'Change Image' : 'Add Image'}
-                        </label>
-                        
-                        {option.imagePreview && (
-                          <div className="ml-4 flex items-center">
-                            <img 
-                              src={option.imagePreview} 
-                              alt={`Option ${String.fromCharCode(65 + index)} Preview`} 
-                              className="h-12 object-contain rounded-md"
-                            />
+                          <FaTimes />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Question Type Selection */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium mb-2">
+                    Question Type
+                  </label>
+                  <div className="flex space-x-4">
+                    <button
+                      type="button"
+                      onClick={() => handleQuestionTypeChange('single')}
+                      className={`px-4 py-2 rounded-lg ${
+                        currentQuestion.questionType === 'single'
+                          ? isDarkMode 
+                            ? 'bg-violet-700 text-white' 
+                            : 'bg-violet-600 text-white'
+                          : isDarkMode 
+                            ? 'bg-gray-700 text-gray-300' 
+                            : 'bg-gray-200 text-gray-700'
+                      }`}
+                    >
+                      Single Choice
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleQuestionTypeChange('multiple')}
+                      className={`px-4 py-2 rounded-lg ${
+                        currentQuestion.questionType === 'multiple'
+                          ? isDarkMode 
+                            ? 'bg-violet-700 text-white' 
+                            : 'bg-violet-600 text-white'
+                          : isDarkMode 
+                            ? 'bg-gray-700 text-gray-300' 
+                            : 'bg-gray-200 text-gray-700'
+                      }`}
+                    >
+                      Multiple Choice
+                    </button>
+                  </div>
+                  <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    {currentQuestion.questionType === 'single' 
+                      ? 'Students can select only one correct answer.' 
+                      : 'Students can select multiple correct answers.'}
+                  </p>
+                </div>
+                
+                {/* Options */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium mb-4">
+                    Options*
+                  </label>
+                  
+                  <div className="space-y-4">
+                    {currentQuestion.options.map((option, index) => (
+                      <div 
+                        key={index}
+                        className={`p-4 rounded-lg ${
+                          isDarkMode ? 'bg-gray-800' : 'bg-gray-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center">
+                            <span className="font-medium mr-2">
+                              Option {String.fromCharCode(65 + index)}
+                            </span>
                             <button
                               type="button"
-                              onClick={() => removeOptionImage(index)}
+                              onClick={() => handleCorrectOptionChange(index)}
                               className={`ml-2 p-1 rounded-full ${
-                                isDarkMode 
-                                  ? 'bg-red-900/50 hover:bg-red-800 text-red-300' 
-                                  : 'bg-red-100 hover:bg-red-200 text-red-700'
+                                currentQuestion.questionType === 'single'
+                                  ? currentQuestion.correctOption === index
+                                    ? isDarkMode 
+                                      ? 'bg-green-900 text-green-300' 
+                                      : 'bg-green-500 text-white'
+                                    : isDarkMode 
+                                      ? 'bg-gray-700 text-gray-400' 
+                                      : 'bg-gray-200 text-gray-500'
+                                  : currentQuestion.correctOptions.includes(index)
+                                    ? isDarkMode 
+                                      ? 'bg-green-900 text-green-300' 
+                                      : 'bg-green-500 text-white'
+                                    : isDarkMode 
+                                      ? 'bg-gray-700 text-gray-400' 
+                                      : 'bg-gray-200 text-gray-500'
                               }`}
-                              title="Remove image"
+                              title={
+                                currentQuestion.questionType === 'single'
+                                  ? currentQuestion.correctOption === index ? "Correct answer" : "Mark as correct"
+                                  : currentQuestion.correctOptions.includes(index) ? "Correct answer" : "Mark as correct"
+                              }
                             >
-                              <FaTimes />
+                              <FaCheck className="w-3 h-3" />
                             </button>
                           </div>
-                        )}
+                        </div>
+                        
+                        <input
+                          type="text"
+                          value={option.text}
+                          onChange={(e) => handleOptionTextChange(index, e.target.value)}
+                          className={`w-full px-4 py-2 rounded-lg border ${
+                            isDarkMode 
+                              ? 'bg-gray-700 border-gray-600 text-white' 
+                              : 'bg-white border-gray-300 text-gray-900'
+                          } focus:ring-2 focus:ring-violet-500 focus:border-transparent mb-2`}
+                          placeholder={`Enter option ${String.fromCharCode(65 + index)} text`}
+                        />
+                        
+                        <div className="flex items-center mt-2">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleOptionImageUpload(e, index)}
+                            ref={(el) => optionImageRefs.current[index] = el}
+                            className="hidden"
+                            id={`option-image-upload-${index}`}
+                          />
+                          <label
+                            htmlFor={`option-image-upload-${index}`}
+                            className={`flex items-center px-3 py-1 rounded-lg cursor-pointer ${
+                              isDarkMode 
+                                ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                                : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                            } text-sm`}
+                          >
+                            <FaImage className="mr-1" />
+                            {option.image ? 'Change Image' : 'Add Image'}
+                          </label>
+                          
+                          {option.imagePreview && (
+                            <div className="ml-4 flex items-center">
+                              <img 
+                                src={option.imagePreview} 
+                                alt={`Option ${String.fromCharCode(65 + index)} Preview`} 
+                                className="h-12 object-contain rounded-md"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeOptionImage(index)}
+                                className={`ml-2 p-1 rounded-full ${
+                                  isDarkMode 
+                                    ? 'bg-red-900/50 hover:bg-red-800 text-red-300' 
+                                    : 'bg-red-100 hover:bg-red-200 text-red-700'
+                                }`}
+                                title="Remove image"
+                              >
+                                <FaTimes />
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Add Question Button */}
+                <div className="flex justify-end space-x-3">
+                  {editingQuestionIndex !== null && (
+                    <button
+                      type="button"
+                      onClick={cancelEdit}
+                      className={`px-6 py-2 rounded-lg font-medium ${
+                        isDarkMode 
+                          ? 'bg-gray-700 hover:bg-gray-600 text-white' 
+                          : 'bg-gray-300 hover:bg-gray-400 text-gray-800'
+                      }`}
+                    >
+                      Cancel
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={addQuestion}
+                    disabled={isUploading}
+                    className={`px-6 py-2 rounded-lg font-medium ${
+                      isDarkMode 
+                        ? 'bg-violet-700 hover:bg-violet-600 text-white' 
+                        : 'bg-violet-600 hover:bg-violet-700 text-white'
+                    } disabled:opacity-50 disabled:cursor-not-allowed flex items-center`}
+                  >
+                    {isUploading ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        {editingQuestionIndex !== null ? 'Updating...' : 'Adding...'}
+                      </>
+                    ) : (
+                      <>
+                        {editingQuestionIndex !== null ? (
+                          <>
+                            <FaCheck className="mr-2" />
+                            Update Question
+                          </>
+                        ) : (
+                          <>
+                            <FaPlus className="mr-2" />
+                            Add Question
+                          </>
+                        )}
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
-              
-              {/* Add Question Button */}
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={addQuestion}
-                  disabled={isUploading}
-                  className={`px-6 py-2 rounded-lg font-medium ${
-                    isDarkMode 
-                      ? 'bg-violet-700 hover:bg-violet-600 text-white' 
-                      : 'bg-violet-600 hover:bg-violet-700 text-white'
-                  } disabled:opacity-50 disabled:cursor-not-allowed flex items-center`}
-                >
-                  {isUploading ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Uploading...
-                    </>
-                  ) : (
-                    <>
-                      <FaPlus className="mr-2" />
-                      Add Question
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-            
-            {/* Submit Exam Button */}
-            {questions.length > 0 && (
-              <div className="mt-8 flex justify-end">
-                <button
-                  type="button"
-                  onClick={submitExam}
-                  disabled={isSubmitting || questions.length === 0}
-                  className={`px-8 py-3 rounded-lg font-medium ${
-                    isDarkMode 
-                      ? 'bg-green-700 hover:bg-green-600 text-white' 
-                      : 'bg-green-600 hover:bg-green-700 text-white'
-                  } disabled:opacity-50 disabled:cursor-not-allowed flex items-center`}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Submitting...
-                    </>
-                  ) : (
-                    'Submit Exam'
-                  )}
-                </button>
+            ) : (
+              /* Show preview and submit section when all questions are added */
+              <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-xl shadow-lg p-6`}>
+                <div className="text-center py-6">
+                  <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full ${
+                    isDarkMode ? 'bg-green-900/50 text-green-300' : 'bg-green-100 text-green-800'
+                  } mb-4`}>
+                    <FaCheck className="w-8 h-8" />
+                  </div>
+                  <h2 className="text-2xl font-bold mb-2">All Questions Added!</h2>
+                  <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-6`}>
+                    You've added all {examMetadata.numberOfQuestions} questions for this exam. 
+                    Review your questions above and submit when ready.
+                  </p>
+                  
+                  <div className="flex justify-center space-x-4">
+                    <button
+                      type="button"
+                      onClick={goBackToMetadata}
+                      className={`px-6 py-3 rounded-lg font-medium ${
+                        isDarkMode 
+                          ? 'bg-gray-700 hover:bg-gray-600 text-white' 
+                          : 'bg-gray-300 hover:bg-gray-400 text-gray-800'
+                      }`}
+                    >
+                      Edit Exam Details
+                    </button>
+                    <button
+                      type="button"
+                      onClick={submitExam}
+                      disabled={isSubmitting}
+                      className={`px-8 py-3 rounded-lg font-medium ${
+                        isDarkMode 
+                          ? 'bg-green-700 hover:bg-green-600 text-white' 
+                          : 'bg-green-600 hover:bg-green-700 text-white'
+                      } disabled:opacity-50 disabled:cursor-not-allowed flex items-center`}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Submitting...
+                        </>
+                      ) : (
+                        <>
+                          <FaCheck className="mr-2" />
+                          Submit Exam
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
+            
+            {/* Navigation buttons */}
+            <div className="mt-8 flex justify-between">
+              <button
+                type="button"
+                onClick={goBackToMetadata}
+                className={`px-6 py-2 rounded-lg font-medium ${
+                  isDarkMode 
+                    ? 'bg-gray-700 hover:bg-gray-600 text-white' 
+                    : 'bg-gray-300 hover:bg-gray-400 text-gray-800'
+                }`}
+              >
+                <FaArrowLeft className="mr-2 inline" /> Back to Exam Details
+              </button>
+            </div>
           </motion.div>
         )}
       </div>
