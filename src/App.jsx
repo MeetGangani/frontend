@@ -10,6 +10,7 @@ import RegisterScreen from './screens/RegisterScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import AdminDashboard from './screens/AdminDashboard';
 import InstituteDashboard from './screens/InstituteDashboard';
+import InstituteExamCreationScreen from './screens/InstituteExamCreationScreen';
 import StudentDashboard from './screens/StudentDashboard';
 import ContactScreen from './screens/ContactScreen';
 import AboutScreen from './screens/AboutScreen';
@@ -28,6 +29,12 @@ const AdminRouteWrapper = () => {
 const InstituteRouteWrapper  = () => {
   const { userInfo } = useSelector((state) => state.auth);
   return userInfo?.userType === 'institute' ? <InstituteDashboard /> : <Navigate to="/login" replace />;
+};
+
+// Add a new wrapper for the exam creation screen
+const InstituteExamCreationWrapper = () => {
+  const { userInfo } = useSelector((state) => state.auth);
+  return userInfo?.userType === 'institute' ? <InstituteExamCreationScreen /> : <Navigate to="/login" replace />;
 };
 
 const StudentRouteWrapper = () => {
@@ -119,6 +126,10 @@ const App = () => {
           {/* Role-specific routes */}
           <Route path="/admin/dashboard" element={<AdminRouteWrapper />} />
           <Route path="/institute/dashboard" element={<InstituteRouteWrapper />} />
+          
+          {/* Add the new route for exam creation */}
+          <Route path="/institute/exam/create" element={<InstituteExamCreationWrapper />} />
+          
           <Route path="/student/dashboard" element={<StudentRouteWrapper />} />
 
           {/* Add these new routes */}
