@@ -1433,7 +1433,7 @@ const InstituteExamCreationScreen = () => {
                         />
                         
                         <div className="flex items-center mt-2">
-                          <input
+                           <input
                             type="file"
                             accept="image/*"
                             onChange={(e) => handleOptionImageUpload(e, index)}
