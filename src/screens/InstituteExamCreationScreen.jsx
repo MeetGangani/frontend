@@ -191,35 +191,23 @@ const InstituteExamCreationScreen = () => {
     try {
       setIsUploading(true);
       
-      // Create a preview URL
+      // Create a preview URL from the local file
       const previewUrl = URL.createObjectURL(file);
       
-      // Create form data
-      const formData = new FormData();
-      formData.append('images', file);
-      
-      // Upload to server using the deployed backend URL
-      const response = await axios.post(
-        `${config.API_BASE_URL}/api/exams/upload-images`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          },
-          withCredentials: true
-        }
-      );
-      
-      // Update the current question with the image URL
-      setCurrentQuestion({
-        ...currentQuestion,
-        questionImage: response.data.imageUrls[0],
+      // For testing, we'll use the preview URL as the image URL
+      // This allows us to test the UI flow without actual uploads
+      setCurrentQuestion(prev => ({
+        ...prev,
+        questionImage: previewUrl,
         questionImagePreview: previewUrl
-      });
+      }));
+      
+      toast.success('Image added successfully');
       
     } catch (error) {
-      console.error('Error uploading image:', error);
-      showToast.error('Failed to upload image: ' + (error.response?.data?.message || error.message));
+      console.error('Error handling image:', error);
+      toast.error('Failed to add image');
+      e.target.value = '';
     } finally {
       setIsUploading(false);
     }
