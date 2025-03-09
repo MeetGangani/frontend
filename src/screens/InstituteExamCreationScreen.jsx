@@ -3,14 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useTheme } from '../context/ThemeContext';
 import { motion } from 'framer-motion';
-import { FaArrowLeft, FaPlus, FaTrash, FaImage, FaCheck, FaTimes, FaEdit } from 'react-icons/fa';
+import { FaArrowLeft, FaPlus, FaTrash, FaImage, FaCheck, FaTimes, FaEdit, FaFileExcel, FaUpload, FaGripVertical } from 'react-icons/fa';
 import axios from 'axios';
 import { showToast } from '../utils/toast';
 import config from '../config/config';
 import axiosInstance from '../utils/axiosConfig';
 import { toast } from 'react-hot-toast';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
-const InstituteExamCreationScreen = () => {
+const InstituteExamCreationScreen = () => { 
   const { isDarkMode } = useTheme();
   const { userInfo } = useSelector((state) => state.auth);
   const navigate = useNavigate();
@@ -59,6 +60,11 @@ const InstituteExamCreationScreen = () => {
   
   // Add a state to track how many questions have been added
   const [questionsRemaining, setQuestionsRemaining] = useState(5);
+  
+  // Add new state for Excel upload
+  const [isUploadingExcel, setIsUploadingExcel] = useState(false);
+  const [excelFile, setExcelFile] = useState(null);
+  const fileInputRef = useRef(null);
   
   // Handle metadata input changes
   const handleMetadataChange = (e) => {
@@ -686,6 +692,308 @@ const InstituteExamCreationScreen = () => {
     }
   };
   
+  // Handle Excel file selection
+  const handleExcelFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.type === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" || 
+          file.type === "application/vnd.ms-excel") {
+        setExcelFile(file);
+      } else {
+        toast.error("Please select a valid Excel file");
+        e.target.value = '';
+      }
+    }
+  };
+
+  // Handle Excel upload and processing
+  const handleExcelUpload = async () => {
+    if (!excelFile) {
+      toast.error("Please select an Excel file first");
+      return;
+    }
+
+    // Check if the number of questions is set
+    if (!examMetadata.numberOfQuestions) {
+      toast.error("Please set the number of questions in exam metadata first");
+      return;
+    }
+
+    setIsUploadingExcel(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', excelFile);
+
+      const response = await axiosInstance.post('/api/proxy/excel', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      if (response.data && response.data.questions) {
+        // Check if the number of questions matches
+        if (response.data.questions.length !== examMetadata.numberOfQuestions) {
+          toast.error(`Excel file contains ${response.data.questions.length} questions but you specified ${examMetadata.numberOfQuestions} questions. Please adjust the number of questions or use a different Excel file.`);
+          return;
+        }
+
+        // Update questions state with processed data
+        const processedQuestions = response.data.questions.map(q => ({
+          questionText: q.question,
+          questionImage: null,
+          questionImagePreview: null,
+          questionType: 'single',
+          options: q.options.map(opt => ({
+            text: opt,
+            image: null,
+            imagePreview: null
+          })),
+          correctOption: q.correctAnswer - 1,
+          correctOptions: []
+        }));
+
+        setQuestions(processedQuestions);
+        setQuestionsRemaining(0); // All questions are now added
+        
+        toast.success(`Successfully loaded ${response.data.questions.length} questions`);
+        setExcelFile(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
+    } catch (error) {
+      console.error('Excel upload error:', error);
+      toast.error(error.response?.data?.message || 'Failed to process Excel file');
+    } finally {
+      setIsUploadingExcel(false);
+    }
+  };
+
+  // Add this in your JSX where you want the Excel upload button to appear
+  const renderExcelUpload = () => (
+    <div className={`mt-4 p-4 border rounded-lg ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+      <h3 className={`text-lg font-medium mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+        Import Questions from Excel
+      </h3>
+      <p className={`text-sm mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+        Note: The Excel file must contain exactly {examMetadata.numberOfQuestions} questions as specified in the exam metadata.
+      </p>
+      <div className="flex items-center space-x-4">
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleExcelFileChange}
+          accept=".xlsx,.xls"
+          className="hidden"
+        />
+        <button
+          onClick={() => {
+            if (!examMetadata.numberOfQuestions) {
+              toast.error("Please set the number of questions in exam metadata first");
+              return;
+            }
+            fileInputRef.current?.click();
+          }}
+          className={`flex items-center px-4 py-2 rounded-lg ${
+            isDarkMode 
+              ? 'bg-gray-700 hover:bg-gray-600 text-white' 
+              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+          }`}
+        >
+          <FaFileExcel className="mr-2" />
+          Select Excel File
+        </button>
+        {excelFile && (
+          <button
+            onClick={handleExcelUpload}
+            disabled={isUploadingExcel}
+            className={`flex items-center px-4 py-2 rounded-lg ${
+              isDarkMode 
+                ? 'bg-violet-600 hover:bg-violet-500 text-white' 
+                : 'bg-violet-500 hover:bg-violet-400 text-white'
+            } ${isUploadingExcel ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            <FaUpload className="mr-2" />
+            {isUploadingExcel ? 'Uploading...' : 'Upload and Process'}
+          </button>
+        )}
+      </div>
+      {excelFile && (
+        <p className={`mt-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+          Selected file: {excelFile.name}
+        </p>
+      )}
+    </div>
+  );
+
+  // Add handleDragEnd function for drag and drop
+  const handleDragEnd = (result) => {
+    if (!result.destination) return;
+
+    const sourceIndex = result.source.index;
+    const destinationIndex = result.destination.index;
+    
+    if (sourceIndex === destinationIndex) return;
+
+    const updatedQuestions = Array.from(questions);
+    const [movedQuestion] = updatedQuestions.splice(sourceIndex, 1);
+    updatedQuestions.splice(destinationIndex, 0, movedQuestion);
+
+    setQuestions(updatedQuestions);
+  };
+
+  // Function to handle manual reordering through dropdown
+  const handleQuestionReorder = (questionIndex, newPosition) => {
+    if (questionIndex === newPosition) return;
+
+    const updatedQuestions = [...questions];
+    const [movedQuestion] = updatedQuestions.splice(questionIndex, 1);
+    updatedQuestions.splice(newPosition, 0, movedQuestion);
+    setQuestions(updatedQuestions);
+  };
+
+  // Modify the renderQuestion function
+  const renderQuestion = (question, index) => (
+    <Draggable key={index} draggableId={`question-${index}`} index={index}>
+      {(provided, snapshot) => (
+        <div
+          ref={provided.innerRef}
+          {...provided.draggableProps}
+          className={`mb-4 p-4 rounded-lg ${
+            isDarkMode 
+              ? 'bg-[#1a1f2e] border border-gray-700' 
+              : 'bg-white border border-gray-200'
+          } ${snapshot.isDragging ? 'shadow-lg' : ''}`}
+        >
+          <div className="flex items-start space-x-4">
+            <div {...provided.dragHandleProps} className="pt-1">
+              <FaGripVertical className={`w-5 h-5 ${
+                isDarkMode ? 'text-gray-500' : 'text-gray-400'
+              }`} />
+            </div>
+            <div className="flex-1">
+              <div className="flex justify-between items-start mb-2">
+                <div className="flex items-center space-x-3">
+                  <select
+                    value={index}
+                    onChange={(e) => handleQuestionReorder(index, parseInt(e.target.value))}
+                    className={`form-select w-20 py-1 px-2 rounded-md text-sm ${
+                      isDarkMode 
+                        ? 'bg-gray-800 text-white border-gray-700' 
+                        : 'bg-white text-gray-900 border-gray-300'
+                    }`}
+                  >
+                    {questions.map((_, i) => (
+                      <option key={i} value={i}>
+                        Q{i + 1}
+                      </option>
+                    ))}
+                  </select>
+                  <h3 className={`font-medium ${
+                    isDarkMode ? 'text-white' : 'text-gray-900'
+                  }`}>
+                    {question.questionText.substring(0, 50)}
+                    {question.questionText.length > 50 ? '...' : ''}
+                  </h3>
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => editQuestion(index)}
+                    className={`p-1.5 rounded-lg ${
+                      isDarkMode 
+                        ? 'hover:bg-gray-700 text-gray-400' 
+                        : 'hover:bg-gray-100 text-gray-600'
+                    }`}
+                    title="Edit question"
+                  >
+                    <FaEdit className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => deleteQuestion(index)}
+                    className={`p-1.5 rounded-lg ${
+                      isDarkMode 
+                        ? 'hover:bg-red-900/50 text-red-400' 
+                        : 'hover:bg-red-100 text-red-600'
+                    }`}
+                    title="Delete question"
+                  >
+                    <FaTrash className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              
+              {/* Question content */}
+              <div className={`mt-3 pl-4 ${
+                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+              }`}>
+                <p className="mb-3">{question.questionText}</p>
+                {question.questionImage && (
+                  <img 
+                    src={question.questionImagePreview} 
+                    alt={`Question ${index + 1}`}
+                    className="mb-3 max-h-40 rounded-lg"
+                  />
+                )}
+                
+                {/* Options */}
+                <div className="space-y-2 mt-4">
+                  {question.options.map((option, optIndex) => (
+                    <div 
+                      key={optIndex}
+                      className={`p-2 rounded-lg ${
+                        question.correctOption === optIndex
+                          ? isDarkMode 
+                            ? 'bg-green-900/30 border-green-700'
+                            : 'bg-green-50 border-green-200'
+                          : isDarkMode
+                            ? 'bg-gray-800/50'
+                            : 'bg-gray-50'
+                      } border`}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <span className={`font-medium ${
+                          isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                        }`}>
+                          {String.fromCharCode(65 + optIndex)}.
+                        </span>
+                        <span>{option.text}</span>
+                      </div>
+                      {option.image && (
+                        <img 
+                          src={option.imagePreview} 
+                          alt={`Option ${String.fromCharCode(65 + optIndex)}`}
+                          className="mt-2 max-h-32 rounded-lg"
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </Draggable>
+  );
+
+  // Modify your questions list rendering to use DragDropContext
+  const renderQuestionsList = () => (
+    <DragDropContext onDragEnd={handleDragEnd}>
+      <Droppable droppableId="questions">
+        {(provided) => (
+          <div
+            {...provided.droppableProps}
+            ref={provided.innerRef}
+            className="space-y-4"
+          >
+            {questions.map((question, index) => renderQuestion(question, index))}
+            {provided.placeholder}
+          </div>
+        )}
+      </Droppable>
+    </DragDropContext>
+  );
+
   return (
     <div className={`min-h-screen ${isDarkMode ? 'bg-[#0A0F1C] text-white' : 'bg-gray-50 text-gray-900'} pt-20 pb-12`}>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -902,6 +1210,9 @@ const InstituteExamCreationScreen = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
+            {/* Add the Excel upload section at the top of the questions step */}
+            {renderExcelUpload()}
+            
             {/* Questions Progress */}
             <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-xl shadow-lg p-6 mb-8`}>
               <div className="flex items-center justify-between">
@@ -936,114 +1247,7 @@ const InstituteExamCreationScreen = () => {
                   Questions ({questions.length})
                 </h2>
                 
-                <div className="space-y-4">
-                  {questions.map((question, index) => (
-                    <div 
-                      key={index}
-                      className={`p-4 rounded-lg ${
-                        isDarkMode ? 'bg-gray-800' : 'bg-gray-50'
-                      } flex justify-between items-start`}
-                    >
-                      <div className="flex-1">
-                        <div className="font-medium mb-2">Question {index + 1}</div>
-                        <div className="mb-2">{question.questionText}</div>
-                        {question.questionImage && (
-                          <img 
-                            src={question.questionImage} 
-                            alt={`Question ${index + 1}`} 
-                            className="h-32 object-contain mb-2 rounded-md"
-                          />
-                        )}
-                        <div className="mt-2">
-                          <div className="font-medium mb-1">
-                            Options: 
-                            <span className="text-xs ml-2 px-2 py-0.5 rounded bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                              {question.questionType === 'single' ? 'Single Choice' : 'Multiple Choice'}
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {question.options.map((option, optIndex) => (
-                              <div 
-                                key={optIndex}
-                                className={`p-2 rounded ${
-                                  question.questionType === 'single'
-                                    ? question.correctOption === optIndex
-                                      ? isDarkMode ? 'bg-green-900/30 border border-green-700' : 'bg-green-50 border border-green-200'
-                                      : isDarkMode ? 'bg-gray-700' : 'bg-white border border-gray-200'
-                                    : question.correctOptions.includes(optIndex)
-                                      ? isDarkMode ? 'bg-green-900/30 border border-green-700' : 'bg-green-50 border border-green-200'
-                                      : isDarkMode ? 'bg-gray-700' : 'bg-white border border-gray-200'
-                                }`}
-                              >
-                                <div className="flex items-center">
-                                  <span className={`font-medium mr-2 ${
-                                    question.questionType === 'single'
-                                      ? question.correctOption === optIndex
-                                        ? isDarkMode ? 'text-green-400' : 'text-green-700'
-                                        : ''
-                                      : question.correctOptions.includes(optIndex)
-                                        ? isDarkMode ? 'text-green-400' : 'text-green-700'
-                                        : ''
-                                  }`}>
-                                    {String.fromCharCode(65 + optIndex)}
-                                  </span>
-                                  {question.questionType === 'single' && question.correctOption === optIndex && (
-                                    <span className={`text-xs px-2 py-0.5 rounded ${
-                                      isDarkMode ? 'bg-green-800 text-green-200' : 'bg-green-100 text-green-800'
-                                    }`}>
-                                      Correct
-                                    </span>
-                                  )}
-                                  {question.questionType === 'multiple' && question.correctOptions.includes(optIndex) && (
-                                    <span className={`text-xs px-2 py-0.5 rounded ${
-                                      isDarkMode ? 'bg-green-800 text-green-200' : 'bg-green-100 text-green-800'
-                                    }`}>
-                                      Correct
-                                    </span>
-                                  )}
-                                </div>
-                                <div>{option.text}</div>
-                                {option.image && (
-                                  <img 
-                                    src={option.image} 
-                                    alt={`Option ${String.fromCharCode(65 + optIndex)}`} 
-                                    className="h-20 object-contain mt-1 rounded-md"
-                                  />
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Always show edit/delete buttons for existing questions */}
-                      <div className="flex space-x-2 ml-4">
-                        <button
-                          onClick={() => editQuestion(index)}
-                          className={`p-2 rounded-lg ${
-                            isDarkMode 
-                              ? 'bg-blue-900/50 hover:bg-blue-800 text-blue-300' 
-                              : 'bg-blue-100 hover:bg-blue-200 text-blue-700'
-                          }`}
-                          title="Edit question"
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          onClick={() => deleteQuestion(index)}
-                          className={`p-2 rounded-lg ${
-                            isDarkMode 
-                              ? 'bg-red-900/50 hover:bg-red-800 text-red-300' 
-                              : 'bg-red-100 hover:bg-red-200 text-red-700'
-                          }`}
-                          title="Delete question"
-                        >
-                          <FaTrash />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                {renderQuestionsList()}
               </div>
             )}
             
