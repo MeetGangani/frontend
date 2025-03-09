@@ -556,73 +556,72 @@ const InstituteExamCreationScreen = () => {
     }
   };
   
-  // Update the submitExam function to use the deployed backend URL
-  // Update the submitExam function to better handle image data
+  // Add this function to format questions according to the schema
+  const formatQuestionsForSubmission = (questions) => {
+    return questions.map(q => ({
+      question: q.questionText,
+      options: q.options.map(opt => opt.text),
+      correctAnswer: q.correctOption + 1  // Convert to 1-based index
+    }));
+  };
+
+  // Modify the submit function
   const submitExam = async () => {
+    if (questions.length !== examMetadata.numberOfQuestions) {
+      toast.error(`Please add all ${examMetadata.numberOfQuestions} questions before submitting`);
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
-      setSubmitting(true);
-      
-      // Validate exam data
-      if (!examMetadata.examName.trim()) {
-        toast.error('Please enter an exam name');
-        setSubmitting(false);
-        return;
+      // First upload any images and get processed questions with image URLs
+      let processedQuestions = questions;
+      if (questions.some(q => q.questionImage || q.options.some(opt => opt.image))) {
+        processedQuestions = await uploadImages();
       }
-      
-      if (questions.length === 0) {
-        toast.error('Please add at least one question');
-        setSubmitting(false);
-        return;
-      }
-      
-      // Prepare exam data - simplify the structure to avoid circular references
+
+      // Format the questions into the expected JSON structure
       const examData = {
-        examName: examMetadata.examName.trim(),
-        description: examMetadata.description.trim(),
-        subject: examMetadata.subject.trim(),
-        timeLimit: parseInt(examMetadata.timeLimit),
-        passingPercentage: parseInt(examMetadata.passingPercentage),
-        questions: questions.map(q => ({
-          questionText: q.questionText || '',
+        questions: processedQuestions.map(q => ({
+          question: q.questionText,
+          options: q.options.map(opt => opt.text),
+          correctAnswer: q.correctOption + 1, // Convert to 1-based index
           questionImage: q.questionImage || null,
-          questionType: q.questionType || 'single',
-          options: q.options.map(opt => ({
-            text: opt.text || '',
-            image: opt.image || null
-          })),
-          correctOption: q.questionType === 'single' ? q.correctOption : -1,
-          correctOptions: q.questionType === 'multiple' ? q.correctOptions : []
+          optionImages: q.options.map(opt => opt.image || null)
         }))
       };
-      
-      console.log('Sending exam data:', JSON.stringify(examData));
-      
-      // Send to server with increased timeout
-      const response = await axiosInstance.post('/api/exams/create-binary', examData, {
-        timeout: 120000, // 2 minutes timeout for large payloads
+
+      // Create a JSON file blob
+      const jsonBlob = new Blob([JSON.stringify(examData)], {
+        type: 'application/json'
+      });
+
+      // Create FormData and append all required fields
+      const formData = new FormData();
+      formData.append('file', jsonBlob, 'exam_questions.json');
+      formData.append('examName', examMetadata.examName);
+      formData.append('description', examMetadata.description);
+      formData.append('examDuration', examMetadata.timeLimit.toString());
+      formData.append('passingPercentage', examMetadata.passingPercentage.toString());
+      formData.append('totalQuestions', examMetadata.numberOfQuestions.toString());
+      formData.append('subject', examMetadata.subject);
+
+      // Submit to the server
+      const response = await axiosInstance.post('/api/upload', formData, {
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'multipart/form-data'
         }
       });
-      
-      toast.success('Exam created successfully!');
-      navigate('/institute/dashboard');
-    } catch (error) {
-      console.error('Error creating exam:', error);
-      
-      if (error.response) {
-        console.error('Error response data:', error.response.data);
-        console.error('Error response status:', error.response.status);
-        toast.error(error.response.data.message || `Server error: ${error.response.status}`);
-      } else if (error.request) {
-        console.error('No response received:', error.request);
-        toast.error('Server did not respond. Please try again later.');
-      } else {
-        console.error('Error message:', error.message);
-        toast.error('Failed to create exam: ' + error.message);
+
+      if (response.data) {
+        toast.success('Exam created successfully!');
+        navigate('/institute/dashboard');
       }
+    } catch (error) {
+      console.error('Error submitting exam:', error);
+      toast.error(error.response?.data?.message || 'Failed to create exam');
     } finally {
-      setSubmitting(false);
+      setIsSubmitting(false);
     }
   };
   
@@ -713,12 +712,6 @@ const InstituteExamCreationScreen = () => {
       return;
     }
 
-    // Check if the number of questions is set
-    if (!examMetadata.numberOfQuestions) {
-      toast.error("Please set the number of questions in exam metadata first");
-      return;
-    }
-
     setIsUploadingExcel(true);
     try {
       const formData = new FormData();
@@ -731,14 +724,8 @@ const InstituteExamCreationScreen = () => {
       });
 
       if (response.data && response.data.questions) {
-        // Check if the number of questions matches
-        if (response.data.questions.length !== examMetadata.numberOfQuestions) {
-          toast.error(`Excel file contains ${response.data.questions.length} questions but you specified ${examMetadata.numberOfQuestions} questions. Please adjust the number of questions or use a different Excel file.`);
-          return;
-        }
-
-        // Update questions state with processed data
-        const processedQuestions = response.data.questions.map(q => ({
+        // Transform the Excel processor response but keep 1-based indexing
+        const transformedQuestions = response.data.questions.map(q => ({
           questionText: q.question,
           questionImage: null,
           questionImagePreview: null,
@@ -748,14 +735,31 @@ const InstituteExamCreationScreen = () => {
             image: null,
             imagePreview: null
           })),
-          correctOption: q.correctAnswer - 1,
+          correctOption: q.correctAnswer - 1, // Store as 0-based for internal use
           correctOptions: []
         }));
 
-        setQuestions(processedQuestions);
-        setQuestionsRemaining(0); // All questions are now added
+        setQuestions(transformedQuestions);
+        // Update questionsRemaining
+        setQuestionsRemaining(Math.max(0, examMetadata.numberOfQuestions - transformedQuestions.length));
         
-        toast.success(`Successfully loaded ${response.data.questions.length} questions`);
+        // Clear the current question form
+        setCurrentQuestion({
+          questionText: '',
+          questionImage: null,
+          questionImagePreview: null,
+          questionType: 'single',
+          options: [
+            { text: '', image: null, imagePreview: null },
+            { text: '', image: null, imagePreview: null },
+            { text: '', image: null, imagePreview: null },
+            { text: '', image: null, imagePreview: null }
+          ],
+          correctOption: 0,
+          correctOptions: []
+        });
+
+        toast.success(`Successfully loaded ${transformedQuestions.length} questions`);
         setExcelFile(null);
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
