@@ -2,7 +2,7 @@ export const clearAuthCookies = () => {
   const cookies = ['jwt']; // Add any other auth-related cookies here
   const domains = [
     '', // current domain
-    '.onrender.com', // production domain
+    '.vercel.app', // production domain
     'localhost' // development domain
   ];
   

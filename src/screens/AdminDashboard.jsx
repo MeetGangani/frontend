@@ -88,7 +88,7 @@ const AdminDashboard = () => {
         // Reset form
         setName('');
         setEmail('');
-        setUserType('student');
+        setUserType('student'); 
         
         // Fetch updated user list
         await fetchUsers();
