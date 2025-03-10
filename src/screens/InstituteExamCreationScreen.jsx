@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useTheme } from '../context/ThemeContext';
 import { motion } from 'framer-motion';
-import { FaArrowLeft, FaPlus, FaTrash, FaImage, FaCheck, FaTimes, FaEdit, FaFileExcel, FaUpload, FaGripVertical } from 'react-icons/fa';
+import { FaArrowLeft, FaPlus, FaTrash, FaImage, FaCheck, FaTimes, FaEdit, FaFileExcel, FaUpload, FaGripVertical, FaSync } from 'react-icons/fa';
 import axios from 'axios';
 import { showToast } from '../utils/toast';
 import config from '../config/config';
@@ -679,24 +679,30 @@ const InstituteExamCreationScreen = () => {
     }
   };
   
-  // Handle Excel file selection
-  const handleExcelFileChange = (e) => {
+  // Keep only one version of handleFileSelect
+  const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.type === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" || 
-          file.type === "application/vnd.ms-excel") {
-        setExcelFile(file);
-      } else {
-        toast.error("Please select a valid Excel file");
+      // Validate file type
+      if (!file.name.match(/\.(xlsx|xls)$/)) {
+        showToast.error('Please select a valid Excel file (.xlsx or .xls)');
         e.target.value = '';
+        return;
       }
+      // Validate file size (e.g., max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        showToast.error('File size should be less than 5MB');
+        e.target.value = '';
+        return;
+      }
+      setExcelFile(file);
     }
   };
 
   // Handle Excel upload and processing
   const handleExcelUpload = async () => {
     if (!excelFile) {
-      toast.error("Please select an Excel file first");
+      showToast.error("Please select an Excel file first");
       return;
     }
 
@@ -705,33 +711,55 @@ const InstituteExamCreationScreen = () => {
       const formData = new FormData();
       formData.append('file', excelFile);
 
-      const response = await axiosInstance.post('/api/proxy/excel', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
+      // Use your backend proxy endpoint instead of calling the Excel processor directly
+      const response = await axiosInstance.post(
+        "/api/proxy/excel",
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          timeout: 30000 // 30 seconds timeout
         }
-      });
+      );
+
+      console.log("Excel processor response:", response.data);
 
       if (response.data && response.data.questions) {
-        // Transform the Excel processor response but keep 1-based indexing
+        // Transform the questions from Excel format to our app format
         const transformedQuestions = response.data.questions.map(q => ({
-          questionText: q.question,
+          questionText: q.question || '',
           questionImage: null,
           questionImagePreview: null,
           questionType: 'single',
-          options: q.options.map(opt => ({
-            text: opt,
+          options: (q.options || []).map(opt => ({
+            text: opt || '',
             image: null,
             imagePreview: null
           })),
-          correctOption: q.correctAnswer - 1, // Store as 0-based for internal use
+          correctOption: parseInt(q.correctAnswer) - 1, // Convert from 1-based to 0-based index
           correctOptions: []
         }));
 
-        setQuestions(transformedQuestions);
-        // Update questionsRemaining
-        setQuestionsRemaining(Math.max(0, examMetadata.numberOfQuestions - transformedQuestions.length));
+        // Validate the number of questions
+        if (transformedQuestions.length === 0) {
+          showToast.error("No valid questions found in the Excel file");
+          return;
+        }
         
-        // Clear the current question form
+        if (transformedQuestions.length > examMetadata.numberOfQuestions) {
+          showToast.error(`Excel file contains ${transformedQuestions.length} questions, but only ${examMetadata.numberOfQuestions} are allowed`);
+          return;
+        }
+
+        // Update questions state
+        setQuestions(transformedQuestions);
+        
+        // Update remaining questions count
+        const remaining = Math.max(0, examMetadata.numberOfQuestions - transformedQuestions.length);
+        setQuestionsRemaining(remaining);
+
+        // Reset current question form
         setCurrentQuestion({
           questionText: '',
           questionImage: null,
@@ -747,48 +775,44 @@ const InstituteExamCreationScreen = () => {
           correctOptions: []
         });
 
-        toast.success(`Successfully loaded ${transformedQuestions.length} questions`);
-        setExcelFile(null);
+        // Clear file input
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
+        setExcelFile(null);
+
+        showToast.success(`Successfully loaded ${transformedQuestions.length} questions from Excel`);
+      } else {
+        throw new Error('Invalid response format from Excel processor');
       }
     } catch (error) {
       console.error('Excel upload error:', error);
-      toast.error(error.response?.data?.message || 'Failed to process Excel file');
+      showToast.error(
+        error.response?.data?.message || 
+        'Failed to process Excel file. Please ensure it follows the correct format.'
+      );
     } finally {
       setIsUploadingExcel(false);
     }
   };
 
-  // Add this in your JSX where you want the Excel upload button to appear
-  const renderExcelUpload = () => (
-    <div className={`mt-4 p-4 border rounded-lg ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-      <h3 className={`text-lg font-medium mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-        Import Questions from Excel
-      </h3>
-      <p className={`text-sm mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-        Note: The Excel file must contain exactly {examMetadata.numberOfQuestions} questions as specified in the exam metadata.
-      </p>
+  // Update the Excel upload button section in your JSX
+  const renderExcelUploadSection = () => (
+    <div className="mt-4 space-y-4">
       <div className="flex items-center space-x-4">
         <input
           type="file"
           ref={fileInputRef}
-          onChange={handleExcelFileChange}
+          onChange={handleFileSelect}
           accept=".xlsx,.xls"
           className="hidden"
         />
         <button
-          onClick={() => {
-            if (!examMetadata.numberOfQuestions) {
-              toast.error("Please set the number of questions in exam metadata first");
-              return;
-            }
-            fileInputRef.current?.click();
-          }}
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
           className={`flex items-center px-4 py-2 rounded-lg ${
-            isDarkMode 
-              ? 'bg-gray-700 hover:bg-gray-600 text-white' 
+            isDarkMode
+              ? 'bg-gray-700 hover:bg-gray-600 text-white'
               : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
           }`}
         >
@@ -796,24 +820,36 @@ const InstituteExamCreationScreen = () => {
           Select Excel File
         </button>
         {excelFile && (
-          <button
-            onClick={handleExcelUpload}
-            disabled={isUploadingExcel}
-            className={`flex items-center px-4 py-2 rounded-lg ${
-              isDarkMode 
-                ? 'bg-violet-600 hover:bg-violet-500 text-white' 
-                : 'bg-violet-500 hover:bg-violet-400 text-white'
-            } ${isUploadingExcel ? 'opacity-50 cursor-not-allowed' : ''}`}
-          >
-            <FaUpload className="mr-2" />
-            {isUploadingExcel ? 'Uploading...' : 'Upload and Process'}
-          </button>
+          <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+            {excelFile.name}
+          </span>
         )}
       </div>
       {excelFile && (
-        <p className={`mt-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-          Selected file: {excelFile.name}
-        </p>
+        <button
+          type="button"
+          onClick={handleExcelUpload}
+          disabled={isUploadingExcel}
+          className={`flex items-center px-4 py-2 rounded-lg ${
+            isUploadingExcel
+              ? 'bg-gray-400 cursor-not-allowed'
+              : isDarkMode
+              ? 'bg-blue-600 hover:bg-blue-500'
+              : 'bg-blue-500 hover:bg-blue-400'
+          } text-white`}
+        >
+          {isUploadingExcel ? (
+            <>
+              <FaSync className="animate-spin mr-2" />
+              Processing...
+            </>
+          ) : (
+            <>
+              <FaUpload className="mr-2" />
+              Upload and Process
+            </>
+          )}
+        </button>
       )}
     </div>
   );
@@ -1203,7 +1239,7 @@ const InstituteExamCreationScreen = () => {
             animate={{ opacity: 1, y: 0 }}
           >
             {/* Add the Excel upload section at the top of the questions step */}
-            {renderExcelUpload()}
+            {renderExcelUploadSection()}
             
             {/* Questions Progress */}
             <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-xl shadow-lg p-6 mb-8`}>
