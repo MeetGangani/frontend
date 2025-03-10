@@ -11,7 +11,7 @@ const HomeScreen = () => {
   const { userInfo } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const location = useLocation();
-
+ 
   useEffect(() => {
     // Check for login success and userInfo cookie
     const searchParams = new URLSearchParams(location.search);
