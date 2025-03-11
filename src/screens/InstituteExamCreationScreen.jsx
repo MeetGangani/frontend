@@ -216,7 +216,15 @@ const InstituteExamCreationScreen = () => {
       // Upload to server
       const response = await axiosInstance.post(
         `/api/exams/upload-images`,
-        formData
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Accept': 'application/json',
+          },
+          withCredentials: true,
+          timeout: 30000 // 30 seconds timeout
+        }
       );
       
       if (!response.data || !response.data.imageUrls || !response.data.imageUrls[0]) {
@@ -245,6 +253,12 @@ const InstituteExamCreationScreen = () => {
         errorMessage = error.response.data.error;
       } else if (error.message) {
         errorMessage = error.message;
+      }
+      
+      if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Upload timeout. Please try again.';
+      } else if (!error.response) {
+        errorMessage = 'Network error. Please check your connection and try again.';
       }
       
       showToast.error(errorMessage);
@@ -299,7 +313,15 @@ const InstituteExamCreationScreen = () => {
       // Upload to server
       const response = await axiosInstance.post(
         `/api/exams/upload-images`,
-        formData
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Accept': 'application/json',
+          },
+          withCredentials: true,
+          timeout: 30000 // 30 seconds timeout
+        }
       );
       
       if (!response.data || !response.data.imageUrls || !response.data.imageUrls[0]) {
@@ -335,6 +357,12 @@ const InstituteExamCreationScreen = () => {
         errorMessage = error.response.data.error;
       } else if (error.message) {
         errorMessage = error.message;
+      }
+      
+      if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Upload timeout. Please try again.';
+      } else if (!error.response) {
+        errorMessage = 'Network error. Please check your connection and try again.';
       }
       
       showToast.error(errorMessage);
