@@ -679,28 +679,36 @@ const InstituteExamCreationScreen = () => {
     try {
       // Prepare the exam data with all question details including images
       const examData = {
-        ...examMetadata,
+        examName: examMetadata.examName,
+        description: examMetadata.description,
+        subject: examMetadata.subject,
+        timeLimit: examMetadata.timeLimit,
+        passingPercentage: examMetadata.passingPercentage,
         questions: questions.map(q => ({
           questionText: q.questionText,
-          questionImage: q.questionImage, // Include question image URL
+          questionImage: q.questionImage,
           questionType: q.questionType,
           options: q.options.map(opt => ({
             text: opt.text,
-            image: opt.image // Include option image URL
+            image: opt.image
           })),
-          correctOption: q.questionType === 'single' ? q.correctOption : null,
-          correctOptions: q.questionType === 'multiple' ? q.correctOptions : []
+          correctOption: q.questionType === 'single' ? q.correctOption : undefined,
+          correctOptions: q.questionType === 'multiple' ? q.correctOptions : undefined
         }))
       };
 
-      // Submit the exam
-      const response = await axiosInstance.post('/api/exams/create', examData);
+      // Submit the exam using the correct endpoint
+      const response = await axiosInstance.post('/api/exams/create-binary', examData);
       
-      showToast.success('Exam created successfully!');
-      navigate('/institute/dashboard');
+      if (response.data && response.data.message) {
+        showToast.success(response.data.message);
+        navigate('/institute/dashboard');
+      } else {
+        throw new Error('Invalid response from server');
+      }
     } catch (error) {
       console.error('Error submitting exam:', error);
-      showToast.error(`Error submitting exam: ${error.message || 'Unknown error'}`);
+      showToast.error(error.message || 'Failed to create exam. Please try again.');
     } finally {
       setSubmitting(false);
     }
