@@ -191,23 +191,35 @@ const InstituteExamCreationScreen = () => {
     try {
       setIsUploading(true);
       
-      // Create a preview URL from the local file
+      // Create a preview URL
       const previewUrl = URL.createObjectURL(file);
       
-      // For testing, we'll use the preview URL as the image URL
-      // This allows us to test the UI flow without actual uploads
-      setCurrentQuestion(prev => ({
-        ...prev,
-        questionImage: previewUrl,
+      // Create form data
+      const formData = new FormData();
+      formData.append('images', file);
+      
+      // Upload to server using axiosInstance instead of direct axios
+      const response = await axiosInstance.post(
+        `/api/exams/upload-images`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+      
+      // Update the question with the image URL
+      setCurrentQuestion({
+        ...currentQuestion,
+        questionImage: response.data.imageUrls[0],
         questionImagePreview: previewUrl
-      }));
+      });
       
-      toast.success('Image added successfully');
-      
+      showToast.success('Image uploaded successfully');
     } catch (error) {
-      console.error('Error handling image:', error);
-      toast.error('Failed to add image');
-      e.target.value = '';
+      console.error('Error uploading images:', error);
+      showToast.error(`Error uploading images: ${error.message || 'Unknown error'}`);
     } finally {
       setIsUploading(false);
     }
@@ -240,15 +252,14 @@ const InstituteExamCreationScreen = () => {
       const formData = new FormData();
       formData.append('images', file);
       
-      // Upload to server using the deployed backend URL
-      const response = await axios.post(
-        `${config.API_BASE_URL}/api/exams/upload-images`,
+      // Upload to server using axiosInstance instead of direct axios
+      const response = await axiosInstance.post(
+        `/api/exams/upload-images`,
         formData,
         {
           headers: {
             'Content-Type': 'multipart/form-data'
-          },
-          withCredentials: true
+          }
         }
       );
       
@@ -265,9 +276,10 @@ const InstituteExamCreationScreen = () => {
         options: updatedOptions
       });
       
+      showToast.success('Option image uploaded successfully');
     } catch (error) {
-      console.error('Error uploading image:', error);
-      showToast.error('Failed to upload image: ' + (error.response?.data?.message || error.message));
+      console.error('Error uploading images:', error);
+      showToast.error(`Error uploading images: ${error.message || 'Unknown error'}`);
     } finally {
       setIsUploading(false);
     }
@@ -553,63 +565,46 @@ const InstituteExamCreationScreen = () => {
     }));
   };
 
-  // Modify the submit function
-  const submitExam = async () => {
-    if (questions.length !== examMetadata.numberOfQuestions) {
-      toast.error(`Please add all ${examMetadata.numberOfQuestions} questions before submitting`);
+  // Handle exam submission
+  const handleSubmitExam = async () => {
+    if (questions.length === 0) {
+      showToast.error('Please add at least one question');
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      // First upload any images and get processed questions with image URLs
-      let processedQuestions = questions;
-      if (questions.some(q => q.questionImage || q.options.some(opt => opt.image))) {
-        processedQuestions = await uploadImages();
-      }
+    if (questions.length < examMetadata.numberOfQuestions) {
+      showToast.error(`Please add ${examMetadata.numberOfQuestions} questions as specified in exam settings`);
+      return;
+    }
 
-      // Format the questions into the expected JSON structure
+    setSubmitting(true);
+    try {
+      // Prepare the exam data with all question details including images
       const examData = {
-        questions: processedQuestions.map(q => ({
-          question: q.questionText,
-          options: q.options.map(opt => opt.text),
-          correctAnswer: q.correctOption + 1, // Convert to 1-based index
-          questionImage: q.questionImage || null,
-          optionImages: q.options.map(opt => opt.image || null)
+        ...examMetadata,
+        questions: questions.map(q => ({
+          questionText: q.questionText,
+          questionImage: q.questionImage, // Include question image URL
+          questionType: q.questionType,
+          options: q.options.map(opt => ({
+            text: opt.text,
+            image: opt.image // Include option image URL
+          })),
+          correctOption: q.questionType === 'single' ? q.correctOption : null,
+          correctOptions: q.questionType === 'multiple' ? q.correctOptions : []
         }))
       };
 
-      // Create a JSON file blob
-      const jsonBlob = new Blob([JSON.stringify(examData)], {
-        type: 'application/json'
-      });
-
-      // Create FormData and append all required fields
-      const formData = new FormData();
-      formData.append('file', jsonBlob, 'exam_questions.json');
-      formData.append('examName', examMetadata.examName);
-      formData.append('description', examMetadata.description);
-      formData.append('examDuration', examMetadata.timeLimit.toString());
-      formData.append('passingPercentage', examMetadata.passingPercentage.toString());
-      formData.append('totalQuestions', examMetadata.numberOfQuestions.toString());
-      formData.append('subject', examMetadata.subject);
-
-      // Submit to the server
-      const response = await axiosInstance.post('/api/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-
-      if (response.data) {
-        toast.success('Exam created successfully!');
-        navigate('/institute/dashboard');
-      }
+      // Submit the exam
+      const response = await axiosInstance.post('/api/exams/create', examData);
+      
+      showToast.success('Exam created successfully!');
+      navigate('/institute/dashboard');
     } catch (error) {
       console.error('Error submitting exam:', error);
-      toast.error(error.response?.data?.message || 'Failed to create exam');
+      showToast.error(`Error submitting exam: ${error.message || 'Unknown error'}`);
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
   };
   
@@ -787,11 +782,16 @@ const InstituteExamCreationScreen = () => {
       }
     } catch (error) {
       console.error('Excel upload error:', error);
-      showToast.error(
-        error.response?.data?.message || 
-        'Failed to process Excel file. Please ensure it follows the correct format.'
-      );
-    } finally {
+      
+      let errorMessage = 'Failed to process Excel file. Please ensure it follows the correct format.';
+      
+      if (error.response && error.response.data && error.response.data.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      showToast.error(errorMessage);
       setIsUploadingExcel(false);
     }
   };
@@ -1584,48 +1584,20 @@ const InstituteExamCreationScreen = () => {
                     </button>
                     <button
                       type="button"
-                      onClick={submitExam}
+                      onClick={handleSubmitExam}
                       disabled={isSubmitting}
-                      className={`px-8 py-3 rounded-lg font-medium ${
+                      className={`px-6 py-3 rounded-lg font-medium ${
                         isDarkMode 
-                          ? 'bg-green-700 hover:bg-green-600 text-white' 
-                          : 'bg-green-600 hover:bg-green-700 text-white'
-                      } disabled:opacity-50 disabled:cursor-not-allowed flex items-center`}
+                          ? 'bg-violet-700 hover:bg-violet-600 text-white' 
+                          : 'bg-violet-600 hover:bg-violet-700 text-white'
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
-                      {isSubmitting ? (
-                        <>
-                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          Submitting...
-                        </>
-                      ) : (
-                        <>
-                          <FaCheck className="mr-2" />
-                          Submit Exam
-                        </>
-                      )}
+                      {isSubmitting ? 'Submitting...' : 'Submit Exam'}
                     </button>
                   </div>
                 </div>
               </div>
             )}
-            
-            {/* Navigation buttons */}
-            <div className="mt-8 flex justify-between">
-              <button
-                type="button"
-                onClick={goBackToMetadata}
-                className={`px-6 py-2 rounded-lg font-medium ${
-                  isDarkMode 
-                    ? 'bg-gray-700 hover:bg-gray-600 text-white' 
-                    : 'bg-gray-300 hover:bg-gray-400 text-gray-800'
-                }`}
-              >
-                <FaArrowLeft className="mr-2 inline" /> Back to Exam Details
-              </button>
-            </div>
           </motion.div>
         )}
       </div>
