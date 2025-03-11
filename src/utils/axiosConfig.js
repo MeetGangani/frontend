@@ -6,18 +6,19 @@ const axiosInstance = axios.create({
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
-  },
+    'Accept': 'application/json'
+  }
 });
 
-// Add a request interceptor to include the token in all requests
+// Add request interceptor to handle CORS
 axiosInstance.interceptors.request.use(
   (config) => {
-    // Get the token from localStorage
-    const token = localStorage.getItem(config.TOKEN_KEY);
+    // Add origin header for CORS
+    config.headers['Origin'] = window.location.origin;
     
-    // If token exists, add it to the headers
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // For file uploads, remove Content-Type header to let browser set it with boundary
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
     }
     
     return config;
@@ -31,9 +32,28 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 403) {
-      console.error('CORS Error:', error);
-      // Handle CORS error (e.g., redirect to login or show message)
+    if (error.response) {
+      // Handle specific error cases
+      switch (error.response.status) {
+        case 401:
+          // Handle unauthorized
+          break;
+        case 403:
+          // Handle forbidden
+          break;
+        case 429:
+          // Handle too many requests
+          break;
+        default:
+          // Handle other errors
+          break;
+      }
+    } else if (error.request) {
+      // Handle network errors
+      console.error('Network Error:', error.request);
+    } else {
+      // Handle other errors
+      console.error('Error:', error.message);
     }
     return Promise.reject(error);
   }

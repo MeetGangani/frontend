@@ -187,6 +187,18 @@ const InstituteExamCreationScreen = () => {
   const handleQuestionImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    // Validate file type and size
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      showToast.error('Please upload a valid image file (JPEG, PNG, GIF, or WebP)');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      showToast.error('Image size should be less than 5MB');
+      return;
+    }
     
     try {
       setIsUploading(true);
@@ -198,17 +210,16 @@ const InstituteExamCreationScreen = () => {
       const formData = new FormData();
       formData.append('images', file);
       
-      // Upload to server using axiosInstance instead of direct axios
+      // Upload to server
       const response = await axiosInstance.post(
         `/api/exams/upload-images`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        }
+        formData
       );
       
+      if (!response.data || !response.data.imageUrls || !response.data.imageUrls[0]) {
+        throw new Error('Invalid response from server');
+      }
+
       // Update the question with the image URL
       setCurrentQuestion({
         ...currentQuestion,
@@ -218,10 +229,28 @@ const InstituteExamCreationScreen = () => {
       
       showToast.success('Image uploaded successfully');
     } catch (error) {
-      console.error('Error uploading images:', error);
-      showToast.error(`Error uploading images: ${error.message || 'Unknown error'}`);
+      console.error('Error uploading image:', error);
+      
+      // Clean up preview URL
+      if (currentQuestion.questionImagePreview) {
+        URL.revokeObjectURL(currentQuestion.questionImagePreview);
+      }
+      
+      // Show appropriate error message
+      let errorMessage = 'Failed to upload image';
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      showToast.error(errorMessage);
     } finally {
       setIsUploading(false);
+      // Reset file input
+      if (questionImageRef.current) {
+        questionImageRef.current.value = '';
+      }
     }
   };
   
@@ -241,6 +270,18 @@ const InstituteExamCreationScreen = () => {
   const handleOptionImageUpload = async (e, optionIndex) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    // Validate file type and size
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      showToast.error('Please upload a valid image file (JPEG, PNG, GIF, or WebP)');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      showToast.error('Image size should be less than 5MB');
+      return;
+    }
     
     try {
       setIsUploading(true);
@@ -252,17 +293,16 @@ const InstituteExamCreationScreen = () => {
       const formData = new FormData();
       formData.append('images', file);
       
-      // Upload to server using axiosInstance instead of direct axios
+      // Upload to server
       const response = await axiosInstance.post(
         `/api/exams/upload-images`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        }
+        formData
       );
       
+      if (!response.data || !response.data.imageUrls || !response.data.imageUrls[0]) {
+        throw new Error('Invalid response from server');
+      }
+
       // Update the option with the image URL
       const updatedOptions = [...currentQuestion.options];
       updatedOptions[optionIndex] = {
@@ -276,12 +316,31 @@ const InstituteExamCreationScreen = () => {
         options: updatedOptions
       });
       
-      showToast.success('Option image uploaded successfully');
+      showToast.success('Image uploaded successfully');
     } catch (error) {
-      console.error('Error uploading images:', error);
-      showToast.error(`Error uploading images: ${error.message || 'Unknown error'}`);
+      console.error('Error uploading image:', error);
+      
+      // Clean up preview URL
+      const currentPreview = currentQuestion.options[optionIndex]?.imagePreview;
+      if (currentPreview) {
+        URL.revokeObjectURL(currentPreview);
+      }
+      
+      // Show appropriate error message
+      let errorMessage = 'Failed to upload image';
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      showToast.error(errorMessage);
     } finally {
       setIsUploading(false);
+      // Reset file input
+      if (optionImageRefs.current[optionIndex]) {
+        optionImageRefs.current[optionIndex].value = '';
+      }
     }
   };
   
