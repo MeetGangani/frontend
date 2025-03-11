@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useTheme } from '../context/ThemeContext';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { FaArrowLeft, FaPlus, FaTrash, FaImage, FaCheck, FaTimes, FaEdit, FaFileExcel, FaUpload, FaGripVertical, FaSync } from 'react-icons/fa';
 import axios from 'axios';
 import { showToast } from '../utils/toast';
@@ -65,6 +65,9 @@ const InstituteExamCreationScreen = () => {
   const [isUploadingExcel, setIsUploadingExcel] = useState(false);
   const [excelFile, setExcelFile] = useState(null);
   const fileInputRef = useRef(null);
+  
+  // Add new state for modal
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   
   // Handle metadata input changes
   const handleMetadataChange = (e) => {
@@ -396,7 +399,7 @@ const InstituteExamCreationScreen = () => {
     return true;
   };
   
-  // Add a function to edit a question
+  // Modify the editQuestion function
   const editQuestion = (index) => {
     const questionToEdit = questions[index];
     
@@ -415,9 +418,16 @@ const InstituteExamCreationScreen = () => {
     });
     
     setEditingQuestionIndex(index);
+    setIsEditModalOpen(true); // Open the modal
   };
   
-  // Modify the addQuestion function to handle editing
+  // Add closeEditModal function
+  const closeEditModal = () => {
+    setIsEditModalOpen(false);
+    cancelEdit();
+  };
+  
+  // Modify the addQuestion function
   const addQuestion = async () => {
     // Check if we're at the limit and not editing
     if (questions.length >= examMetadata.numberOfQuestions && editingQuestionIndex === null) {
@@ -470,6 +480,7 @@ const InstituteExamCreationScreen = () => {
         updatedQuestions[editingQuestionIndex] = processedQuestion;
         setQuestions(updatedQuestions);
         setEditingQuestionIndex(null);
+        setIsEditModalOpen(false); // Close the modal
         showToast.success('Question updated successfully');
       } else {
         // We're adding a new question
@@ -1081,6 +1092,298 @@ const InstituteExamCreationScreen = () => {
     </DragDropContext>
   );
 
+  // Add EditQuestionModal component
+  const EditQuestionModal = () => {
+    if (!isEditModalOpen) return null;
+    
+    return (
+      <AnimatePresence>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black bg-opacity-50"
+        >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            className={`relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl shadow-lg ${
+              isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'
+            } p-6`}
+          >
+            {/* Close button */}
+            <button
+              onClick={closeEditModal}
+              className={`absolute top-4 right-4 p-2 rounded-full ${
+                isDarkMode 
+                  ? 'hover:bg-gray-700 text-gray-400' 
+                  : 'hover:bg-gray-100 text-gray-600'
+              }`}
+            >
+              <FaTimes />
+            </button>
+            
+            <h2 className="text-2xl font-bold mb-6">
+              Edit Question {editingQuestionIndex + 1}
+            </h2>
+            
+            {/* Question form content */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-2">
+                Question Text or Image*
+              </label>
+              <textarea
+                value={currentQuestion.questionText}
+                onChange={handleQuestionTextChange}
+                rows="3"
+                className={`w-full px-4 py-2 rounded-lg border ${
+                  isDarkMode 
+                    ? 'bg-gray-800 border-gray-700 text-white' 
+                    : 'bg-white border-gray-300 text-gray-900'
+                } focus:ring-2 focus:ring-violet-500 focus:border-transparent mb-2`}
+                placeholder="Enter question text"
+              />
+              
+              <div className="flex items-center mt-2">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleQuestionImageUpload}
+                  ref={questionImageRef}
+                  className="hidden"
+                  id="question-image-upload-modal"
+                />
+                <label
+                  htmlFor="question-image-upload-modal"
+                  className={`flex items-center px-4 py-2 rounded-lg cursor-pointer ${
+                    isDarkMode 
+                      ? 'bg-gray-800 hover:bg-gray-700 text-gray-300' 
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                  }`}
+                >
+                  <FaImage className="mr-2" />
+                  {currentQuestion.questionImage ? 'Change Image' : 'Add Image'}
+                </label>
+                
+                {currentQuestion.questionImagePreview && (
+                  <div className="ml-4 flex items-center">
+                    <img 
+                      src={currentQuestion.questionImagePreview} 
+                      alt="Question Preview" 
+                      className="h-16 object-contain rounded-md"
+                    />
+                    <button
+                      type="button"
+                      onClick={removeQuestionImage}
+                      className={`ml-2 p-1 rounded-full ${
+                        isDarkMode 
+                          ? 'bg-red-900/50 hover:bg-red-800 text-red-300' 
+                          : 'bg-red-100 hover:bg-red-200 text-red-700'
+                      }`}
+                      title="Remove image"
+                    >
+                      <FaTimes />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Question Type Selection */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-2">
+                Question Type
+              </label>
+              <div className="flex space-x-4">
+                <button
+                  type="button"
+                  onClick={() => handleQuestionTypeChange('single')}
+                  className={`px-4 py-2 rounded-lg ${
+                    currentQuestion.questionType === 'single'
+                      ? isDarkMode 
+                        ? 'bg-violet-700 text-white' 
+                        : 'bg-violet-600 text-white'
+                      : isDarkMode 
+                        ? 'bg-gray-700 text-gray-300' 
+                        : 'bg-gray-200 text-gray-700'
+                  }`}
+                >
+                  Single Choice
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuestionTypeChange('multiple')}
+                  className={`px-4 py-2 rounded-lg ${
+                    currentQuestion.questionType === 'multiple'
+                      ? isDarkMode 
+                        ? 'bg-violet-700 text-white' 
+                        : 'bg-violet-600 text-white'
+                      : isDarkMode 
+                        ? 'bg-gray-700 text-gray-300' 
+                        : 'bg-gray-200 text-gray-700'
+                  }`}
+                >
+                  Multiple Choice
+                </button>
+              </div>
+            </div>
+            
+            {/* Options */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-4">
+                Options*
+              </label>
+              
+              <div className="space-y-4">
+                {currentQuestion.options.map((option, index) => (
+                  <div 
+                    key={index}
+                    className={`p-4 rounded-lg ${
+                      isDarkMode ? 'bg-gray-800' : 'bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center">
+                        <span className="font-medium mr-2">
+                          Option {String.fromCharCode(65 + index)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleCorrectOptionChange(index)}
+                          className={`ml-2 p-1 rounded-full ${
+                            currentQuestion.questionType === 'single'
+                              ? currentQuestion.correctOption === index
+                                ? isDarkMode 
+                                  ? 'bg-green-900 text-green-300' 
+                                  : 'bg-green-500 text-white'
+                                : isDarkMode 
+                                  ? 'bg-gray-700 text-gray-400' 
+                                  : 'bg-gray-200 text-gray-500'
+                              : currentQuestion.correctOptions.includes(index)
+                                ? isDarkMode 
+                                  ? 'bg-green-900 text-green-300' 
+                                  : 'bg-green-500 text-white'
+                                : isDarkMode 
+                                  ? 'bg-gray-700 text-gray-400' 
+                                  : 'bg-gray-200 text-gray-500'
+                          }`}
+                          title={
+                            currentQuestion.questionType === 'single'
+                              ? currentQuestion.correctOption === index ? "Correct answer" : "Mark as correct"
+                              : currentQuestion.correctOptions.includes(index) ? "Correct answer" : "Mark as correct"
+                          }
+                        >
+                          <FaCheck className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <input
+                      type="text"
+                      value={option.text}
+                      onChange={(e) => handleOptionTextChange(index, e.target.value)}
+                      className={`w-full px-4 py-2 rounded-lg border ${
+                        isDarkMode 
+                          ? 'bg-gray-700 border-gray-600 text-white' 
+                          : 'bg-white border-gray-300 text-gray-900'
+                      } focus:ring-2 focus:ring-violet-500 focus:border-transparent mb-2`}
+                      placeholder={`Enter option ${String.fromCharCode(65 + index)} text`}
+                    />
+                    
+                    <div className="flex items-center mt-2">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleOptionImageUpload(e, index)}
+                        ref={(el) => optionImageRefs.current[index] = el}
+                        className="hidden"
+                        id={`option-image-upload-modal-${index}`}
+                      />
+                      <label
+                        htmlFor={`option-image-upload-modal-${index}`}
+                        className={`flex items-center px-3 py-1 rounded-lg cursor-pointer ${
+                          isDarkMode 
+                            ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                            : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                        } text-sm`}
+                      >
+                        <FaImage className="mr-1" />
+                        {option.image ? 'Change Image' : 'Add Image'}
+                      </label>
+                      
+                      {option.imagePreview && (
+                        <div className="ml-4 flex items-center">
+                          <img 
+                            src={option.imagePreview} 
+                            alt={`Option ${String.fromCharCode(65 + index)} Preview`} 
+                            className="h-12 object-contain rounded-md"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeOptionImage(index)}
+                            className={`ml-2 p-1 rounded-full ${
+                              isDarkMode 
+                                ? 'bg-red-900/50 hover:bg-red-800 text-red-300' 
+                                : 'bg-red-100 hover:bg-red-200 text-red-700'
+                            }`}
+                            title="Remove image"
+                          >
+                            <FaTimes />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={closeEditModal}
+                className={`px-6 py-2 rounded-lg font-medium ${
+                  isDarkMode 
+                    ? 'bg-gray-700 hover:bg-gray-600 text-white' 
+                    : 'bg-gray-300 hover:bg-gray-400 text-gray-800'
+                }`}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={addQuestion}
+                disabled={isUploading}
+                className={`px-6 py-2 rounded-lg font-medium ${
+                  isDarkMode 
+                    ? 'bg-violet-700 hover:bg-violet-600 text-white' 
+                    : 'bg-violet-600 hover:bg-violet-700 text-white'
+                } disabled:opacity-50 disabled:cursor-not-allowed flex items-center`}
+              >
+                {isUploading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <FaCheck className="mr-2" />
+                    Update Question
+                  </>
+                )}
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      </AnimatePresence>
+    );
+  };
+
   return (
     <div className={`min-h-screen ${isDarkMode ? 'bg-[#0A0F1C] text-white' : 'bg-gray-50 text-gray-900'} pt-20 pb-12`}>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1568,7 +1871,7 @@ const InstituteExamCreationScreen = () => {
                   {editingQuestionIndex !== null && (
                     <button
                       type="button"
-                      onClick={cancelEdit}
+                      onClick={closeEditModal}
                       className={`px-6 py-2 rounded-lg font-medium ${
                         isDarkMode 
                           ? 'bg-gray-700 hover:bg-gray-600 text-white' 
@@ -1594,21 +1897,12 @@ const InstituteExamCreationScreen = () => {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        {editingQuestionIndex !== null ? 'Updating...' : 'Adding...'}
+                        Updating...
                       </>
                     ) : (
                       <>
-                        {editingQuestionIndex !== null ? (
-                          <>
-                            <FaCheck className="mr-2" />
-                            Update Question
-                          </>
-                        ) : (
-                          <>
-                            <FaPlus className="mr-2" />
-                            Add Question
-                          </>
-                        )}
+                        <FaCheck className="mr-2" />
+                        Update Question
                       </>
                     )}
                   </button>
@@ -1660,6 +1954,9 @@ const InstituteExamCreationScreen = () => {
           </motion.div>
         )}
       </div>
+      
+      {/* Add the EditQuestionModal */}
+      <EditQuestionModal />
     </div>
   );
 };
