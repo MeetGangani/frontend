@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useRegisterMutation, useSendOtpMutation, useVerifyOtpMutation } from '../slices/usersApiSlice';
 import { setCredentials } from '../slices/authSlice';
 import { motion } from 'framer-motion';
-import { FaBrain, FaEnvelope, FaLock, FaUser, FaGithub, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaBrain, FaEnvelope, FaLock, FaUser, FaGithub, FaEye, FaEyeSlash, FaExclamationTriangle, FaExclamationCircle } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
 import Loader from '../components/Loader';
 import { useTheme } from '../context/ThemeContext';
@@ -20,6 +20,7 @@ const RegisterScreen = () => {
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
   const [passwordStrength, setPasswordStrength] = useState({
     score: 0,
     requirements: {
@@ -122,8 +123,10 @@ const RegisterScreen = () => {
 
   const submitHandler = async (e) => {
     e.preventDefault();
+    setErrorMessage('');
     
     if (password !== confirmPassword) {
+      setErrorMessage('Passwords do not match. Please make sure both passwords are identical.');
       showToast.error('Passwords do not match');
       return;
     }
@@ -131,21 +134,33 @@ const RegisterScreen = () => {
     try {
       const res = await register({ name, email, password }).unwrap();
       dispatch(setCredentials({ ...res }));
-      showToast.success('Registration successful');
+      showToast.success('Registration successful! Welcome to NexusEdu.');
       navigate('/');
     } catch (err) {
-      // Show the specific error message from the backend
-      if (err?.data?.message) {
-        // Server error message (e.g., "User already exists")
-        showToast.error(err.data.message);
+      console.error('Registration error:', err);
+      
+      // Handle different error scenarios
+      if (err?.data?.message?.includes('User already exists')) {
+        setErrorMessage(`An account with email "${email}" already exists. Please use a different email or try logging in.`);
+        showToast.error('Account already exists', {
+          icon: <FaExclamationCircle className="text-red-500 text-xl" />
+        });
+      } else if (err?.data?.message?.includes('Email')) {
+        setErrorMessage(err.data.message);
+        showToast.error('Email error');
+      } else if (err?.data?.message?.includes('Password')) {
+        setErrorMessage(err.data.message);
+        showToast.error('Password error');
       } else if (!navigator.onLine) {
-        showToast.error('No internet connection. Please check your network.');
+        setErrorMessage('No internet connection. Please check your network and try again.');
+        showToast.error('Network error');
       } else if (err.name === 'TypeError' && err.message === 'Failed to fetch') {
-        showToast.error('Unable to connect to the server. Please try again later.');
+        setErrorMessage('Unable to connect to the server. Please try again later.');
+        showToast.error('Connection error');
       } else {
-        showToast.error('User already exists');
+        setErrorMessage(err?.data?.message || 'Registration failed. Please try again later.');
+        showToast.error(err?.data?.message || 'Registration failed');
       }
-      console.error('Registration error:', err); // For debugging
     }
   };
 
@@ -163,19 +178,42 @@ const RegisterScreen = () => {
   // Handle email verification
   const handleSendOTP = async (e) => {
     e.preventDefault();
+    setErrorMessage('');
+    
+    // Basic email validation
+    if (!email || !email.includes('@') || !email.includes('.')) {
+      setErrorMessage('Please enter a valid email address');
+      showToast.error('Invalid email format');
+      return;
+    }
     
     try {
       await sendOtp({ email }).unwrap();
       setShowOtpInput(true);
       showToast.success('OTP sent to your email');
     } catch (err) {
-      showToast.error(err?.data?.message || 'Failed to send OTP');
+      console.error('Send OTP error:', err);
+      
+      if (err?.data?.message?.includes('User already exists')) {
+        setErrorMessage(`An account with email "${email}" already exists. Please use a different email or try logging in.`);
+        showToast.error('Account already exists');
+      } else {
+        setErrorMessage(err?.data?.message || 'Failed to send OTP');
+        showToast.error(err?.data?.message || 'Failed to send OTP');
+      }
     }
   };
 
   // Handle OTP verification
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
+    setErrorMessage('');
+    
+    if (!otp || otp.length !== 6) {
+      setErrorMessage('Please enter a valid 6-digit OTP');
+      showToast.error('Invalid OTP');
+      return;
+    }
     
     try {
       await verifyOtp({ email, otp }).unwrap();
@@ -183,6 +221,15 @@ const RegisterScreen = () => {
       setShowOtpInput(false);
       showToast.success('Email verified successfully');
     } catch (err) {
+      console.error('Verify OTP error:', err);
+      
+      if (err?.data?.message?.includes('expired')) {
+        setErrorMessage('OTP has expired. Please request a new one.');
+      } else if (err?.data?.message?.includes('Invalid OTP')) {
+        setErrorMessage('The OTP you entered is incorrect. Please try again.');
+      } else {
+        setErrorMessage(err?.data?.message || 'Invalid OTP');
+      }
       showToast.error(err?.data?.message || 'Invalid OTP');
     }
   };
@@ -269,13 +316,23 @@ const RegisterScreen = () => {
           </div>
 
           <form 
-            onSubmit={!isEmailVerified ? handleSendOTP : submitHandler} 
+            onSubmit={!isEmailVerified ? (showOtpInput ? handleVerifyOTP : handleSendOTP) : submitHandler} 
             className={`relative space-y-6 ${
               isDarkMode 
                 ? 'bg-gray-900/50 border-gray-800' 
                 : 'bg-white/50 border-gray-200'
             } backdrop-blur-xl p-6 sm:p-8 rounded-lg shadow-xl border`}
           >
+            {/* Error message display */}
+            {errorMessage && (
+              <div className={`p-3 rounded-lg ${
+                isDarkMode ? 'bg-red-900/50 text-red-200' : 'bg-red-50 text-red-700'
+              } flex items-start`}>
+                <FaExclamationTriangle className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" />
+                <p className="text-sm">{errorMessage}</p>
+              </div>
+            )}
+            
             {/* Email Input */}
             <div>
               <label htmlFor="email" className={`block text-sm font-medium ${

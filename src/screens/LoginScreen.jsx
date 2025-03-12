@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useLoginMutation } from '../slices/usersApiSlice';
 import { setCredentials } from '../slices/authSlice';
 import { motion } from 'framer-motion';
-import { FaBrain, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaExclamationTriangle, FaCheckCircle } from 'react-icons/fa';
+import { FaBrain, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaExclamationTriangle, FaCheckCircle, FaExclamationCircle, FaInfoCircle } from 'react-icons/fa';
 import Loader from '../components/Loader';
 import { useTheme } from '../context/ThemeContext';
 import { FcGoogle } from 'react-icons/fc';
@@ -88,14 +88,38 @@ const LoginScreen = () => {
       showToast.success(successMessage);
       navigate(getRedirectPath(res.userType));
     } catch (err) {
-      if (err?.data?.message?.includes('already logged in on another device')) {
-        // Show session modal
+      console.error('Login error:', err);
+      
+      // Extract device type from error message if available
+      let deviceType = 'another device';
+      if (err?.data?.message) {
+        const deviceMatch = err.data.message.match(/another (mobile device|computer)/);
+        if (deviceMatch) {
+          deviceType = deviceMatch[0];
+        }
+      }
+      
+      // Handle different error scenarios
+      if (err?.data?.message?.includes('already logged in on another')) {
+        // Show session modal with device type information
         setSessionEmail(email);
         setSessionPassword(password);
         setShowSessionModal(true);
+        setErrorMessage(`You are already logged in on ${deviceType}. Please log out from there first or use the option below to log out other sessions.`);
       } else if (err?.data?.message?.includes('Invalid email or password')) {
         setErrorMessage('The email or password you entered is incorrect. Please try again.');
-        showToast.error('Invalid credentials');
+        showToast.error('Invalid credentials', {
+          icon: <FaExclamationCircle className="text-red-500 text-xl" />
+        });
+      } else if (err?.data?.message?.includes('Email address is required')) {
+        setErrorMessage('Please enter your email address');
+        showToast.error('Email required');
+      } else if (err?.data?.message?.includes('Password is required')) {
+        setErrorMessage('Please enter your password');
+        showToast.error('Password required');
+      } else if (!navigator.onLine) {
+        setErrorMessage('No internet connection. Please check your network and try again.');
+        showToast.error('Network error');
       } else {
         setErrorMessage(err?.data?.message || 'Login failed. Please try again later.');
         showToast.error(err?.data?.message || 'Login failed');
@@ -173,12 +197,18 @@ const LoginScreen = () => {
             </div>
             
             <p className={`mb-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-              You are already logged in on another device. For security reasons, you can only be logged in on one device at a time.
+              {errorMessage || 'You are already logged in on another device. For security reasons, you can only be logged in on one device at a time.'}
             </p>
             
-            <p className={`mb-6 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-              Would you like to log out from all other devices and continue on this device?
-            </p>
+            <div className={`mb-6 p-4 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+              <div className="flex items-start">
+                <FaInfoCircle className={`w-5 h-5 mr-2 mt-0.5 ${isDarkMode ? 'text-blue-400' : 'text-blue-500'}`} />
+                <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  <strong>Why is this happening?</strong><br />
+                  For security reasons and to prevent exam sharing, students can only be logged in on one device at a time.
+                </p>
+              </div>
+            </div>
             
             <div className="flex flex-col sm:flex-row gap-3 justify-end">
               <button
@@ -199,8 +229,8 @@ const LoginScreen = () => {
               >
                 {isForceLoggingOut ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Processing...
+                    <Loader size="sm" light />
+                    <span className="ml-2">Processing...</span>
                   </>
                 ) : (
                   'Log out other sessions'
