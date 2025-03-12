@@ -904,7 +904,12 @@ const InstituteExamCreationScreen = () => {
 
   // Update the Excel upload button section in your JSX
   const renderExcelUploadSection = () => (
-    <div className="mt-4 space-y-4">
+    <div className={`mb-8 p-6 rounded-2xl ${
+      isDarkMode 
+        ? 'bg-gray-800/50 backdrop-blur-xl border border-gray-700' 
+        : 'bg-white border border-gray-200'
+    } shadow-xl`}>
+      <h3 className="text-lg font-semibold mb-4">Import Questions</h3>
       <div className="flex items-center space-x-4">
         <input
           type="file"
@@ -916,9 +921,9 @@ const InstituteExamCreationScreen = () => {
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className={`flex items-center px-4 py-2 rounded-lg ${
+          className={`flex items-center px-5 py-2.5 rounded-lg font-medium transition-all duration-200 ${
             isDarkMode
-              ? 'bg-gray-700 hover:bg-gray-600 text-white'
+              ? 'bg-gray-700 hover:bg-gray-600 text-gray-200'
               : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
           }`}
         >
@@ -936,12 +941,12 @@ const InstituteExamCreationScreen = () => {
           type="button"
           onClick={handleExcelUpload}
           disabled={isUploadingExcel}
-          className={`flex items-center px-4 py-2 rounded-lg ${
+          className={`mt-4 flex items-center px-5 py-2.5 rounded-lg font-medium transition-all duration-200 ${
             isUploadingExcel
               ? 'bg-gray-400 cursor-not-allowed'
               : isDarkMode
-              ? 'bg-blue-600 hover:bg-blue-500'
-              : 'bg-blue-500 hover:bg-blue-400'
+              ? 'bg-violet-600 hover:bg-violet-700'
+              : 'bg-violet-600 hover:bg-violet-700'
           } text-white`}
         >
           {isUploadingExcel ? (
@@ -1421,35 +1426,44 @@ const InstituteExamCreationScreen = () => {
   };
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'bg-[#0A0F1C] text-white' : 'bg-gray-50 text-gray-900'} pt-20 pb-12`}>
+    <div className={`min-h-screen ${isDarkMode ? 'bg-[#0A0F1C] text-white' : 'bg-gray-50 text-gray-900'} pt-24 pb-12`}>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">Create New Exam</h1>
+        {/* Header with improved styling */}
+        <div className="flex items-center justify-between mb-10">
+          <div>
+            <h1 className="text-4xl font-bold tracking-tight">Create New Exam</h1>
+            <p className={`mt-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Set up your exam details and add questions
+            </p>
+          </div>
           <button
             onClick={() => navigate('/institute/dashboard')}
-            className={`flex items-center px-4 py-2 rounded-lg ${
+            className={`flex items-center px-5 py-2.5 rounded-lg font-medium transition-all duration-200 ${
               isDarkMode 
                 ? 'bg-gray-800 hover:bg-gray-700 text-gray-200' 
-                : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                : 'bg-white hover:bg-gray-50 text-gray-700 shadow-sm border border-gray-200'
             }`}
           >
-            <FaArrowLeft className="mr-2" /> Back to Dashboard
+            <FaArrowLeft className="mr-2 h-4 w-4" /> Back
           </button>
         </div>
         
-        {/* Progress Steps */}
-        <div className="mb-8">
+        {/* Progress Steps with improved visual feedback */}
+        <div className="mb-10">
           <div className="flex items-center justify-center">
             <div className={`flex items-center ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-              <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
+              <div className={`flex items-center justify-center w-12 h-12 rounded-full text-lg font-semibold transition-all duration-200 ${
                 currentStep >= 1 
-                  ? 'bg-violet-600 text-white' 
-                  : isDarkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-200 text-gray-500'
+                  ? isDarkMode
+                    ? 'bg-violet-600 text-white ring-4 ring-violet-500/20' 
+                    : 'bg-violet-600 text-white ring-4 ring-violet-500/20'
+                  : isDarkMode 
+                    ? 'bg-gray-800 text-gray-400' 
+                    : 'bg-gray-100 text-gray-500'
               }`}>
                 1
               </div>
-              <div className={`mx-4 text-sm font-medium ${
+              <div className={`ml-4 text-base font-medium ${
                 currentStep >= 1 
                   ? isDarkMode ? 'text-white' : 'text-gray-900' 
                   : isDarkMode ? 'text-gray-400' : 'text-gray-500'
@@ -1458,21 +1472,25 @@ const InstituteExamCreationScreen = () => {
               </div>
             </div>
             
-            <div className={`w-16 h-1 ${
+            <div className={`w-24 h-1 mx-8 rounded ${
               currentStep >= 2 
                 ? 'bg-violet-600' 
                 : isDarkMode ? 'bg-gray-700' : 'bg-gray-200'
             }`} />
             
             <div className={`flex items-center ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-              <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
+              <div className={`flex items-center justify-center w-12 h-12 rounded-full text-lg font-semibold transition-all duration-200 ${
                 currentStep >= 2 
-                  ? 'bg-violet-600 text-white' 
-                  : isDarkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-200 text-gray-500'
+                  ? isDarkMode
+                    ? 'bg-violet-600 text-white ring-4 ring-violet-500/20' 
+                    : 'bg-violet-600 text-white ring-4 ring-violet-500/20'
+                  : isDarkMode 
+                    ? 'bg-gray-800 text-gray-400' 
+                    : 'bg-gray-100 text-gray-500'
               }`}>
                 2
               </div>
-              <div className={`mx-4 text-sm font-medium ${
+              <div className={`ml-4 text-base font-medium ${
                 currentStep >= 2 
                   ? isDarkMode ? 'text-white' : 'text-gray-900' 
                   : isDarkMode ? 'text-gray-400' : 'text-gray-500'
@@ -1483,16 +1501,20 @@ const InstituteExamCreationScreen = () => {
           </div>
         </div>
         
-        {/* Step 1: Exam Metadata */}
+        {/* Step 1: Exam Metadata with improved card styling */}
         {currentStep === 1 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-xl shadow-lg p-6`}
+            className={`${
+              isDarkMode 
+                ? 'bg-gray-800/50 backdrop-blur-xl border border-gray-700' 
+                : 'bg-white border border-gray-200'
+            } rounded-2xl shadow-xl p-8`}
           >
-            <h2 className="text-2xl font-bold mb-6">Exam Details</h2>
+            <h2 className="text-2xl font-bold mb-8">Exam Details</h2>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Exam Name */}
               <div>
                 <label className="block text-sm font-medium mb-2">
@@ -1503,11 +1525,11 @@ const InstituteExamCreationScreen = () => {
                   name="examName"
                   value={examMetadata.examName}
                   onChange={handleMetadataChange}
-                  className={`w-full px-4 py-2 rounded-lg border ${
+                  className={`w-full px-4 py-3 rounded-lg border text-base transition-colors duration-200 ${
                     isDarkMode 
-                      ? 'bg-gray-800 border-gray-700 text-white' 
-                      : 'bg-white border-gray-300 text-gray-900'
-                  } focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
+                      ? 'bg-gray-900/50 border-gray-600 text-white focus:border-violet-500' 
+                      : 'bg-white border-gray-300 text-gray-900 focus:border-violet-500'
+                  } focus:ring-2 focus:ring-violet-500/20 focus:outline-none`}
                   placeholder="Enter exam name"
                   required
                 />
@@ -1523,11 +1545,11 @@ const InstituteExamCreationScreen = () => {
                   name="subject"
                   value={examMetadata.subject}
                   onChange={handleMetadataChange}
-                  className={`w-full px-4 py-2 rounded-lg border ${
+                  className={`w-full px-4 py-3 rounded-lg border text-base transition-colors duration-200 ${
                     isDarkMode 
-                      ? 'bg-gray-800 border-gray-700 text-white' 
-                      : 'bg-white border-gray-300 text-gray-900'
-                  } focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
+                      ? 'bg-gray-900/50 border-gray-600 text-white focus:border-violet-500' 
+                      : 'bg-white border-gray-300 text-gray-900 focus:border-violet-500'
+                  } focus:ring-2 focus:ring-violet-500/20 focus:outline-none`}
                   placeholder="Enter subject"
                   required
                 />
@@ -1545,11 +1567,11 @@ const InstituteExamCreationScreen = () => {
                   onChange={handleMetadataChange}
                   min="5"
                   max="180"
-                  className={`w-full px-4 py-2 rounded-lg border ${
+                  className={`w-full px-4 py-3 rounded-lg border text-base transition-colors duration-200 ${
                     isDarkMode 
-                      ? 'bg-gray-800 border-gray-700 text-white' 
-                      : 'bg-white border-gray-300 text-gray-900'
-                  } focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
+                      ? 'bg-gray-900/50 border-gray-600 text-white focus:border-violet-500' 
+                      : 'bg-white border-gray-300 text-gray-900 focus:border-violet-500'
+                  } focus:ring-2 focus:ring-violet-500/20 focus:outline-none`}
                   required
                 />
               </div>
@@ -1566,18 +1588,18 @@ const InstituteExamCreationScreen = () => {
                   onChange={handleMetadataChange}
                   min="1"
                   max="100"
-                  className={`w-full px-4 py-2 rounded-lg border ${
+                  className={`w-full px-4 py-3 rounded-lg border text-base transition-colors duration-200 ${
                     isDarkMode 
-                      ? 'bg-gray-800 border-gray-700 text-white' 
-                      : 'bg-white border-gray-300 text-gray-900'
-                  } focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
+                      ? 'bg-gray-900/50 border-gray-600 text-white focus:border-violet-500' 
+                      : 'bg-white border-gray-300 text-gray-900 focus:border-violet-500'
+                  } focus:ring-2 focus:ring-violet-500/20 focus:outline-none`}
                   required
                 />
               </div>
             </div>
             
             {/* Description */}
-            <div className="mt-6">
+            <div className="mt-8">
               <label className="block text-sm font-medium mb-2">
                 Description
               </label>
@@ -1585,18 +1607,18 @@ const InstituteExamCreationScreen = () => {
                 name="description"
                 value={examMetadata.description}
                 onChange={handleMetadataChange}
-                rows="3"
-                className={`w-full px-4 py-2 rounded-lg border ${
+                rows="4"
+                className={`w-full px-4 py-3 rounded-lg border text-base transition-colors duration-200 ${
                   isDarkMode 
-                    ? 'bg-gray-800 border-gray-700 text-white' 
-                    : 'bg-white border-gray-300 text-gray-900'
-                } focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
+                    ? 'bg-gray-900/50 border-gray-600 text-white focus:border-violet-500' 
+                    : 'bg-white border-gray-300 text-gray-900 focus:border-violet-500'
+                } focus:ring-2 focus:ring-violet-500/20 focus:outline-none`}
                 placeholder="Enter exam description"
               />
             </div>
             
             {/* Number of Questions */}
-            <div className="mt-6">
+            <div className="mt-8">
               <label className="block text-sm font-medium mb-2">
                 Number of Questions*
               </label>
@@ -1607,22 +1629,24 @@ const InstituteExamCreationScreen = () => {
                 onChange={handleMetadataChange}
                 min="1"
                 max="20"
-                className={`w-full px-4 py-2 rounded-lg border ${
+                className={`w-full px-4 py-3 rounded-lg border text-base transition-colors duration-200 ${
                   isDarkMode 
-                    ? 'bg-gray-800 border-gray-700 text-white' 
-                    : 'bg-white border-gray-300 text-gray-900'
-                } focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
+                    ? 'bg-gray-900/50 border-gray-600 text-white focus:border-violet-500' 
+                    : 'bg-white border-gray-300 text-gray-900 focus:border-violet-500'
+                } focus:ring-2 focus:ring-violet-500/20 focus:outline-none`}
                 required
               />
             </div>
             
             {/* Next Button */}
-            <div className="mt-8 flex justify-end">
+            <div className="mt-10 flex justify-end">
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={proceedToQuestions}
-                className="px-6 py-3 bg-violet-600 text-white rounded-lg hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2"
+                className={`px-8 py-3 rounded-lg font-medium text-white bg-violet-600 hover:bg-violet-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 ${
+                  isDarkMode ? 'ring-offset-gray-900' : 'ring-offset-white'
+                }`}
               >
                 Next: Add Questions
               </motion.button>
@@ -1630,25 +1654,91 @@ const InstituteExamCreationScreen = () => {
           </motion.div>
         )}
         
-        {/* Step 2: Questions */}
+        {/* Step 2: Questions with improved styling */}
         {currentStep === 2 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            {/* Add the Excel upload section at the top of the questions step */}
-            {renderExcelUploadSection()}
+            {/* Excel upload section with improved styling */}
+            <div className={`mb-8 p-6 rounded-2xl ${
+              isDarkMode 
+                ? 'bg-gray-800/50 backdrop-blur-xl border border-gray-700' 
+                : 'bg-white border border-gray-200'
+            } shadow-xl`}>
+              <h3 className="text-lg font-semibold mb-4">Import Questions</h3>
+              <div className="flex items-center space-x-4">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileSelect}
+                  accept=".xlsx,.xls"
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`flex items-center px-5 py-2.5 rounded-lg font-medium transition-all duration-200 ${
+                    isDarkMode
+                      ? 'bg-gray-700 hover:bg-gray-600 text-gray-200'
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                  }`}
+                >
+                  <FaFileExcel className="mr-2" />
+                  Select Excel File
+                </button>
+                {excelFile && (
+                  <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                    {excelFile.name}
+                  </span>
+                )}
+              </div>
+              {excelFile && (
+                <button
+                  type="button"
+                  onClick={handleExcelUpload}
+                  disabled={isUploadingExcel}
+                  className={`mt-4 flex items-center px-5 py-2.5 rounded-lg font-medium transition-all duration-200 ${
+                    isUploadingExcel
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : isDarkMode
+                      ? 'bg-violet-600 hover:bg-violet-700'
+                      : 'bg-violet-600 hover:bg-violet-700'
+                  } text-white`}
+                >
+                  {isUploadingExcel ? (
+                    <>
+                      <FaSync className="animate-spin mr-2" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <FaUpload className="mr-2" />
+                      Upload and Process
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
             
-            {/* Questions Progress */}
-            <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-xl shadow-lg p-6 mb-8`}>
-              <div className="flex items-center justify-between">
+            {/* Questions Progress with improved styling */}
+            <div className={`mb-8 p-6 rounded-2xl ${
+              isDarkMode 
+                ? 'bg-gray-800/50 backdrop-blur-xl border border-gray-700' 
+                : 'bg-white border border-gray-200'
+            } shadow-xl`}>
+              <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold">
                   Questions Progress
                 </h2>
-                <div className={`px-4 py-2 rounded-lg ${
+                <div className={`px-4 py-2 rounded-lg text-sm font-medium ${
                   questionsRemaining === 0
-                    ? isDarkMode ? 'bg-green-900/50 text-green-300' : 'bg-green-100 text-green-800'
-                    : isDarkMode ? 'bg-blue-900/50 text-blue-300' : 'bg-blue-100 text-blue-800'
+                    ? isDarkMode 
+                      ? 'bg-green-500/10 text-green-400 ring-1 ring-green-400/30' 
+                      : 'bg-green-50 text-green-700 ring-1 ring-green-600/20'
+                    : isDarkMode 
+                      ? 'bg-blue-500/10 text-blue-400 ring-1 ring-blue-400/30' 
+                      : 'bg-blue-50 text-blue-700 ring-1 ring-blue-600/20'
                 }`}>
                   {questionsRemaining === 0 
                     ? 'All questions added!' 
@@ -1656,16 +1746,18 @@ const InstituteExamCreationScreen = () => {
                 </div>
               </div>
               
-              <div className="mt-4 w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-                <div 
-                  className="bg-violet-600 h-2.5 rounded-full" 
-                  style={{ 
-                    width: `${Math.min(100, (questions.length / examMetadata.numberOfQuestions) * 100)}%` 
-                  }}
-                ></div>
+              <div className="relative pt-1">
+                <div className="overflow-hidden h-2 text-xs flex rounded-full bg-gray-200 dark:bg-gray-700">
+                  <div 
+                    className="transition-all duration-300 ease-out bg-violet-600 rounded-full"
+                    style={{ 
+                      width: `${Math.min(100, (questions.length / examMetadata.numberOfQuestions) * 100)}%` 
+                    }}
+                  ></div>
+                </div>
               </div>
             </div>
-            
+
             {/* Questions List */}
             {questions.length > 0 && (
               <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-xl shadow-lg p-6 mb-8`}>

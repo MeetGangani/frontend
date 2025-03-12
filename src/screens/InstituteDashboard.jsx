@@ -235,7 +235,7 @@ const InstituteDashboard = () => {
               Welcome back! Manage your exams and view student performance
             </p>
           </div>
-          <button
+              <button
             onClick={() => navigate('/institute/exam/create')}
             className={`px-6 py-3 rounded-lg font-medium inline-flex items-center gap-2 transform transition-all duration-200 hover:scale-105 ${
               isDarkMode
@@ -245,13 +245,13 @@ const InstituteDashboard = () => {
           >
             <FaPlus className="w-4 h-4" />
             Create New Exam
-          </button>
+              </button>
         </div>
-      </div>
+        </div>
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <motion.div
+          <motion.div
           variants={cardVariants}
           className={`p-6 rounded-xl ${
             isDarkMode ? 'bg-gray-800' : 'bg-white'
@@ -263,11 +263,11 @@ const InstituteDashboard = () => {
               <h3 className={`text-2xl font-bold mt-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 {uploads.length}
               </h3>
-            </div>
+              </div>
             <div className={`p-3 rounded-full ${isDarkMode ? 'bg-violet-900/20 text-violet-400' : 'bg-violet-100 text-violet-600'}`}>
               <FaChartBar className="w-6 h-6" />
             </div>
-          </div>
+              </div>
         </motion.div>
 
         <motion.div
@@ -277,16 +277,16 @@ const InstituteDashboard = () => {
           } shadow-lg`}
         >
           <div className="flex items-center justify-between">
-            <div>
+              <div>
               <p className={`text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Active Exams</p>
               <h3 className={`text-2xl font-bold mt-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 {uploads.filter(exam => exam.examMode).length}
               </h3>
-            </div>
+              </div>
             <div className={`p-3 rounded-full ${isDarkMode ? 'bg-green-900/20 text-green-400' : 'bg-green-100 text-green-600'}`}>
               <FaGraduationCap className="w-6 h-6" />
-            </div>
-          </div>
+                  </div>
+                </div>
         </motion.div>
 
         <motion.div
@@ -301,14 +301,14 @@ const InstituteDashboard = () => {
               <h3 className={`text-2xl font-bold mt-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 {uploads.filter(exam => exam.status === 'pending').length}
               </h3>
-            </div>
+                </div>
             <div className={`p-3 rounded-full ${isDarkMode ? 'bg-yellow-900/20 text-yellow-400' : 'bg-yellow-100 text-yellow-600'}`}>
               <FaChalkboardTeacher className="w-6 h-6" />
-            </div>
-          </div>
-        </motion.div>
+                </div>
+              </div>
+          </motion.div>
 
-        <motion.div
+          <motion.div
           variants={cardVariants}
           className={`p-6 rounded-xl ${
             isDarkMode ? 'bg-gray-800' : 'bg-white'
@@ -330,7 +330,7 @@ const InstituteDashboard = () => {
 
       {/* Exams Section */}
       <div className={`rounded-xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
-        <div className="overflow-x-auto">
+            <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
@@ -360,9 +360,9 @@ const InstituteDashboard = () => {
                 </th>
                 <th className={`px-6 py-5 text-left text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   Toggle
-                </th>
-              </tr>
-            </thead>
+                      </th>
+                  </tr>
+                </thead>
             <tbody>
               {uploads.map((upload, index) => (
                 <tr 
@@ -374,99 +374,99 @@ const InstituteDashboard = () => {
                   }`}
                 >
                   <td className={`px-6 py-4 text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                    {upload.examName}
-                  </td>
+                        {upload.examName}
+                      </td>
                   <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                    {upload.description}
-                  </td>
+                        {upload.description}
+                      </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                       upload.status === 'approved'
-                        ? isDarkMode 
+                              ? isDarkMode
                           ? 'bg-green-400/10 text-green-400' 
                           : 'bg-green-100 text-green-700'
-                        : isDarkMode 
+                              : isDarkMode
                           ? 'bg-yellow-400/10 text-yellow-400'
                           : 'bg-yellow-100 text-yellow-700'
                     }`}>
-                      {upload.status}
-                    </span>
-                  </td>
+                          {upload.status}
+                        </span>
+                      </td>
                   <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                     {new Date(upload.createdAt).toLocaleDateString('en-GB')}
-                  </td>
+                      </td>
                   <td className={`px-6 py-4 text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                    {upload.totalQuestions}
-                  </td>
+                        {upload.totalQuestions}
+                      </td>
                   <td className="px-6 py-4">
-                    <button
-                      onClick={() => handleViewResults(upload._id)}
+                          <button
+                            onClick={() => handleViewResults(upload._id)}
                       className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                         isDarkMode
                           ? 'text-violet-400 hover:bg-violet-400/10'
                           : 'text-violet-600 hover:bg-violet-50'
                       }`}
-                    >
-                      View Results
-                    </button>
-                  </td>
+                          >
+                            View Results
+                          </button>
+                      </td>
                   <td className="px-6 py-4">
                     {!upload.resultsReleased ? (
-                      <button
-                        onClick={() => handleReleaseResults(upload._id)}
+                            <button
+                              onClick={() => handleReleaseResults(upload._id)}
                         className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                           isDarkMode
                             ? 'text-green-400 hover:bg-green-400/10'
                             : 'text-green-600 hover:bg-green-50'
                         }`}
-                      >
-                        Release Results
-                      </button>
+                            >
+                              Release Results
+                            </button>
                     ) : (
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         isDarkMode ? 'bg-green-400/10 text-green-400' : 'bg-green-100 text-green-700'
                       }`}>
-                        Results Released
-                      </span>
-                    )}
-                  </td>
+                            Results Released
+                          </span>
+                        )}
+                      </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      upload.examMode
-                        ? isDarkMode 
+                            upload.examMode
+                              ? isDarkMode
                           ? 'bg-green-400/10 text-green-400' 
                           : 'bg-green-100 text-green-700'
-                        : isDarkMode 
+                              : isDarkMode
                           ? 'bg-red-400/10 text-red-400'
                           : 'bg-red-100 text-red-700'
                     }`}>
                       {upload.examMode ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
+                        </span>
+                      </td>
                   <td className="px-6 py-4">
-                    <button
-                      onClick={() => handleToggleExamMode(upload._id)}
-                      disabled={upload.status !== "approved"}
+                        <button
+                          onClick={() => handleToggleExamMode(upload._id)}
+                          disabled={upload.status !== "approved"}
                       className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                         upload.examMode
-                          ? isDarkMode
+                                ? isDarkMode
                             ? 'text-red-400 hover:bg-red-400/10'
                             : 'text-red-600 hover:bg-red-50'
-                          : isDarkMode
+                                : isDarkMode
                             ? 'text-green-400 hover:bg-green-400/10'
                             : 'text-green-600 hover:bg-green-50'
                       } disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
                       {upload.examMode ? 'Deactivate' : 'Activate'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
         </div>
-      </div>
-    </motion.div>
+            </div>
+          </motion.div>
   );
 
   const renderResultsModal = () => {
@@ -477,7 +477,7 @@ const InstituteDashboard = () => {
         <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
           <div className="fixed inset-0 transition-opacity" aria-hidden="true">
             <div className={`absolute inset-0 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-500'} opacity-75`}></div>
-          </div>
+              </div>
 
           <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
@@ -495,28 +495,28 @@ const InstituteDashboard = () => {
                       <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                         Exam Results Overview
                       </p>
-                    </div>
+              </div>
                     <div className="flex gap-2">
-                      <button
-                        onClick={handleResultsRefresh}
+                    <button
+                      onClick={handleResultsRefresh}
                         className={`p-2 rounded-lg ${
-                          isDarkMode
+                        isDarkMode
                             ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
                             : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
                         }`}
                       >
                         <FaSync className={isRefreshing ? 'animate-spin' : ''} />
-                      </button>
-                      <button
-                        onClick={downloadResultsAsCSV}
+                    </button>
+                    <button
+                      onClick={downloadResultsAsCSV}
                         className={`p-2 rounded-lg ${
-                          isDarkMode
+                        isDarkMode
                             ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
                             : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
-                        }`}
-                      >
+                      }`}
+                    >
                         <FaDownload />
-                      </button>
+                    </button>
                     </div>
                   </div>
 
@@ -611,7 +611,7 @@ const InstituteDashboard = () => {
                   Release Results
                 </button>
               )}
-            </div>
+              </div>
           </div>
         </div>
       </div>
