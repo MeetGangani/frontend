@@ -32,6 +32,7 @@ axiosInstance.interceptors.request.use(
     return config;
   },
   (error) => {
+    console.error('Request error:', error);
     return Promise.reject(error);
   }
 );
@@ -54,20 +55,48 @@ axiosInstance.interceptors.response.use(
     console.error('Axios Error:', error);
 
     if (error.response) {
-      const errorMessage = error.response.data?.error || 'An error occurred';
-      console.error(`Server error (${error.response.status}):`, errorMessage);
-      return Promise.reject(new Error(errorMessage));
-    } else if (error.request) {
-      // Handle network errors
-      console.error('Network Error:', error.request);
-      if (error.code === 'ECONNABORTED') {
-        return Promise.reject(new Error('Request timeout. Please try again.'));
+      // Server responded with an error status code
+      const errorData = error.response.data;
+      console.error(`Server error (${error.response.status}):`, errorData);
+      
+      // Check for session conflict error
+      if (errorData?.message && errorData.message.includes('already logged in on another')) {
+        return Promise.reject({
+          status: error.response.status,
+          data: errorData
+        });
       }
-      return Promise.reject(new Error('Network error. Please check your connection.'));
+      
+      // Return the error data directly to preserve the original error structure
+      return Promise.reject({
+        status: error.response.status,
+        data: errorData
+      });
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error('Network Error:', error.request);
+      
+      if (error.code === 'ECONNABORTED') {
+        return Promise.reject({
+          status: 'TIMEOUT',
+          message: 'Request timeout. Please try again.',
+          error: error
+        });
+      }
+      
+      return Promise.reject({
+        status: 'NETWORK_ERROR',
+        message: 'Network error. Please check your connection.',
+        error: error
+      });
     } else {
-      // Handle other errors
+      // Something happened in setting up the request that triggered an Error
       console.error('Error:', error.message);
-      return Promise.reject(error);
+      return Promise.reject({
+        status: 'REQUEST_ERROR',
+        message: error.message || 'An unexpected error occurred',
+        error: error
+      });
     }
   }
 );

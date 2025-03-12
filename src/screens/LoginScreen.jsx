@@ -90,6 +90,21 @@ const LoginScreen = () => {
     } catch (err) {
       console.error('Login error:', err);
       
+      // Handle different error types
+      if (!err) {
+        setErrorMessage('An unknown error occurred. Please try again.');
+        showToast.error('Login failed');
+        return;
+      }
+      
+      // Handle network errors
+      if (err.status === 'FETCH_ERROR') {
+        const errorMsg = err.data?.message || 'Unable to connect to server. Please check your internet connection.';
+        setErrorMessage(errorMsg);
+        showToast.error('Network error');
+        return;
+      }
+      
       // Check for session conflict error
       if (err?.data?.message && err.data.message.includes('already logged in on another')) {
         // Show session modal
@@ -100,7 +115,11 @@ const LoginScreen = () => {
         setErrorMessage(err.data.message);
         // Show toast with the exact error message
         showToast.error(err.data.message);
-      } else if (err?.data?.message?.includes('Invalid email or password')) {
+        return;
+      } 
+      
+      // Handle other specific errors
+      if (err?.data?.message?.includes('Invalid email or password')) {
         setErrorMessage('The email or password you entered is incorrect. Please try again.');
         showToast.error('Invalid credentials');
       } else if (err?.data?.message?.includes('Email address is required')) {
@@ -131,7 +150,7 @@ const LoginScreen = () => {
       }).unwrap();
       
       // Then force logout other sessions
-      await axios.post(
+      const response = await axios.post(
         `${config.API_BASE_URL}/api/users/force-logout-others`,
         {},
         { withCredentials: true }
@@ -148,10 +167,20 @@ const LoginScreen = () => {
       setShowSessionModal(false);
     } catch (error) {
       console.error('Force logout error:', error);
-      // Display the exact error message from the backend
-      const errorMsg = error?.response?.data?.message || error?.data?.message || 'Failed to force logout';
-      showToast.error(errorMsg);
-      setErrorMessage(errorMsg);
+      
+      // Handle different error types
+      if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+        setErrorMessage('Network error. Unable to connect to server.');
+        showToast.error('Network error. Please check your connection and try again.');
+      } else if (error.status === 'FETCH_ERROR') {
+        setErrorMessage('Unable to connect to server. Please check your internet connection.');
+        showToast.error('Network error. Please try again.');
+      } else {
+        // Display the exact error message from the backend
+        const errorMsg = error?.response?.data?.message || error?.data?.message || 'Failed to force logout';
+        setErrorMessage(errorMsg);
+        showToast.error(errorMsg);
+      }
     } finally {
       setIsForceLoggingOut(false);
     }

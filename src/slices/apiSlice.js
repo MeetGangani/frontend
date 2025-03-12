@@ -21,25 +21,48 @@ const baseQuery = fetchBaseQuery({
 
 // Create a custom base query with error handling and auth checks
 const baseQueryWithAuth = async (args, api, extraOptions) => {
-  let result = await baseQuery(args, api, extraOptions);
+  try {
+    let result = await baseQuery(args, api, extraOptions);
 
-  if (result?.error?.status === 401) {
-    api.dispatch(logout());
-    // Don't redirect here, let the component handle it
+    // Handle authentication errors
+    if (result?.error?.status === 401) {
+      // Check if it's a session conflict error
+      if (result?.error?.data?.message?.includes('already logged in on another')) {
+        // Don't logout for session conflicts, let the component handle it
+        return result;
+      }
+      
+      // For other 401 errors, logout the user
+      api.dispatch(logout());
+      return result;
+    }
+
+    // Handle 403 Forbidden responses
+    if (result?.error?.status === 403) {
+      window.location.href = '/unauthorized';
+    }
+
+    // Handle network errors
+    if (result?.error?.status === 'FETCH_ERROR') {
+      console.error('Network error:', result.error);
+      result.error.data = { 
+        message: 'Unable to connect to server. Please check your internet connection.' 
+      };
+    }
+
     return result;
+  } catch (error) {
+    console.error('API request error:', error);
+    return {
+      error: {
+        status: 'FETCH_ERROR',
+        data: { 
+          message: 'An unexpected error occurred. Please try again later.' 
+        },
+        error: error
+      }
+    };
   }
-
-  // Handle 403 Forbidden responses
-  if (result?.error?.status === 403) {
-    window.location.href = '/unauthorized';
-  }
-
-  // Handle network errors
-  if (result?.error?.status === 'FETCH_ERROR') {
-    result.error.message = 'Unable to connect to server. Please check your internet connection.';
-  }
-
-  return result;
 };
 
 export const apiSlice = createApi({
