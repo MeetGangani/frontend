@@ -4,19 +4,24 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useLoginMutation } from '../slices/usersApiSlice';
 import { setCredentials } from '../slices/authSlice';
 import { motion } from 'framer-motion';
-import { FaBrain, FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaBrain, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaExclamationTriangle } from 'react-icons/fa';
 import Loader from '../components/Loader';
 import { useTheme } from '../context/ThemeContext';
 import { FcGoogle } from 'react-icons/fc';
 import config from '../config/config.js';
 import Logo from '../components/Logo';
 import { showToast } from '../utils/toast';
+import axios from 'axios';
 
 const LoginScreen = () => {
   const { isDarkMode } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showSessionModal, setShowSessionModal] = useState(false);
+  const [sessionEmail, setSessionEmail] = useState('');
+  const [sessionPassword, setSessionPassword] = useState('');
+  const [isForceLoggingOut, setIsForceLoggingOut] = useState(false);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -52,7 +57,43 @@ const LoginScreen = () => {
       navigate('/');
       showToast.success('Login successful');
     } catch (err) {
-      showToast.error(err?.data?.message || 'Login failed');
+      if (err?.data?.message?.includes('already logged in on another device')) {
+        // Show session modal
+        setSessionEmail(email);
+        setSessionPassword(password);
+        setShowSessionModal(true);
+      } else {
+        showToast.error(err?.data?.message || 'Login failed');
+      }
+    }
+  };
+
+  const handleForceLogout = async () => {
+    setIsForceLoggingOut(true);
+    try {
+      // First login
+      const loginRes = await login({ 
+        email: sessionEmail, 
+        password: sessionPassword,
+        forceLogin: true 
+      }).unwrap();
+      
+      // Then force logout other sessions
+      await axios.post(
+        `${config.API_BASE_URL}/api/users/force-logout-others`,
+        {},
+        { withCredentials: true }
+      );
+      
+      // Set credentials and navigate
+      dispatch(setCredentials({ ...loginRes }));
+      navigate('/');
+      showToast.success('Logged in successfully. Other sessions have been terminated.');
+      setShowSessionModal(false);
+    } catch (error) {
+      showToast.error(error?.response?.data?.message || 'Failed to force logout');
+    } finally {
+      setIsForceLoggingOut(false);
     }
   };
 
@@ -78,6 +119,56 @@ const LoginScreen = () => {
       {isLoading && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
           <Loader />
+        </div>
+      )}
+
+      {/* Session Modal */}
+      {showSessionModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className={`w-full max-w-md rounded-xl ${
+            isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'
+          } p-6 shadow-2xl`}>
+            <div className="flex items-center mb-4 text-amber-500">
+              <FaExclamationTriangle className="w-6 h-6 mr-2" />
+              <h3 className="text-xl font-bold">Active Session Detected</h3>
+            </div>
+            
+            <p className={`mb-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+              You are already logged in on another device. For security reasons, you can only be logged in on one device at a time.
+            </p>
+            
+            <p className={`mb-6 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+              Would you like to log out from all other devices and continue on this device?
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-3 justify-end">
+              <button
+                onClick={() => setShowSessionModal(false)}
+                className={`px-4 py-2 rounded-lg ${
+                  isDarkMode 
+                    ? 'bg-gray-800 hover:bg-gray-700 text-gray-300' 
+                    : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                } transition-colors`}
+                disabled={isForceLoggingOut}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleForceLogout}
+                className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white transition-colors flex items-center justify-center"
+                disabled={isForceLoggingOut}
+              >
+                {isForceLoggingOut ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Processing...
+                  </>
+                ) : (
+                  'Log out other sessions'
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
