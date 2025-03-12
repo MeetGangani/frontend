@@ -615,27 +615,60 @@ const StudentDashboard = () => {
             <p className={`text-base md:text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               {currentExam.questions[currentQuestionIndex].text}
             </p>
+            {currentExam.questions[currentQuestionIndex].questionImage && (
+              <div className="mt-2">
+                <img 
+                  src={currentExam.questions[currentQuestionIndex].questionImage} 
+                  alt={`Question ${currentQuestionIndex + 1}`} 
+                  className="max-h-64 rounded-lg"
+                />
+              </div>
+            )}
           </div>
 
           {/* Options */}
           <div className="space-y-3">
-            {currentExam.questions[currentQuestionIndex].options.map((option, index) => (
-              <button
-                key={index}
-                onClick={() => handleAnswerSelect(currentQuestionIndex, index)}
-                className={`w-full p-4 text-left rounded-lg transition-colors ${
-                  answers[currentQuestionIndex] === index
-                    ? isDarkMode
-                      ? 'bg-violet-600 text-white'
-                      : 'bg-violet-100 text-violet-900'
-                    : isDarkMode
-                      ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                {option}
-              </button>
-            ))}
+            {currentExam.questions[currentQuestionIndex].options.map((option, index) => {
+              // Check if option contains an image (format: "text::img::imageUrl")
+              const hasImage = typeof option === 'string' && option.includes('::img::');
+              let optionText = option;
+              let imageUrl = null;
+              
+              if (hasImage) {
+                const parts = option.split('::img::');
+                optionText = parts[0];
+                imageUrl = parts[1];
+              }
+              
+              return (
+                <button
+                  key={index}
+                  onClick={() => handleAnswerSelect(currentQuestionIndex, index)}
+                  className={`w-full p-4 text-left rounded-lg transition-colors ${
+                    answers[currentQuestionIndex] === index
+                      ? isDarkMode
+                        ? 'bg-violet-600 text-white'
+                        : 'bg-violet-100 text-violet-900'
+                      : isDarkMode
+                        ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                        : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <div>
+                    {optionText}
+                    {imageUrl && (
+                      <div className="mt-2">
+                        <img 
+                          src={imageUrl} 
+                          alt={`Option ${index + 1}`} 
+                          className="max-h-32 rounded-lg"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
           </div>
 
           {/* Navigation and Submit Buttons */}
