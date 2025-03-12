@@ -3,7 +3,7 @@ import { useTheme } from "../context/ThemeContext";
 import { motion } from "framer-motion";
 import { toast } from "react-hot-toast";
 import axiosInstance from "../utils/axiosConfig";
-import { FaSync, FaDownload, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import { FaSync, FaDownload, FaPlus, FaEdit, FaTrash, FaUpload, FaChartBar, FaList, FaFileExcel, FaFileCode } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
 const InstituteDashboard = () => {
@@ -25,6 +25,25 @@ const InstituteDashboard = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [examDuration, setExamDuration] = useState(60); // Default to 60 minutes
   const [fileType, setFileType] = useState("json"); // Add this state for toggling between JSON and Excel
+
+  // Animation variants for Framer Motion
+  const containerVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.4 }
+    }
+  };
+
+  const cardVariants = {
+    hidden: { opacity: 0, scale: 0.95 },
+    visible: { 
+      opacity: 1, 
+      scale: 1,
+      transition: { duration: 0.3 }
+    }
+  };
 
   useEffect(() => {
     fetchUploads();
@@ -422,559 +441,449 @@ const InstituteDashboard = () => {
     });
   };
 
-  return (
-    <div
-      className={`min-h-screen pt-20 ${
-        isDarkMode ? "bg-[#0A0F1C]" : "bg-gray-50"
-      }`}
+  const renderUploadTab = () => (
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <nav className="flex space-x-8">
-            {["upload", "exams", "create"].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => handleTabSwitch(tab)}
-                className={`py-2 px-1 text-sm font-medium border-b-2 transition-colors duration-200 ${
-                  activeTab === tab
-                    ? "border-violet-500 text-violet-500"
-                    : isDarkMode
-                    ? "border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-700"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
-            ))}
-          </nav>
+      <div className={`p-6 rounded-xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+        <h2 className={`text-2xl font-bold mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+          Upload New Exam
+        </h2>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* File Type Selection */}
+          <div className="flex gap-4 mb-6">
+            <button
+              type="button"
+              onClick={() => setFileType("json")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                fileType === "json"
+                  ? 'bg-violet-600 text-white'
+                  : isDarkMode
+                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <FaFileCode /> JSON
+            </button>
+            <button
+              type="button"
+              onClick={() => setFileType("excel")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                fileType === "excel"
+                  ? 'bg-violet-600 text-white'
+                  : isDarkMode
+                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <FaFileExcel /> Excel
+            </button>
+          </div>
+
+          {/* File Upload */}
+          <div className="space-y-2">
+            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+              Upload {fileType.toUpperCase()} File
+            </label>
+            <div className={`relative border-2 border-dashed rounded-lg p-6 text-center ${
+              isDarkMode ? 'border-gray-600 hover:border-gray-500' : 'border-gray-300 hover:border-gray-400'
+            } transition-colors`}>
+              <input
+                type="file"
+                onChange={handleFileChange}
+                accept={fileType === "json" ? ".json" : ".xlsx,.xls"}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              />
+              <div className="space-y-2">
+                <FaUpload className={`mx-auto h-8 w-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Drag and drop your {fileType.toUpperCase()} file here, or click to browse
+                </p>
+                {file && (
+                  <p className={`text-sm font-medium ${isDarkMode ? 'text-violet-400' : 'text-violet-600'}`}>
+                    Selected: {file.name}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Exam Details */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                Exam Name
+              </label>
+              <input
+                type="text"
+                value={examName}
+                onChange={(e) => setExamName(e.target.value)}
+                className={`w-full px-4 py-2 rounded-lg border ${
+                  isDarkMode
+                    ? 'bg-gray-700 border-gray-600 text-white focus:border-violet-500'
+                    : 'bg-white border-gray-300 text-gray-900 focus:border-violet-500'
+                } focus:ring-2 focus:ring-violet-200 transition-colors`}
+                placeholder="Enter exam name"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                Duration (minutes)
+              </label>
+              <input
+                type="number"
+                value={examDuration}
+                onChange={handleExamDurationChange}
+                min="1"
+                className={`w-full px-4 py-2 rounded-lg border ${
+                  isDarkMode
+                    ? 'bg-gray-700 border-gray-600 text-white focus:border-violet-500'
+                    : 'bg-white border-gray-300 text-gray-900 focus:border-violet-500'
+                } focus:ring-2 focus:ring-violet-200 transition-colors`}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+              Description
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows="3"
+              className={`w-full px-4 py-2 rounded-lg border ${
+                isDarkMode
+                  ? 'bg-gray-700 border-gray-600 text-white focus:border-violet-500'
+                  : 'bg-white border-gray-300 text-gray-900 focus:border-violet-500'
+              } focus:ring-2 focus:ring-violet-200 transition-colors`}
+              placeholder="Enter exam description"
+            />
+          </div>
+
+          {error && (
+            <div className="p-4 rounded-lg bg-red-100 border border-red-400 text-red-700">
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="p-4 rounded-lg bg-green-100 border border-green-400 text-green-700">
+              {success}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className={`w-full py-3 px-4 rounded-lg transition-colors ${
+              loading
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-violet-600 hover:bg-violet-700 text-white'
+            } font-medium flex items-center justify-center gap-2`}
+          >
+            {loading ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
+                <span>Uploading...</span>
+              </>
+            ) : (
+              <>
+                <FaUpload />
+                <span>Upload Exam</span>
+              </>
+            )}
+          </button>
+        </form>
+      </div>
+
+      {/* Create New Exam Button */}
+      <motion.button
+        variants={cardVariants}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={navigateToExamCreation}
+        className={`w-full py-4 px-6 rounded-xl ${
+          isDarkMode
+            ? 'bg-violet-600 hover:bg-violet-700'
+            : 'bg-violet-600 hover:bg-violet-700'
+        } text-white font-medium flex items-center justify-center gap-2 shadow-lg`}
+      >
+        <FaPlus />
+        <span>Create New Exam</span>
+      </motion.button>
+    </motion.div>
+  );
+
+  const renderExamsTab = () => (
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6"
+    >
+      <div className="flex justify-between items-center mb-6">
+        <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+          My Exams
+        </h2>
+        <button
+          onClick={fetchUploads}
+          disabled={loading}
+          className={`p-2 rounded-lg transition-all duration-200 ${
+            isDarkMode 
+              ? 'bg-gray-800 hover:bg-gray-700 text-gray-300' 
+              : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+          } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          title="Refresh exams"
+        >
+          <FaSync className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600" />
+        </div>
+      ) : uploads.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {uploads.map((upload) => (
+            <motion.div
+              key={upload._id}
+              variants={cardVariants}
+              whileHover={{ scale: 1.02 }}
+              className={`p-6 rounded-xl ${
+                isDarkMode ? 'bg-gray-800' : 'bg-white'
+              } shadow-lg space-y-4`}
+            >
+              <div className="flex justify-between items-start">
+                <h3 className={`font-semibold text-lg ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  {upload.examName}
+                </h3>
+                <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  upload.examMode
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {upload.examMode ? 'Active' : 'Inactive'}
+                </div>
+              </div>
+
+              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                {upload.description}
+              </p>
+
+              <div className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                Created: {new Date(upload.createdAt).toLocaleDateString()}
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => handleToggleExamMode(upload._id)}
+                  className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                    upload.examMode
+                      ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                      : 'bg-green-100 text-green-700 hover:bg-green-200'
+                  }`}
+                >
+                  {upload.examMode ? 'Stop Exam' : 'Start Exam'}
+                </button>
+                <button
+                  onClick={() => handleViewResults(upload._id)}
+                  className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium ${
+                    isDarkMode
+                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  View Results
+                </button>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      ) : (
+        <div className={`text-center py-12 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+          No exams found. Upload your first exam to get started.
+        </div>
+      )}
+    </motion.div>
+  );
+
+  return (
+    <div className={`min-h-screen pt-16 pb-12 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <div className="container mx-auto px-4 md:px-6">
+        {/* Navigation Tabs */}
+        <div className="flex gap-4 mb-8">
+          <button
+            onClick={() => handleTabSwitch("upload")}
+            className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all ${
+              activeTab === "upload"
+                ? 'bg-violet-600 text-white'
+                : isDarkMode
+                  ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                  : 'bg-white text-gray-700 hover:bg-gray-100'
+            } font-medium shadow-sm`}
+          >
+            <FaUpload />
+            <span>Upload</span>
+          </button>
+          <button
+            onClick={() => handleTabSwitch("exams")}
+            className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all ${
+              activeTab === "exams"
+                ? 'bg-violet-600 text-white'
+                : isDarkMode
+                  ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                  : 'bg-white text-gray-700 hover:bg-gray-100'
+            } font-medium shadow-sm`}
+          >
+            <FaList />
+            <span>My Exams</span>
+          </button>
         </div>
 
-        {activeTab === "upload" && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`${
-              isDarkMode ? "bg-[#1a1f2e]" : "bg-white"
-            } rounded-lg shadow-md p-6`}
-          >
-            <h2
-              className={`text-2xl font-bold mb-6 ${
-                isDarkMode ? "text-white" : "text-gray-900"
-              }`}
-            >
-              Upload Exam Questions
-            </h2>
-            
-            {/* Add file type toggle */}
-            <div className="mb-6">
-              <div className={`inline-flex rounded-md shadow-sm ${isDarkMode ? "bg-[#0A0F1C]" : "bg-gray-100"}`} role="group">
-                <button
-                  type="button"
-                  onClick={() => setFileType("json")}
-                  className={`px-4 py-2 text-sm font-medium rounded-l-lg ${
-                    fileType === "json"
-                      ? isDarkMode
-                        ? "bg-violet-700 text-white"
-                        : "bg-violet-600 text-white"
-                      : isDarkMode
-                      ? "bg-[#0A0F1C] text-gray-300 hover:bg-[#2a2f3e]"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  JSON
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFileType("excel")}
-                  className={`px-4 py-2 text-sm font-medium rounded-r-lg ${
-                    fileType === "excel"
-                      ? isDarkMode
-                        ? "bg-violet-700 text-white"
-                        : "bg-violet-600 text-white"
-                      : isDarkMode
-                      ? "bg-[#0A0F1C] text-gray-300 hover:bg-[#2a2f3e]"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  Excel
-                </button>
-              </div>
-            </div>
-            
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label
-                  className={`block text-sm font-medium mb-1 ${
-                    isDarkMode ? "text-gray-300" : "text-gray-700"
-                  }`}
-                >
-                  Exam Name
-                </label>
-                <input
-                  type="text"
-                  value={examName}
-                  onChange={(e) => setExamName(e.target.value)}
-                  placeholder="Enter exam name"
-                  required
-                  className={`w-full px-4 py-3 rounded-lg ${
-                    isDarkMode
-                      ? "bg-[#0A0F1C] border-gray-700 text-white placeholder-gray-500"
-                      : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400"
-                  } border focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
-                />
-              </div>
-
-              <div>
-                <label
-                  className={`block text-sm font-medium mb-1 ${
-                    isDarkMode ? "text-gray-300" : "text-gray-700"
-                  }`}
-                >
-                  Description
-                </label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Enter exam description"
-                  required
-                  rows="3"
-                  className={`w-full px-4 py-3 rounded-lg ${
-                    isDarkMode
-                      ? "bg-[#0A0F1C] border-gray-700 text-white placeholder-gray-500"
-                      : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400"
-                  } border focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
-                />
-              </div>
-
-              <div>
-                <label
-                  className={`block text-sm font-medium mb-1 ${
-                    isDarkMode ? "text-gray-300" : "text-gray-700"
-                  }`}
-                >
-                  Exam Duration (minutes)
-                </label>
-                <input
-                  type="number"
-                  value={examDuration}
-                  onChange={handleExamDurationChange}
-                  min="0"
-                  className={`w-full px-4 py-3 rounded-lg ${
-                    isDarkMode
-                      ? "bg-[#0A0F1C] border-gray-700 text-white placeholder-gray-500"
-                      : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400"
-                  } border focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
-                />
-              </div>
-
-              <div>
-                <label
-                  className={`block text-sm font-medium mb-1 ${
-                    isDarkMode ? "text-gray-300" : "text-gray-700"
-                  }`}
-                >
-                  Upload {fileType === "json" ? "JSON" : "Excel"} File
-                </label>
-                <div
-                  className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-lg ${
-                    isDarkMode
-                      ? "border-gray-700 bg-[#0A0F1C]"
-                      : "border-gray-300 bg-gray-50"
-                  }`}
-                >
-                  <div className="space-y-1 text-center">
-                    <svg
-                      className={`mx-auto h-12 w-12 ${
-                        isDarkMode ? "text-gray-400" : "text-gray-400"
-                      }`}
-                      stroke="currentColor"
-                      fill="none"
-                      viewBox="0 0 48 48"
-                      aria-hidden="true"
-                    >
-                      <path
-                        d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                        strokeWidth={2}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    <div className="flex text-sm text-center">
-                      <label
-                        htmlFor="file-upload"
-                        className={`relative cursor-pointer rounded-md font-medium ${
-                          isDarkMode ? "text-violet-400" : "text-violet-600"
-                        } hover:text-violet-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-violet-500`}
-                      >
-                        <span>Upload a file</span>
-                        <input
-                          id="file-upload"
-                          name="file-upload"
-                          type="file"
-                          className="sr-only"
-                          onChange={handleFileChange}
-                          accept={fileType === "json" ? ".json" : ".xlsx,.xls"}
-                        />
-                      </label>
-                      <p
-                        className={`pl-1 ${
-                          isDarkMode ? "text-gray-400" : "text-gray-500"
-                        }`}
-                      >
-                        or drag and drop
-                      </p>
-                    </div>
-                    <p
-                      className={`text-xs ${
-                        isDarkMode ? "text-gray-400" : "text-gray-500"
-                      }`}
-                    >
-                      {fileType === "json" ? "JSON file only" : "Excel files (.xlsx, .xls)"}
-                    </p>
-                    {file && (
-                      <p
-                        className={`text-sm font-medium ${
-                          isDarkMode ? "text-green-400" : "text-green-600"
-                        }`}
-                      >
-                        {file.name}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {error && (
-                <div
-                  className={`p-4 rounded-lg ${
-                    isDarkMode
-                      ? "bg-red-900/20 text-red-300"
-                      : "bg-red-50 text-red-700"
-                  }`}
-                >
-                  {error}
-                </div>
-              )}
-
-              {success && (
-                <div
-                  className={`p-4 rounded-lg ${
-                    isDarkMode
-                      ? "bg-green-900/20 text-green-300"
-                      : "bg-green-50 text-green-700"
-                  }`}
-                >
-                  {success}
-                </div>
-              )}
-
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className={`px-6 py-3 rounded-lg font-medium ${
-                    isDarkMode
-                      ? "bg-violet-700 hover:bg-violet-600 text-white"
-                      : "bg-violet-600 hover:bg-violet-700 text-white"
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  {loading ? "Uploading..." : "Upload Exam"}
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        )}
-
-        {activeTab === "exams" && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">My Exams</h2>
-              <button
-                onClick={navigateToExamCreation}
-                className={`px-4 py-2 rounded-lg font-medium flex items-center ${
-                  isDarkMode
-                    ? 'bg-violet-700 hover:bg-violet-600 text-white'
-                    : 'bg-violet-600 hover:bg-violet-700 text-white'
-                }`}
-              >
-                <FaPlus className="mr-2" />
-                Create New Exam
-              </button>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 shadow-md rounded-lg overflow-hidden">
-                <thead className={isDarkMode ? "bg-[#0A0F1C]" : "bg-gray-50"}>
-                  <tr>
-                    {[
-                      "Exam Name",
-                      "Description",
-                      "Status",
-                      "Uploaded Date",
-                      "Total Questions",
-                      "Results",
-                      "Actions",
-                      "Exam Mode",
-                      "Toggle Exam Mode",
-                    ].map((header) => (
-                      <th
-                        key={header}
-                        className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                          isDarkMode ? "text-gray-400" : "text-gray-500"
-                        }`}
-                      >
-                        {header}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody
-                  className={`divide-y ${
-                    isDarkMode
-                      ? "divide-gray-700 bg-[#1a1f2e]"
-                      : "divide-gray-200 bg-white"
-                  }`}
-                >
-                  {uploads.map((upload) => (
-                    <tr key={upload._id}>
-                      <td
-                        className={`px-6 py-4 whitespace-nowrap ${
-                          isDarkMode ? "text-gray-300" : "text-gray-900"
-                        }`}
-                      >
-                        {upload.examName}
-                      </td>
-                      <td
-                        className={`px-6 py-4 whitespace-nowrap ${
-                          isDarkMode ? "text-gray-300" : "text-gray-900"
-                        }`}
-                      >
-                        {upload.description}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            upload.status === "approved"
-                              ? isDarkMode
-                                ? "bg-green-900/20 text-green-300"
-                                : "bg-green-100 text-green-800"
-                              : upload.status === "rejected"
-                              ? isDarkMode
-                                ? "bg-red-900/20 text-red-300"
-                                : "bg-red-100 text-red-800"
-                              : isDarkMode
-                              ? "bg-yellow-900/20 text-yellow-300"
-                              : "bg-yellow-100 text-yellow-800"
-                          }`}
-                        >
-                          {upload.status}
-                        </span>
-                      </td>
-                      <td
-                        className={`px-6 py-4 whitespace-nowrap ${
-                          isDarkMode ? "text-gray-300" : "text-gray-900"
-                        }`}
-                      >
-                        {new Date(upload.createdAt).toLocaleDateString()}
-                      </td>
-                      <td
-                        className={`px-6 py-4 whitespace-nowrap ${
-                          isDarkMode ? "text-gray-300" : "text-gray-900"
-                        }`}
-                      >
-                        {upload.totalQuestions}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {upload.status === "approved" && (
-                          <button
-                            onClick={() => handleViewResults(upload._id)}
-                            className="px-3 py-1 bg-violet-600 text-white text-sm rounded-lg hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2"
-                          >
-                            View Results
-                          </button>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {upload.status === "approved" &&
-                          !upload.resultsReleased && (
-                            <button
-                              onClick={() => handleReleaseResults(upload._id)}
-                              className="px-3 py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                            >
-                              Release Results
-                            </button>
-                          )}
-                        {upload.resultsReleased && (
-                          <span
-                            className={`px-2 py-1 text-xs font-medium rounded-full ${
-                              isDarkMode
-                                ? "bg-green-900/20 text-green-300"
-                                : "bg-green-100 text-green-800"
-                            }`}
-                          >
-                            Results Released
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            upload.examMode
-                              ? isDarkMode
-                                ? "bg-green-900/20 text-green-300"
-                                : "bg-green-100 text-green-800"
-                              : isDarkMode
-                              ? "bg-red-900/20 text-red-300"
-                              : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {upload.examMode ? "Active" : "Inactive"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <button
-                          onClick={() => handleToggleExamMode(upload._id)}
-                          disabled={upload.status !== "approved"}
-                          className={`px-3 py-1 rounded text-xs font-medium ${
-                            upload.status === "approved"
-                              ? upload.examMode
-                                ? isDarkMode
-                                  ? "bg-red-900/20 text-red-300 hover:bg-red-900/30"
-                                  : "bg-red-100 text-red-800 hover:bg-red-200"
-                                : isDarkMode
-                                ? "bg-green-900/20 text-green-300 hover:bg-green-900/30"
-                                : "bg-green-100 text-green-800 hover:bg-green-200"
-                              : isDarkMode
-                              ? "bg-gray-800 text-gray-500 cursor-not-allowed"
-                              : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                          }`}
-                        >
-                          {upload.examMode ? "Deactivate" : "Activate"}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </motion.div>
-        )}
-
-        {activeTab === "create" && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex justify-center"
-          >
-            <div
-              className={`w-full max-w-4xl ${
-                isDarkMode ? "bg-[#1a1f2e]" : "bg-white"
-              } rounded-lg shadow-md p-6`}
-            >
-              <div className="flex justify-between items-center mb-6">
-                <h2
-                  className={`text-2xl font-bold ${
-                    isDarkMode ? "text-white" : "text-gray-900"
-                  }`}
-                >
-                  Create New Exam
-                </h2>
-              </div>
-
-              <div className="text-center py-8">
-                <p
-                  className={`mb-6 ${
-                    isDarkMode ? "text-gray-300" : "text-gray-600"
-                  }`}
-                >
-                  Create a new exam with our interactive exam builder. Add
-                  questions, options, and images directly on the platform.
-                </p>
-                <button
-                  onClick={navigateToExamCreation}
-                  className={`px-6 py-3 rounded-lg font-medium ${
-                    isDarkMode
-                      ? "bg-violet-700 hover:bg-violet-600 text-white"
-                      : "bg-violet-600 hover:bg-violet-700 text-white"
-                  } transition-all duration-200 transform hover:scale-105`}
-                >
-                  <FaPlus className="inline mr-2" />
-                  Start Creating Exam
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
+        {/* Main Content */}
+        {activeTab === "upload" ? renderUploadTab() : renderExamsTab()}
 
         {/* Results Modal */}
-        {showResultsModal && (
-          <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className={`w-full max-w-4xl max-h-[90vh] rounded-lg shadow-xl overflow-hidden flex flex-col ${
-                isDarkMode ? "bg-[#1a1f2e]" : "bg-white"
-              }`}
-            >
-              <div
-                className={`px-6 py-4 flex justify-between items-center border-b ${
-                  isDarkMode ? "border-gray-700" : "border-gray-200"
-                }`}
-              >
-                <div className="flex items-center space-x-4">
-                  <h3 className={`text-lg font-semibold ${isDarkMode ? "text-white" : "text-gray-900"}`}>
-                    {selectedExam?.examName} - Results
-                  </h3>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={handleResultsRefresh}
-                      disabled={isRefreshing}
-                      className={`p-2 rounded-lg transition-all duration-200 ${
-                        isDarkMode
-                          ? "bg-[#2a2f3e] hover:bg-[#3a3f4e] text-gray-300"
-                          : "bg-gray-100 hover:bg-gray-200 text-gray-600"
-                      } ${isRefreshing ? "opacity-50 cursor-not-allowed" : ""}`}
-                      title="Refresh results"
-                    >
-                      <FaSync className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
-                    </button>
-                    <button
-                      onClick={downloadResultsAsCSV}
-                      className={`p-2 rounded-lg transition-all duration-200 ${
-                        isDarkMode
-                          ? "bg-[#2a2f3e] hover:bg-[#3a3f4e] text-gray-300"
-                          : "bg-gray-100 hover:bg-gray-200 text-gray-600"
-                      }`}
-                      title="Download results as CSV"
-                    >
-                      <FaDownload className="w-4 h-4" />
-                    </button>
+        {showResultsModal && selectedExam && (
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+              <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div className={`absolute inset-0 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-500'} opacity-75`}></div>
+              </div>
+
+              <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+              <div className={`inline-block align-bottom rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full ${
+                isDarkMode ? 'bg-gray-800' : 'bg-white'
+              }`}>
+                <div className="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                  <div className="sm:flex sm:items-start">
+                    <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className={`text-lg leading-6 font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                          Exam Results: {selectedExam.examName}
+                        </h3>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleResultsRefresh}
+                            className={`p-2 rounded-lg ${
+                              isDarkMode
+                                ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                                : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                            }`}
+                          >
+                            <FaSync className={isRefreshing ? 'animate-spin' : ''} />
+                          </button>
+                          <button
+                            onClick={downloadResultsAsCSV}
+                            className={`p-2 rounded-lg ${
+                              isDarkMode
+                                ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                                : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                            }`}
+                          >
+                            <FaDownload />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className={`mt-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                        {examResults.length > 0 ? (
+                          <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                              <thead className={isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}>
+                                <tr>
+                                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Student
+                                  </th>
+                                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Score
+                                  </th>
+                                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Correct Answers
+                                  </th>
+                                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Submitted At
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                                {examResults.map((result) => (
+                                  <tr key={result._id}>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                      <div className="text-sm font-medium">
+                                        {result.student.name}
+                                      </div>
+                                      <div className="text-sm text-gray-500">
+                                        {result.student.email}
+                                      </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                        result.score >= 70
+                                          ? 'bg-green-100 text-green-800'
+                                          : result.score >= 50
+                                            ? 'bg-yellow-100 text-yellow-800'
+                                            : 'bg-red-100 text-red-800'
+                                      }`}>
+                                        {result.score}%
+                                      </span>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                      {result.correctAnswers}/{result.totalQuestions}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                      {new Date(result.submittedAt).toLocaleString()}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        ) : (
+                          <div className="text-center py-8">
+                            No results available for this exam yet.
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <button
-                  onClick={() => setShowResultsModal(false)}
-                  className={`${isDarkMode ? "text-gray-400 hover:text-gray-300" : "text-gray-400 hover:text-gray-500"}`}
-                >
-                  <span className="sr-only">Close</span>
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+                <div className={`px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse ${
+                  isDarkMode ? 'bg-gray-800' : 'bg-gray-50'
+                }`}>
+                  <button
+                    type="button"
+                    onClick={() => setShowResultsModal(false)}
+                    className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium sm:ml-3 sm:w-auto sm:text-sm ${
+                      isDarkMode
+                        ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                    }`}
+                  >
+                    Close
+                  </button>
+                  {!selectedExam.resultsReleased && (
+                    <button
+                      type="button"
+                      onClick={() => handleReleaseResults(selectedExam._id)}
+                      className="mt-3 w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-violet-600 text-base font-medium text-white hover:bg-violet-700 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                    >
+                      Release Results
+                    </button>
+                  )}
+                </div>
               </div>
-              {/* Rest of the modal content */}
-            </motion.div>
+            </div>
           </div>
         )}
-
-        {/* Debug button */}
-        <button
-          onClick={debugExams}
-          className="px-4 py-2 bg-red-500 text-white rounded"
-        >
-          Debug Exams
-        </button>
       </div>
     </div>
   );
