@@ -142,15 +142,13 @@ const RegisterScreen = () => {
       // Handle different error scenarios
       if (err?.data?.message?.includes('User already exists')) {
         setErrorMessage(`An account with email "${email}" already exists. Please use a different email or try logging in.`);
-        showToast.error('Account already exists', {
-          icon: <FaExclamationCircle className="text-red-500 text-xl" />
-        });
+        showToast.error(err.data.message);
       } else if (err?.data?.message?.includes('Email')) {
         setErrorMessage(err.data.message);
-        showToast.error('Email error');
+        showToast.error(err.data.message);
       } else if (err?.data?.message?.includes('Password')) {
         setErrorMessage(err.data.message);
-        showToast.error('Password error');
+        showToast.error(err.data.message);
       } else if (!navigator.onLine) {
         setErrorMessage('No internet connection. Please check your network and try again.');
         showToast.error('Network error');
@@ -196,7 +194,7 @@ const RegisterScreen = () => {
       
       if (err?.data?.message?.includes('User already exists')) {
         setErrorMessage(`An account with email "${email}" already exists. Please use a different email or try logging in.`);
-        showToast.error('Account already exists');
+        showToast.error(err.data.message);
       } else {
         setErrorMessage(err?.data?.message || 'Failed to send OTP');
         showToast.error(err?.data?.message || 'Failed to send OTP');
@@ -225,12 +223,14 @@ const RegisterScreen = () => {
       
       if (err?.data?.message?.includes('expired')) {
         setErrorMessage('OTP has expired. Please request a new one.');
+        showToast.error(err.data.message);
       } else if (err?.data?.message?.includes('Invalid OTP')) {
         setErrorMessage('The OTP you entered is incorrect. Please try again.');
+        showToast.error(err.data.message);
       } else {
         setErrorMessage(err?.data?.message || 'Invalid OTP');
+        showToast.error(err?.data?.message || 'Invalid OTP');
       }
-      showToast.error(err?.data?.message || 'Invalid OTP');
     }
   };
 
