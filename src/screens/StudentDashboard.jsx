@@ -614,7 +614,7 @@ const StudentDashboard = () => {
             </h3>
             <p className={`text-base md:text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               {currentExam.questions[currentQuestionIndex].text}
-            </p>
+            </p> 
             {currentExam.questions[currentQuestionIndex].questionImage && (
               <div className="mt-2">
                 <img 
