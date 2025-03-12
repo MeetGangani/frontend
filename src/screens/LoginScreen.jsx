@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useLoginMutation } from '../slices/usersApiSlice';
 import { setCredentials } from '../slices/authSlice';
 import { motion } from 'framer-motion';
-import { FaBrain, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaExclamationTriangle } from 'react-icons/fa';
+import { FaBrain, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaExclamationTriangle, FaCheckCircle } from 'react-icons/fa';
 import Loader from '../components/Loader';
 import { useTheme } from '../context/ThemeContext';
 import { FcGoogle } from 'react-icons/fc';
@@ -22,6 +22,7 @@ const LoginScreen = () => {
   const [sessionEmail, setSessionEmail] = useState('');
   const [sessionPassword, setSessionPassword] = useState('');
   const [isForceLoggingOut, setIsForceLoggingOut] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -51,18 +52,52 @@ const LoginScreen = () => {
 
   const submitHandler = async (e) => {
     e.preventDefault();
+    setErrorMessage('');
+    
+    // Basic validation
+    if (!email.trim()) {
+      setErrorMessage('Please enter your email address');
+      return;
+    }
+    
+    if (!password) {
+      setErrorMessage('Please enter your password');
+      return;
+    }
+    
     try {
       const res = await login({ email, password }).unwrap();
       dispatch(setCredentials({ ...res }));
-      navigate('/');
-      showToast.success('Login successful');
+      
+      // Show different success messages based on user type
+      let successMessage = '';
+      switch (res.userType) {
+        case 'student':
+          successMessage = `Welcome back, ${res.name}! You're now logged in as a student.`;
+          break;
+        case 'institute':
+          successMessage = `Welcome back, ${res.name}! You're now logged in as an institute.`;
+          break;
+        case 'admin':
+          successMessage = `Welcome back, ${res.name}! You're now logged in as an administrator.`;
+          break;
+        default:
+          successMessage = 'Login successful!';
+      }
+      
+      showToast.success(successMessage);
+      navigate(getRedirectPath(res.userType));
     } catch (err) {
       if (err?.data?.message?.includes('already logged in on another device')) {
         // Show session modal
         setSessionEmail(email);
         setSessionPassword(password);
         setShowSessionModal(true);
+      } else if (err?.data?.message?.includes('Invalid email or password')) {
+        setErrorMessage('The email or password you entered is incorrect. Please try again.');
+        showToast.error('Invalid credentials');
       } else {
+        setErrorMessage(err?.data?.message || 'Login failed. Please try again later.');
         showToast.error(err?.data?.message || 'Login failed');
       }
     }
@@ -87,8 +122,12 @@ const LoginScreen = () => {
       
       // Set credentials and navigate
       dispatch(setCredentials({ ...loginRes }));
-      navigate('/');
-      showToast.success('Logged in successfully. Other sessions have been terminated.');
+      
+      const deviceInfo = navigator.userAgent;
+      const deviceName = deviceInfo.includes('Mobile') ? 'mobile device' : 'computer';
+      
+      showToast.success(`Successfully logged in on this ${deviceName}. All other sessions have been terminated.`);
+      navigate(getRedirectPath(loginRes.userType));
       setShowSessionModal(false);
     } catch (error) {
       showToast.error(error?.response?.data?.message || 'Failed to force logout');
@@ -198,6 +237,16 @@ const LoginScreen = () => {
             ? 'bg-gray-900/50 border-gray-800' 
             : 'bg-white/50 border-gray-200'
         } border p-8 shadow-xl`}>
+          {/* Error message display */}
+          {errorMessage && (
+            <div className={`mb-6 p-3 rounded-lg ${
+              isDarkMode ? 'bg-red-900/50 text-red-200' : 'bg-red-50 text-red-700'
+            } flex items-start`}>
+              <FaExclamationTriangle className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" />
+              <p className="text-sm">{errorMessage}</p>
+            </div>
+          )}
+          
           <div className="relative mb-6">
             <motion.button
               whileHover={{ scale: 1.02 }}
@@ -272,7 +321,10 @@ const LoginScreen = () => {
                       } rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
                       placeholder="Enter your email"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        setErrorMessage('');
+                      }}
                     />
                   </div>
                 </div>
@@ -301,7 +353,10 @@ const LoginScreen = () => {
                       } rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent`}
                       placeholder="Enter your password"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        setErrorMessage('');
+                      }}
                     />
                     <button
                       type="button"
