@@ -1760,7 +1760,11 @@ const InstituteExamCreationScreen = () => {
 
             {/* Questions List */}
             {questions.length > 0 && (
-              <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-xl shadow-lg p-6 mb-8`}>
+              <div className={`mb-8 p-6 rounded-2xl ${
+                isDarkMode 
+                  ? 'bg-gray-800/50 backdrop-blur-xl border border-gray-700' 
+                  : 'bg-white border border-gray-200'
+              } shadow-xl`}>
                 <h2 className="text-2xl font-bold mb-6">
                   Questions ({questions.length})
                 </h2>
@@ -1771,7 +1775,11 @@ const InstituteExamCreationScreen = () => {
             
             {/* Show question form only if we haven't added all required questions or if we're editing */}
             {(questionsRemaining > 0 || editingQuestionIndex !== null) ? (
-              <div id="question-form" className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-xl shadow-lg p-6`}>
+              <div id="question-form" className={`p-6 rounded-2xl ${
+                isDarkMode 
+                  ? 'bg-gray-800/50 backdrop-blur-xl border border-gray-700' 
+                  : 'bg-white border border-gray-200'
+              } shadow-xl`}>
                 <h2 className="text-2xl font-bold mb-6">
                   {editingQuestionIndex !== null 
                     ? `Edit Question ${editingQuestionIndex + 1}` 
@@ -1786,16 +1794,16 @@ const InstituteExamCreationScreen = () => {
                   <textarea
                     value={currentQuestion.questionText}
                     onChange={handleQuestionTextChange}
-                    rows="3"
-                    className={`w-full px-4 py-2 rounded-lg border ${
+                    rows="4"
+                    className={`w-full px-4 py-3 rounded-lg border text-base transition-colors duration-200 ${
                       isDarkMode 
-                        ? 'bg-gray-800 border-gray-700 text-white' 
-                        : 'bg-white border-gray-300 text-gray-900'
-                    } focus:ring-2 focus:ring-violet-500 focus:border-transparent mb-2`}
+                        ? 'bg-gray-900/50 border-gray-600 text-white focus:border-violet-500' 
+                        : 'bg-white border-gray-300 text-gray-900 focus:border-violet-500'
+                    } focus:ring-2 focus:ring-violet-500/20 focus:outline-none`}
                     placeholder="Enter question text"
                   />
                   
-                  <div className="flex items-center mt-2">
+                  <div className="flex items-center mt-4">
                     <input
                       type="file"
                       accept="image/*"
@@ -1806,10 +1814,10 @@ const InstituteExamCreationScreen = () => {
                     />
                     <label
                       htmlFor="question-image-upload"
-                      className={`flex items-center px-4 py-2 rounded-lg cursor-pointer ${
+                      className={`flex items-center px-4 py-2 rounded-lg cursor-pointer transition-all duration-200 ${
                         isDarkMode 
-                          ? 'bg-gray-800 hover:bg-gray-700 text-gray-300' 
-                          : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                          ? 'bg-gray-700 hover:bg-gray-600 text-gray-300 border border-gray-600' 
+                          : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200'
                       }`}
                     >
                       <FaImage className="mr-2" />
@@ -1821,15 +1829,15 @@ const InstituteExamCreationScreen = () => {
                         <img 
                           src={currentQuestion.questionImagePreview} 
                           alt="Question Preview" 
-                          className="h-16 object-contain rounded-md"
+                          className="h-16 object-contain rounded-lg border border-gray-200 dark:border-gray-700"
                         />
                         <button
                           type="button"
                           onClick={removeQuestionImage}
-                          className={`ml-2 p-1 rounded-full ${
+                          className={`ml-2 p-2 rounded-full transition-colors duration-200 ${
                             isDarkMode 
-                              ? 'bg-red-900/50 hover:bg-red-800 text-red-300' 
-                              : 'bg-red-100 hover:bg-red-200 text-red-700'
+                              ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400' 
+                              : 'bg-red-50 hover:bg-red-100 text-red-600'
                           }`}
                           title="Remove image"
                         >
@@ -1849,14 +1857,14 @@ const InstituteExamCreationScreen = () => {
                     <button
                       type="button"
                       onClick={() => handleQuestionTypeChange('single')}
-                      className={`px-4 py-2 rounded-lg ${
+                      className={`px-5 py-2.5 rounded-lg font-medium transition-all duration-200 ${
                         currentQuestion.questionType === 'single'
                           ? isDarkMode 
-                            ? 'bg-violet-700 text-white' 
-                            : 'bg-violet-600 text-white'
+                            ? 'bg-violet-600 text-white ring-2 ring-violet-500/50' 
+                            : 'bg-violet-600 text-white ring-2 ring-violet-500/50'
                           : isDarkMode 
-                            ? 'bg-gray-700 text-gray-300' 
-                            : 'bg-gray-200 text-gray-700'
+                            ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
                       Single Choice
@@ -1864,20 +1872,20 @@ const InstituteExamCreationScreen = () => {
                     <button
                       type="button"
                       onClick={() => handleQuestionTypeChange('multiple')}
-                      className={`px-4 py-2 rounded-lg ${
+                      className={`px-5 py-2.5 rounded-lg font-medium transition-all duration-200 ${
                         currentQuestion.questionType === 'multiple'
                           ? isDarkMode 
-                            ? 'bg-violet-700 text-white' 
-                            : 'bg-violet-600 text-white'
+                            ? 'bg-violet-600 text-white ring-2 ring-violet-500/50' 
+                            : 'bg-violet-600 text-white ring-2 ring-violet-500/50'
                           : isDarkMode 
-                            ? 'bg-gray-700 text-gray-300' 
-                            : 'bg-gray-200 text-gray-700'
+                            ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
                       Multiple Choice
                     </button>
                   </div>
-                  <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <p className={`mt-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                     {currentQuestion.questionType === 'single' 
                       ? 'Students can select only one correct answer.' 
                       : 'Students can select multiple correct answers.'}
@@ -1894,34 +1902,38 @@ const InstituteExamCreationScreen = () => {
                     {currentQuestion.options.map((option, index) => (
                       <div 
                         key={index}
-                        className={`p-4 rounded-lg ${
-                          isDarkMode ? 'bg-gray-800' : 'bg-gray-50'
+                        className={`p-5 rounded-lg border ${
+                          isDarkMode 
+                            ? 'bg-gray-900/50 border-gray-700' 
+                            : 'bg-gray-50 border-gray-200'
                         }`}
                       >
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center">
-                            <span className="font-medium mr-2">
+                            <span className={`text-lg font-medium ${
+                              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                            }`}>
                               Option {String.fromCharCode(65 + index)}
                             </span>
                             <button
                               type="button"
                               onClick={() => handleCorrectOptionChange(index)}
-                              className={`ml-2 p-1 rounded-full ${
+                              className={`ml-3 p-1.5 rounded-full transition-all duration-200 ${
                                 currentQuestion.questionType === 'single'
                                   ? currentQuestion.correctOption === index
                                     ? isDarkMode 
-                                      ? 'bg-green-900 text-green-300' 
-                                      : 'bg-green-500 text-white'
+                                      ? 'bg-green-500/20 text-green-400 ring-2 ring-green-500/50' 
+                                      : 'bg-green-100 text-green-700 ring-2 ring-green-500/50'
                                     : isDarkMode 
-                                      ? 'bg-gray-700 text-gray-400' 
-                                      : 'bg-gray-200 text-gray-500'
+                                      ? 'bg-gray-800 text-gray-400 hover:bg-gray-700' 
+                                      : 'bg-white text-gray-400 hover:bg-gray-100 border border-gray-200'
                                   : currentQuestion.correctOptions.includes(index)
                                     ? isDarkMode 
-                                      ? 'bg-green-900 text-green-300' 
-                                      : 'bg-green-500 text-white'
+                                      ? 'bg-green-500/20 text-green-400 ring-2 ring-green-500/50' 
+                                      : 'bg-green-100 text-green-700 ring-2 ring-green-500/50'
                                     : isDarkMode 
-                                      ? 'bg-gray-700 text-gray-400' 
-                                      : 'bg-gray-200 text-gray-500'
+                                      ? 'bg-gray-800 text-gray-400 hover:bg-gray-700' 
+                                      : 'bg-white text-gray-400 hover:bg-gray-100 border border-gray-200'
                               }`}
                               title={
                                 currentQuestion.questionType === 'single'
@@ -1929,7 +1941,7 @@ const InstituteExamCreationScreen = () => {
                                   : currentQuestion.correctOptions.includes(index) ? "Correct answer" : "Mark as correct"
                               }
                             >
-                              <FaCheck className="w-3 h-3" />
+                              <FaCheck className="w-4 h-4" />
                             </button>
                           </div>
                         </div>
@@ -1938,16 +1950,16 @@ const InstituteExamCreationScreen = () => {
                           type="text"
                           value={option.text}
                           onChange={(e) => handleOptionTextChange(index, e.target.value)}
-                          className={`w-full px-4 py-2 rounded-lg border ${
+                          className={`w-full px-4 py-3 rounded-lg border text-base transition-colors duration-200 ${
                             isDarkMode 
-                              ? 'bg-gray-700 border-gray-600 text-white' 
-                              : 'bg-white border-gray-300 text-gray-900'
-                          } focus:ring-2 focus:ring-violet-500 focus:border-transparent mb-2`}
+                              ? 'bg-gray-800 border-gray-700 text-white focus:border-violet-500' 
+                              : 'bg-white border-gray-300 text-gray-900 focus:border-violet-500'
+                          } focus:ring-2 focus:ring-violet-500/20 focus:outline-none mb-3`}
                           placeholder={`Enter option ${String.fromCharCode(65 + index)} text`}
                         />
                         
-                        <div className="flex items-center mt-2">
-                           <input
+                        <div className="flex items-center">
+                          <input
                             type="file"
                             accept="image/*"
                             onChange={(e) => handleOptionImageUpload(e, index)}
@@ -1957,13 +1969,13 @@ const InstituteExamCreationScreen = () => {
                           />
                           <label
                             htmlFor={`option-image-upload-${index}`}
-                            className={`flex items-center px-3 py-1 rounded-lg cursor-pointer ${
+                            className={`flex items-center px-3 py-1.5 rounded-lg cursor-pointer transition-all duration-200 ${
                               isDarkMode 
-                                ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
-                                : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                                ? 'bg-gray-700 hover:bg-gray-600 text-gray-300 border border-gray-600' 
+                                : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200'
                             } text-sm`}
                           >
-                            <FaImage className="mr-1" />
+                            <FaImage className="mr-1.5" />
                             {option.image ? 'Change Image' : 'Add Image'}
                           </label>
                           
@@ -1972,15 +1984,15 @@ const InstituteExamCreationScreen = () => {
                               <img 
                                 src={option.imagePreview} 
                                 alt={`Option ${String.fromCharCode(65 + index)} Preview`} 
-                                className="h-12 object-contain rounded-md"
+                                className="h-12 object-contain rounded-lg border border-gray-200 dark:border-gray-700"
                               />
                               <button
                                 type="button"
                                 onClick={() => removeOptionImage(index)}
-                                className={`ml-2 p-1 rounded-full ${
+                                className={`ml-2 p-1.5 rounded-full transition-colors duration-200 ${
                                   isDarkMode 
-                                    ? 'bg-red-900/50 hover:bg-red-800 text-red-300' 
-                                    : 'bg-red-100 hover:bg-red-200 text-red-700'
+                                    ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400' 
+                                    : 'bg-red-50 hover:bg-red-100 text-red-600'
                                 }`}
                                 title="Remove image"
                               >
@@ -1994,16 +2006,16 @@ const InstituteExamCreationScreen = () => {
                   </div>
                 </div>
                 
-                {/* Add Question Button */}
-                <div className="flex justify-end space-x-3">
+                {/* Action Buttons */}
+                <div className="flex justify-end space-x-4">
                   {editingQuestionIndex !== null && (
                     <button
                       type="button"
                       onClick={closeEditModal}
-                      className={`px-6 py-2 rounded-lg font-medium ${
+                      className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
                         isDarkMode 
                           ? 'bg-gray-700 hover:bg-gray-600 text-white' 
-                          : 'bg-gray-300 hover:bg-gray-400 text-gray-800'
+                          : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                       }`}
                     >
                       Cancel
@@ -2013,9 +2025,9 @@ const InstituteExamCreationScreen = () => {
                     type="button"
                     onClick={addQuestion}
                     disabled={isUploading}
-                    className={`px-6 py-2 rounded-lg font-medium ${
+                    className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
                       isDarkMode 
-                        ? 'bg-violet-700 hover:bg-violet-600 text-white' 
+                        ? 'bg-violet-600 hover:bg-violet-700 text-white' 
                         : 'bg-violet-600 hover:bg-violet-700 text-white'
                     } disabled:opacity-50 disabled:cursor-not-allowed flex items-center`}
                   >
@@ -2030,7 +2042,7 @@ const InstituteExamCreationScreen = () => {
                     ) : (
                       <>
                         <FaCheck className="mr-2" />
-                        Update Question
+                        {editingQuestionIndex !== null ? 'Update Question' : 'Add Question'}
                       </>
                     )}
                   </button>
@@ -2038,44 +2050,56 @@ const InstituteExamCreationScreen = () => {
               </div>
             ) : (
               /* Show preview and submit section when all questions are added */
-              <div className={`${isDarkMode ? 'bg-[#1a1f2e]' : 'bg-white'} rounded-xl shadow-lg p-6`}>
-                <div className="text-center py-6">
-                  <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full ${
-                    isDarkMode ? 'bg-green-900/50 text-green-300' : 'bg-green-100 text-green-800'
-                  } mb-4`}>
-                    <FaCheck className="w-8 h-8" />
-                  </div>
-                  <h2 className="text-2xl font-bold mb-2">All Questions Added!</h2>
-                  <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-6`}>
-                    You've added all {examMetadata.numberOfQuestions} questions for this exam. 
-                    Review your questions above and submit when ready.
-                  </p>
-                  
-                  <div className="flex justify-center space-x-4">
-                    <button
-                      type="button"
-                      onClick={goBackToMetadata}
-                      className={`px-6 py-3 rounded-lg font-medium ${
-                        isDarkMode 
-                          ? 'bg-gray-700 hover:bg-gray-600 text-white' 
-                          : 'bg-gray-300 hover:bg-gray-400 text-gray-800'
-                      }`}
-                    >
-                      Edit Exam Details
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleSubmitExam}
-                      disabled={isSubmitting}
-                      className={`px-6 py-3 rounded-lg font-medium ${
-                        isDarkMode 
-                          ? 'bg-violet-700 hover:bg-violet-600 text-white' 
-                          : 'bg-violet-600 hover:bg-violet-700 text-white'
-                      } disabled:opacity-50 disabled:cursor-not-allowed`}
-                    >
-                      {isSubmitting ? 'Submitting...' : 'Submit Exam'}
-                    </button>
-                  </div>
+              <div className={`p-8 rounded-2xl ${
+                isDarkMode 
+                  ? 'bg-gray-800/50 backdrop-blur-xl border border-gray-700' 
+                  : 'bg-white border border-gray-200'
+              } shadow-xl text-center`}>
+                <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full mb-6 ${
+                  isDarkMode ? 'bg-green-500/20 text-green-400' : 'bg-green-100 text-green-700'
+                }`}>
+                  <FaCheck className="w-10 h-10" />
+                </div>
+                <h2 className="text-3xl font-bold mb-4">All Questions Added!</h2>
+                <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} text-lg mb-8`}>
+                  You've added all {examMetadata.numberOfQuestions} questions for this exam. 
+                  Review your questions above and submit when ready.
+                </p>
+                
+                <div className="flex justify-center space-x-4">
+                  <button
+                    type="button"
+                    onClick={goBackToMetadata}
+                    className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                      isDarkMode 
+                        ? 'bg-gray-700 hover:bg-gray-600 text-white' 
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                    }`}
+                  >
+                    Edit Exam Details
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSubmitExam}
+                    disabled={isSubmitting}
+                    className={`px-8 py-3 rounded-lg font-medium text-white transition-all duration-200 ${
+                      isDarkMode 
+                        ? 'bg-violet-600 hover:bg-violet-700' 
+                        : 'bg-violet-600 hover:bg-violet-700'
+                    } disabled:opacity-50 disabled:cursor-not-allowed flex items-center`}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Submitting...
+                      </>
+                    ) : (
+                      'Submit Exam'
+                    )}
+                  </button>
                 </div>
               </div>
             )}
@@ -2083,7 +2107,7 @@ const InstituteExamCreationScreen = () => {
         )}
       </div>
       
-      {/* Add the EditQuestionModal */}
+      {/* Add the EditQuestionModal with improved styling */}
       <EditQuestionModal />
     </div>
   );
