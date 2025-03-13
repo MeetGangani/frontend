@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useTheme } from '../context/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaArrowLeft, FaPlus, FaTrash, FaImage, FaCheck, FaTimes, FaEdit, FaFileExcel, FaUpload, FaGripVertical, FaSync } from 'react-icons/fa';
+import { FaArrowLeft, FaPlus, FaTrash, FaImage, FaCheck, FaTimes, FaEdit, FaFileExcel, FaUpload, FaGripVertical, FaSync, FaBars } from 'react-icons/fa';
 import axios from 'axios';
 import { showToast } from '../utils/toast';
 import config from '../config/config';
@@ -50,6 +50,11 @@ const InstituteExamCreationScreen = () => {
   // Loading states
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isUploadingExcel, setIsUploadingExcel] = useState(false);
+  // Add state to track which option is currently being uploaded
+  const [currentUploadingOptionIndex, setCurrentUploadingOptionIndex] = useState(null);
+  // Add specific state for question image upload
+  const [isUploadingQuestionImage, setIsUploadingQuestionImage] = useState(false);
   
   // Refs for file inputs
   const questionImageRef = useRef(null);
@@ -62,7 +67,6 @@ const InstituteExamCreationScreen = () => {
   const [questionsRemaining, setQuestionsRemaining] = useState(5);
   
   // Add new state for Excel upload
-  const [isUploadingExcel, setIsUploadingExcel] = useState(false);
   const [excelFile, setExcelFile] = useState(null);
   const fileInputRef = useRef(null);
   
@@ -204,7 +208,7 @@ const InstituteExamCreationScreen = () => {
     }
     
     try {
-      setIsUploading(true);
+      setIsUploadingQuestionImage(true);
       
       // Create a preview URL
       const previewUrl = URL.createObjectURL(file);
@@ -263,7 +267,7 @@ const InstituteExamCreationScreen = () => {
       
       showToast.error(errorMessage);
     } finally {
-      setIsUploading(false);
+      setIsUploadingQuestionImage(false);
       // Reset file input
       if (questionImageRef.current) {
         questionImageRef.current.value = '';
@@ -302,6 +306,7 @@ const InstituteExamCreationScreen = () => {
     
     try {
       setIsUploading(true);
+      setCurrentUploadingOptionIndex(optionIndex);
       
       // Create a preview URL
       const previewUrl = URL.createObjectURL(file);
@@ -368,6 +373,7 @@ const InstituteExamCreationScreen = () => {
       showToast.error(errorMessage);
     } finally {
       setIsUploading(false);
+      setCurrentUploadingOptionIndex(null);
       // Reset file input
       if (optionImageRefs.current[optionIndex]) {
         optionImageRefs.current[optionIndex].value = '';
@@ -811,93 +817,70 @@ const InstituteExamCreationScreen = () => {
     try {
       const formData = new FormData();
       formData.append('file', excelFile);
-
-      // Use your backend proxy endpoint instead of calling the Excel processor directly
-      const response = await axiosInstance.post(
-        "/api/proxy/excel",
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-          timeout: 30000 // 30 seconds timeout
+      
+      const response = await axiosInstance.post('/api/proxy/excel', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
         }
-      );
-
-      console.log("Excel processor response:", response.data);
-
+      });
+      
       if (response.data && response.data.questions) {
-        // Transform the questions from Excel format to our app format
-        const transformedQuestions = response.data.questions.map(q => ({
-          questionText: q.question || '',
-          questionImage: null,
-          questionImagePreview: null,
-          questionType: 'single',
-          options: (q.options || []).map(opt => ({
-            text: opt || '',
-            image: null,
-            imagePreview: null
-          })),
-          correctOption: parseInt(q.correctAnswer) - 1, // Convert from 1-based to 0-based index
-          correctOptions: []
-        }));
-
-        // Validate the number of questions
-        if (transformedQuestions.length === 0) {
-          showToast.error("No valid questions found in the Excel file");
-          return;
+        // Check if we got any errors back
+        if (response.data.errors && response.data.errors.length > 0) {
+          // Show errors but continue with valid questions
+          response.data.errors.forEach(error => {
+            showToast.error(error);
+          });
         }
         
-        if (transformedQuestions.length > examMetadata.numberOfQuestions) {
-          showToast.error(`Excel file contains ${transformedQuestions.length} questions, but only ${examMetadata.numberOfQuestions} are allowed`);
-          return;
-        }
-
-        // Update questions state
-        setQuestions(transformedQuestions);
-        
-        // Update remaining questions count
-        const remaining = Math.max(0, examMetadata.numberOfQuestions - transformedQuestions.length);
-        setQuestionsRemaining(remaining);
-
-        // Reset current question form
-        setCurrentQuestion({
-          questionText: '',
-          questionImage: null,
-          questionImagePreview: null,
-          questionType: 'single',
-          options: [
-            { text: '', image: null, imagePreview: null },
-            { text: '', image: null, imagePreview: null },
-            { text: '', image: null, imagePreview: null },
-            { text: '', image: null, imagePreview: null }
-          ],
-          correctOption: 0,
-          correctOptions: []
+        // Map the questions to our format
+        const mappedQuestions = response.data.questions.map(q => {
+          // Determine if it's single or multiple choice
+          const isMultipleChoice = q.questionType === 'multiple';
+          
+          return {
+            questionText: q.questionText,
+            questionType: q.questionType, // 'single' or 'multiple'
+            questionImage: null,
+            questionImagePreview: null,
+            options: q.options,
+            // For single-choice, set correctOption; for multiple-choice, set correctOptions
+            correctOption: !isMultipleChoice ? q.correctOption : 0,
+            correctOptions: isMultipleChoice ? q.correctOptions : []
+          };
         });
-
-        // Clear file input
+        
+        // Add the questions to our state
+        setQuestions([...questions, ...mappedQuestions]);
+        
+        // Calculate remaining questions
+        const newQuestionsCount = questions.length + mappedQuestions.length;
+        if (newQuestionsCount >= examMetadata.numberOfQuestions) {
+          setQuestionsRemaining(0);
+        } else {
+          setQuestionsRemaining(examMetadata.numberOfQuestions - newQuestionsCount);
+        }
+        
+        // Reset the file input
+        setExcelFile(null);
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
-        setExcelFile(null);
-
-        showToast.success(`Successfully loaded ${transformedQuestions.length} questions from Excel`);
+        
+        showToast.success(`Imported ${mappedQuestions.length} questions from Excel`);
       } else {
-        throw new Error('Invalid response format from Excel processor');
+        showToast.error('No questions were found in the Excel file');
       }
     } catch (error) {
-      console.error('Excel upload error:', error);
+      console.error('Error uploading Excel file:', error);
+      let errorMessage = 'Failed to upload Excel file';
       
-      let errorMessage = 'Failed to process Excel file. Please ensure it follows the correct format.';
-      
-      if (error.response && error.response.data && error.response.data.error) {
+      if (error.response?.data?.error) {
         errorMessage = error.response.data.error;
-      } else if (error.message) {
-        errorMessage = error.message;
       }
       
       showToast.error(errorMessage);
+    } finally {
       setIsUploadingExcel(false);
     }
   };
@@ -921,11 +904,12 @@ const InstituteExamCreationScreen = () => {
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
+          disabled={isUploadingExcel}
           className={`flex items-center px-5 py-2.5 rounded-lg font-medium transition-all duration-200 ${
             isDarkMode
               ? 'bg-gray-700 hover:bg-gray-600 text-gray-200'
               : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-          }`}
+          } ${isUploadingExcel ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           <FaFileExcel className="mr-2" />
           Select Excel File
@@ -943,7 +927,7 @@ const InstituteExamCreationScreen = () => {
           disabled={isUploadingExcel}
           className={`mt-4 flex items-center px-5 py-2.5 rounded-lg font-medium transition-all duration-200 ${
             isUploadingExcel
-              ? 'bg-gray-400 cursor-not-allowed'
+              ? 'opacity-70 cursor-not-allowed'
               : isDarkMode
               ? 'bg-violet-600 hover:bg-violet-700'
               : 'bg-violet-600 hover:bg-violet-700'
@@ -951,7 +935,10 @@ const InstituteExamCreationScreen = () => {
         >
           {isUploadingExcel ? (
             <>
-              <FaSync className="animate-spin mr-2" />
+              <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
               Processing...
             </>
           ) : (
@@ -991,126 +978,160 @@ const InstituteExamCreationScreen = () => {
     setQuestions(updatedQuestions);
   };
 
-  // Modify the renderQuestion function
+  // Update the renderQuestion function to handle multiple-choice questions
   const renderQuestion = (question, index) => (
     <Draggable key={index} draggableId={`question-${index}`} index={index}>
       {(provided, snapshot) => (
-        <div
+        <motion.div
           ref={provided.innerRef}
           {...provided.draggableProps}
-          className={`mb-4 p-4 rounded-lg ${
+          className={`p-6 rounded-xl transition-all duration-200 ${
             isDarkMode 
-              ? 'bg-[#1a1f2e] border border-gray-700' 
-              : 'bg-white border border-gray-200'
-          } ${snapshot.isDragging ? 'shadow-lg' : ''}`}
+              ? snapshot.isDragging 
+                ? 'bg-gray-800 ring-2 ring-violet-500 shadow-lg'
+                : 'bg-gray-800 shadow-md border border-gray-700 hover:border-gray-600'
+              : snapshot.isDragging 
+                ? 'bg-white ring-2 ring-violet-500 shadow-lg'
+                : 'bg-white shadow-md border border-gray-200 hover:border-gray-300'
+          }`}
         >
-          <div className="flex items-start space-x-4">
-            <div {...provided.dragHandleProps} className="pt-1">
-              <FaGripVertical className={`w-5 h-5 ${
-                isDarkMode ? 'text-gray-500' : 'text-gray-400'
-              }`} />
-            </div>
+          <div className="flex items-start justify-between">
             <div className="flex-1">
-              <div className="flex justify-between items-start mb-2">
-                <div className="flex items-center space-x-3">
-                  <select
-                    value={index}
-                    onChange={(e) => handleQuestionReorder(index, parseInt(e.target.value))}
-                    className={`form-select w-20 py-1 px-2 rounded-md text-sm ${
-                      isDarkMode 
-                        ? 'bg-gray-800 text-white border-gray-700' 
-                        : 'bg-white text-gray-900 border-gray-300'
-                    }`}
-                  >
-                    {questions.map((_, i) => (
-                      <option key={i} value={i}>
-                        Q{i + 1}
-                      </option>
-                    ))}
-                  </select>
-                  <h3 className={`font-medium ${
-                    isDarkMode ? 'text-white' : 'text-gray-900'
-                  }`}>
-                    {question.questionText.substring(0, 50)}
-                    {question.questionText.length > 50 ? '...' : ''}
-                  </h3>
-                </div>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => editQuestion(index)}
-                    className={`p-1.5 rounded-lg ${
-                      isDarkMode 
-                        ? 'hover:bg-gray-700 text-gray-400' 
-                        : 'hover:bg-gray-100 text-gray-600'
-                    }`}
-                    title="Edit question"
-                  >
-                    <FaEdit className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => deleteQuestion(index)}
-                    className={`p-1.5 rounded-lg ${
-                      isDarkMode 
-                        ? 'hover:bg-red-900/50 text-red-400' 
-                        : 'hover:bg-red-100 text-red-600'
-                    }`}
-                    title="Delete question"
-                  >
-                    <FaTrash className="w-4 h-4" />
-                  </button>
-                </div>
+              <div className="flex items-center mb-2">
+                <span className={`inline-flex items-center justify-center h-6 w-6 rounded-full text-xs font-medium mr-2 ${
+                  isDarkMode
+                    ? 'bg-violet-600/20 text-violet-400'
+                    : 'bg-violet-100 text-violet-700'
+                }`}>
+                  {index + 1}
+                </span>
+                
+                <span className={`text-xs font-medium uppercase tracking-wider px-2 py-1 rounded ${
+                  question.questionType === 'multiple'
+                    ? isDarkMode 
+                      ? 'bg-indigo-900/50 text-indigo-400' 
+                      : 'bg-indigo-100 text-indigo-700'
+                    : isDarkMode 
+                      ? 'bg-violet-900/50 text-violet-400' 
+                      : 'bg-violet-100 text-violet-700'
+                }`}>
+                  {question.questionType === 'multiple' ? 'Multiple Choice' : 'Single Choice'}
+                </span>
               </div>
               
-              {/* Question content */}
-              <div className={`mt-3 pl-4 ${
-                isDarkMode ? 'text-gray-300' : 'text-gray-700'
-              }`}>
-                <p className="mb-3">{question.questionText}</p>
-                {question.questionImage && (
+              <h3 className={`text-lg font-medium mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                {question.questionText}
+              </h3>
+              
+              {question.questionImage && (
+                <div className="mb-4">
                   <img 
-                    src={question.questionImagePreview} 
-                    alt={`Question ${index + 1}`}
-                    className="mb-3 max-h-40 rounded-lg"
+                    src={question.questionImage} 
+                    alt="Question" 
+                    className="max-h-32 rounded-lg object-contain"
                   />
-                )}
-                
-                {/* Options */}
-                <div className="space-y-2 mt-4">
-                  {question.options.map((option, optIndex) => (
-                    <div 
-                      key={optIndex}
-                      className={`p-2 rounded-lg ${
-                        question.correctOption === optIndex
+                </div>
+              )}
+              
+              <div className="space-y-2">
+                {question.options.map((option, optIndex) => (
+                  <div 
+                    key={optIndex}
+                    className={`flex items-center p-3 rounded-lg ${
+                      // For single-choice questions
+                      question.questionType === 'single' && question.correctOption === optIndex
+                        ? isDarkMode 
+                          ? 'bg-green-900/20 border border-green-800/50' 
+                          : 'bg-green-50 border border-green-200'
+                        // For multiple-choice questions
+                        : question.questionType === 'multiple' && question.correctOptions.includes(optIndex)
                           ? isDarkMode 
-                            ? 'bg-green-900/30 border-green-700'
-                            : 'bg-green-50 border-green-200'
-                          : isDarkMode
-                            ? 'bg-gray-800/50'
-                            : 'bg-gray-50'
-                      } border`}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <span className={`font-medium ${
-                          isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                        }`}>
-                          {String.fromCharCode(65 + optIndex)}.
-                        </span>
-                        <span>{option.text}</span>
-                      </div>
-                      {option.image && (
-                        <img 
-                          src={option.imagePreview} 
-                          alt={`Option ${String.fromCharCode(65 + optIndex)}`}
-                          className="mt-2 max-h-32 rounded-lg"
-                        />
+                            ? 'bg-green-900/20 border border-green-800/50' 
+                            : 'bg-green-50 border border-green-200'
+                          // Non-correct options
+                          : isDarkMode 
+                            ? 'bg-gray-700/50 border border-gray-700' 
+                            : 'bg-gray-50 border border-gray-200'
+                    }`}
+                  >
+                    <div className={`flex-shrink-0 h-6 w-6 flex items-center justify-center rounded-full mr-3 ${
+                      // For single-choice questions
+                      question.questionType === 'single' && question.correctOption === optIndex
+                        ? isDarkMode 
+                          ? 'bg-green-600/80 text-white' 
+                          : 'bg-green-600 text-white'
+                        // For multiple-choice questions
+                        : question.questionType === 'multiple' && question.correctOptions.includes(optIndex)
+                          ? isDarkMode 
+                            ? 'bg-green-600/80 text-white' 
+                            : 'bg-green-600 text-white'
+                          // Non-correct options
+                          : isDarkMode 
+                            ? 'bg-gray-700 text-gray-400' 
+                            : 'bg-white text-gray-600 border border-gray-300'
+                    }`}>
+                      {/* Show checkmark for correct options */}
+                      {(question.questionType === 'single' && question.correctOption === optIndex) || 
+                       (question.questionType === 'multiple' && question.correctOptions.includes(optIndex)) ? (
+                        <FaCheck size={12} />
+                      ) : (
+                        String.fromCharCode(65 + optIndex)
                       )}
                     </div>
-                  ))}
-                </div>
+                    
+                    <div className="flex-1">
+                      <span className={isDarkMode ? 'text-gray-200' : 'text-gray-700'}>
+                        {option.text}
+                      </span>
+                    </div>
+                    
+                    {option.image && (
+                      <div className="ml-2">
+                        <img 
+                          src={option.image} 
+                          alt={`Option ${String.fromCharCode(65 + optIndex)}`} 
+                          className="h-10 w-10 object-cover rounded"
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="flex flex-col items-center ml-4">
+              <div {...provided.dragHandleProps} className="mb-2">
+                <FaBars className={`cursor-move ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+              </div>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => editQuestion(index)}
+                  className={`p-2 rounded-lg transition-colors ${
+                    isDarkMode 
+                      ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                  }`}
+                  title="Edit question"
+                >
+                  <FaEdit />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => deleteQuestion(index)}
+                  className={`p-2 rounded-lg transition-colors ${
+                    isDarkMode 
+                      ? 'bg-red-900/30 hover:bg-red-900/50 text-red-400' 
+                      : 'bg-red-100 hover:bg-red-200 text-red-700'
+                  }`}
+                  title="Delete question"
+                >
+                  <FaTrash />
+                </button>
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
     </Draggable>
   );
@@ -1201,10 +1222,22 @@ const InstituteExamCreationScreen = () => {
                     isDarkMode 
                       ? 'bg-gray-800 hover:bg-gray-700 text-gray-300' 
                       : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                  }`}
+                  } ${isUploadingQuestionImage ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  <FaImage className="mr-2" />
-                  {currentQuestion.questionImage ? 'Change Image' : 'Add Image'}
+                  {isUploadingQuestionImage ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <FaImage className="mr-2" />
+                      {currentQuestion.questionImage ? 'Change Image' : 'Add Image'}
+                    </>
+                  )}
                 </label>
                 
                 {currentQuestion.questionImagePreview && (
@@ -1223,6 +1256,7 @@ const InstituteExamCreationScreen = () => {
                           : 'bg-red-100 hover:bg-red-200 text-red-700'
                       }`}
                       title="Remove image"
+                      disabled={isUploadingQuestionImage}
                     >
                       <FaTimes />
                     </button>
@@ -1326,13 +1360,13 @@ const InstituteExamCreationScreen = () => {
                       onChange={(e) => handleOptionTextChange(index, e.target.value)}
                       className={`w-full px-4 py-2 rounded-lg border ${
                         isDarkMode 
-                          ? 'bg-gray-700 border-gray-600 text-white' 
-                          : 'bg-white border-gray-300 text-gray-900'
-                      } focus:ring-2 focus:ring-violet-500 focus:border-transparent mb-2`}
+                          ? 'bg-gray-700 border-gray-600 text-white focus:border-violet-500' 
+                          : 'bg-white border-gray-300 text-gray-900 focus:border-violet-500'
+                      } focus:ring-2 focus:ring-violet-500/20 focus:outline-none mb-3`}
                       placeholder={`Enter option ${String.fromCharCode(65 + index)} text`}
                     />
                     
-                    <div className="flex items-center mt-2">
+                    <div className="flex items-center">
                       <input
                         type="file"
                         accept="image/*"
@@ -1343,14 +1377,26 @@ const InstituteExamCreationScreen = () => {
                       />
                       <label
                         htmlFor={`option-image-upload-modal-${index}`}
-                        className={`flex items-center px-3 py-1 rounded-lg cursor-pointer ${
+                        className={`flex items-center px-3 py-1.5 rounded-lg cursor-pointer transition-all duration-200 ${
                           isDarkMode 
-                            ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
-                            : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                        } text-sm`}
+                            ? 'bg-gray-700 hover:bg-gray-600 text-gray-300 border border-gray-600' 
+                            : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200'
+                        } text-sm ${isUploading && currentUploadingOptionIndex === index ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
-                        <FaImage className="mr-1" />
-                        {option.image ? 'Change Image' : 'Add Image'}
+                        {isUploading && currentUploadingOptionIndex === index ? (
+                          <>
+                            <svg className="animate-spin -ml-1 mr-1.5 h-4 w-4 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <FaImage className="mr-1.5" />
+                            {option.image ? 'Change Image' : 'Add Image'}
+                          </>
+                        )}
                       </label>
                       
                       {option.imagePreview && (
@@ -1358,17 +1404,18 @@ const InstituteExamCreationScreen = () => {
                           <img 
                             src={option.imagePreview} 
                             alt={`Option ${String.fromCharCode(65 + index)} Preview`} 
-                            className="h-12 object-contain rounded-md"
+                            className="h-12 object-contain rounded-lg border border-gray-200 dark:border-gray-700"
                           />
                           <button
                             type="button"
                             onClick={() => removeOptionImage(index)}
-                            className={`ml-2 p-1 rounded-full ${
+                            className={`ml-2 p-1.5 rounded-full transition-colors duration-200 ${
                               isDarkMode 
-                                ? 'bg-red-900/50 hover:bg-red-800 text-red-300' 
-                                : 'bg-red-100 hover:bg-red-200 text-red-700'
+                                ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400' 
+                                : 'bg-red-50 hover:bg-red-100 text-red-600'
                             }`}
                             title="Remove image"
+                            disabled={isUploading}
                           >
                             <FaTimes />
                           </button>
@@ -1396,10 +1443,10 @@ const InstituteExamCreationScreen = () => {
               <button
                 type="button"
                 onClick={addQuestion}
-                disabled={isUploading}
-                className={`px-6 py-2 rounded-lg font-medium ${
+                disabled={isUploading || isUploadingQuestionImage}
+                className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
                   isDarkMode 
-                    ? 'bg-violet-700 hover:bg-violet-600 text-white' 
+                    ? 'bg-violet-600 hover:bg-violet-700 text-white' 
                     : 'bg-violet-600 hover:bg-violet-700 text-white'
                 } disabled:opacity-50 disabled:cursor-not-allowed flex items-center`}
               >
@@ -1412,10 +1459,7 @@ const InstituteExamCreationScreen = () => {
                     Updating...
                   </>
                 ) : (
-                  <>
-                    <FaCheck className="mr-2" />
-                    Update Question
-                  </>
+                  getActionButtonText()
                 )}
               </button>
             </div>
@@ -1678,11 +1722,12 @@ const InstituteExamCreationScreen = () => {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingExcel}
                   className={`flex items-center px-5 py-2.5 rounded-lg font-medium transition-all duration-200 ${
                     isDarkMode
                       ? 'bg-gray-700 hover:bg-gray-600 text-gray-200'
                       : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                  }`}
+                  } ${isUploadingExcel ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <FaFileExcel className="mr-2" />
                   Select Excel File
@@ -1700,7 +1745,7 @@ const InstituteExamCreationScreen = () => {
                   disabled={isUploadingExcel}
                   className={`mt-4 flex items-center px-5 py-2.5 rounded-lg font-medium transition-all duration-200 ${
                     isUploadingExcel
-                      ? 'bg-gray-400 cursor-not-allowed'
+                      ? 'opacity-70 cursor-not-allowed'
                       : isDarkMode
                       ? 'bg-violet-600 hover:bg-violet-700'
                       : 'bg-violet-600 hover:bg-violet-700'
@@ -1708,7 +1753,10 @@ const InstituteExamCreationScreen = () => {
                 >
                   {isUploadingExcel ? (
                     <>
-                      <FaSync className="animate-spin mr-2" />
+                      <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
                       Processing...
                     </>
                   ) : (
@@ -1818,10 +1866,22 @@ const InstituteExamCreationScreen = () => {
                         isDarkMode 
                           ? 'bg-gray-700 hover:bg-gray-600 text-gray-300 border border-gray-600' 
                           : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200'
-                      }`}
+                      } ${isUploadingQuestionImage ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
-                      <FaImage className="mr-2" />
-                      {currentQuestion.questionImage ? 'Change Image' : 'Add Image'}
+                      {isUploadingQuestionImage ? (
+                        <>
+                          <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <FaImage className="mr-2" />
+                          {currentQuestion.questionImage ? 'Change Image' : 'Add Image'}
+                        </>
+                      )}
                     </label>
                     
                     {currentQuestion.questionImagePreview && (
@@ -1840,6 +1900,7 @@ const InstituteExamCreationScreen = () => {
                               : 'bg-red-50 hover:bg-red-100 text-red-600'
                           }`}
                           title="Remove image"
+                          disabled={isUploadingQuestionImage}
                         >
                           <FaTimes />
                         </button>
@@ -1973,10 +2034,22 @@ const InstituteExamCreationScreen = () => {
                               isDarkMode 
                                 ? 'bg-gray-700 hover:bg-gray-600 text-gray-300 border border-gray-600' 
                                 : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200'
-                            } text-sm`}
+                            } text-sm ${isUploading && currentUploadingOptionIndex === index ? 'opacity-50 cursor-not-allowed' : ''}`}
                           >
-                            <FaImage className="mr-1.5" />
-                            {option.image ? 'Change Image' : 'Add Image'}
+                            {isUploading && currentUploadingOptionIndex === index ? (
+                              <>
+                                <svg className="animate-spin -ml-1 mr-1.5 h-4 w-4 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Uploading...
+                              </>
+                            ) : (
+                              <>
+                                <FaImage className="mr-1.5" />
+                                {option.image ? 'Change Image' : 'Add Image'}
+                              </>
+                            )}
                           </label>
                           
                           {option.imagePreview && (
@@ -1995,6 +2068,7 @@ const InstituteExamCreationScreen = () => {
                                     : 'bg-red-50 hover:bg-red-100 text-red-600'
                                 }`}
                                 title="Remove image"
+                                disabled={isUploading}
                               >
                                 <FaTimes />
                               </button>
@@ -2024,7 +2098,7 @@ const InstituteExamCreationScreen = () => {
                   <button
                     type="button"
                     onClick={addQuestion}
-                    disabled={isUploading}
+                    disabled={isUploading || isUploadingQuestionImage}
                     className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
                       isDarkMode 
                         ? 'bg-violet-600 hover:bg-violet-700 text-white' 
@@ -2040,10 +2114,7 @@ const InstituteExamCreationScreen = () => {
                         Updating...
                       </>
                     ) : (
-                      <>
-                        <FaCheck className="mr-2" />
-                        {editingQuestionIndex !== null ? 'Update Question' : 'Add Question'}
-                      </>
+                      getActionButtonText()
                     )}
                   </button>
                 </div>
@@ -2090,7 +2161,7 @@ const InstituteExamCreationScreen = () => {
                   >
                     {isSubmitting ? (
                       <>
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>

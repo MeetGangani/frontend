@@ -399,36 +399,48 @@ const InstituteDashboard = () => {
                         {upload.totalQuestions}
                       </td>
                   <td className="px-6 py-4">
+                        {upload.status === "approved" ? (
                           <button
                             onClick={() => handleViewResults(upload._id)}
-                      className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
-                        isDarkMode
-                          ? 'text-violet-400 hover:bg-violet-400/10'
-                          : 'text-violet-600 hover:bg-violet-50'
-                      }`}
+                            className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                              isDarkMode
+                                ? 'text-violet-400 hover:bg-violet-400/10'
+                                : 'text-violet-600 hover:bg-violet-50'
+                            }`}
                           >
                             View Results
                           </button>
-                      </td>
-                  <td className="px-6 py-4">
-                    {!upload.resultsReleased ? (
-                            <button
-                              onClick={() => handleReleaseResults(upload._id)}
-                        className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
-                          isDarkMode
-                            ? 'text-green-400 hover:bg-green-400/10'
-                            : 'text-green-600 hover:bg-green-50'
-                        }`}
-                            >
-                              Release Results
-                            </button>
-                    ) : (
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        isDarkMode ? 'bg-green-400/10 text-green-400' : 'bg-green-100 text-green-700'
-                      }`}>
-                            Results Released
+                        ) : (
+                          <span className={`text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                            Pending Approval
                           </span>
                         )}
+                      </td>
+                  <td className="px-6 py-4">
+                    {upload.status === "approved" ? (
+                      !upload.resultsReleased ? (
+                        <button
+                          onClick={() => handleReleaseResults(upload._id)}
+                          className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                            isDarkMode
+                              ? 'text-green-400 hover:bg-green-400/10'
+                              : 'text-green-600 hover:bg-green-50'
+                          }`}
+                        >
+                          Release Results
+                        </button>
+                      ) : (
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          isDarkMode ? 'bg-green-400/10 text-green-400' : 'bg-green-100 text-green-700'
+                        }`}>
+                          Results Released
+                        </span>
+                      )
+                    ) : (
+                      <span className={`text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                        Pending Approval
+                      </span>
+                    )}
                       </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -602,7 +614,7 @@ const InstituteDashboard = () => {
               >
                 Close
               </button>
-              {!selectedExam.resultsReleased && (
+              {selectedExam && selectedExam.status === "approved" && !selectedExam.resultsReleased && (
                 <button
                   type="button"
                   onClick={() => handleReleaseResults(selectedExam._id)}
