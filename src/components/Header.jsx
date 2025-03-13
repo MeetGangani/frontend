@@ -8,7 +8,7 @@ import { FaSignInAlt, FaSignOutAlt, FaUser, FaBrain, FaChalkboardTeacher, FaMoon
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 import { clearAuthCookies } from '../utils/cookieUtils';
-import logoImage from '../assets/logo.png';
+import logoImage from '../assets/logo.png'; 
 
 const Header = () => {
   const { userInfo } = useSelector((state) => state.auth);
