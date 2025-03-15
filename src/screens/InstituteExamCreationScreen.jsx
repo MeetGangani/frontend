@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useTheme } from '../context/ThemeContext';
 import { showToast } from '../utils/toast';
-import { FaPlus, FaEdit, FaTrash, FaImage, FaFileExcel, FaUpload, FaArrowLeft, FaArrowRight, FaCheck, FaExclamationTriangle, FaTimes, FaBars } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaImage, FaFileExcel, FaUpload, FaArrowLeft, FaArrowRight, FaCheck, FaExclamationTriangle, FaTimes, FaBars, FaDownload } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import config from '../config/config';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import axiosInstance from '../utils/axiosConfig';
+import * as XLSX from 'xlsx';
 
 const InstituteExamCreationScreen = () => { 
   const { isDarkMode } = useTheme();
@@ -820,7 +821,7 @@ const InstituteExamCreationScreen = () => {
   };
 
   // Handle Excel upload and processing
-  const handleExcelUpload = async () => {
+  const handleExcelUpload = async (e) => {
     if (!excelFile) {
       showToast.error("Please select an Excel file first");
       return;
@@ -965,6 +966,53 @@ const InstituteExamCreationScreen = () => {
     }
   };
 
+  // Function to download sample Excel file
+  const downloadSampleExcel = () => {
+    // Create workbook and worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.aoa_to_sheet([
+      // Header row
+      ['Sr. No.', 'Question', 'Option A', 'Option B', 'Option C', 'Option D', 'Correct Answer'],
+      
+      // Sample data rows
+      [1, 'What is the capital of France?', 'London', 'Berlin', 'Paris', 'Madrid', 'C'],
+      [2, 'Which planet is known as the Red Planet?', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'B'],
+      [3, 'What is 2+2?', '3', '4', '5', '6', 'B'],
+      [4, 'Which of these are primary colors? (Select all that apply)', 'Red', 'Green', 'Blue', 'Yellow', 'A,C,D'],
+      [5, 'Who wrote "Romeo and Juliet"?', 'Charles Dickens', 'William Shakespeare', 'Jane Austen', 'Mark Twain', 'B'],
+      
+      // Empty row before notes
+      [],
+      
+      // Notes section
+      ['Notes:'],
+      ['1. For single-choice questions, enter the letter of the correct option (A, B, C, or D) in the "Correct Answer" column.'],
+      ['2. For multiple-choice questions, enter the letters of all correct options separated by commas (e.g., "A,C,D") in the "Correct Answer" column.'],
+      ['3. The system will automatically detect if a question is multiple-choice based on the format of the "Correct Answer" column.'],
+      ['4. All columns are required. Each question must have at least 2 options.']
+    ]);
+    
+    // Set column widths
+    const columnWidths = [
+      { wch: 10 },  // Sr. No.
+      { wch: 50 },  // Question
+      { wch: 20 },  // Option A
+      { wch: 20 },  // Option B
+      { wch: 20 },  // Option C
+      { wch: 20 },  // Option D
+      { wch: 20 }   // Correct Answer
+    ];
+    worksheet['!cols'] = columnWidths;
+    
+    // Add the worksheet to the workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sample Exam Format');
+    
+    // Generate xlsx file and trigger download
+    XLSX.writeFile(workbook, 'sample_exam_format.xlsx');
+    
+    showToast.success('Sample Excel file downloaded. Use this format to create your exam questions.');
+  };
+
   // Update the Excel upload button section in your JSX
   const renderExcelUploadSection = () => (
     <div className={`mb-8 p-6 rounded-2xl ${
@@ -999,7 +1047,21 @@ const InstituteExamCreationScreen = () => {
             {excelFile.name}
           </span>
         )}
+        
+        <button
+          onClick={downloadSampleExcel}
+          className={`flex items-center px-5 py-2.5 rounded-lg font-medium transition-all duration-200 ${
+            isDarkMode
+              ? 'bg-blue-600 hover:bg-blue-700 text-white'
+              : 'bg-blue-100 hover:bg-blue-200 text-blue-700'
+          }`}
+        >
+          <FaDownload className="mr-2" /> Download Sample Format
+        </button>
       </div>
+      <p className={`text-xs mt-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+        Download a sample Excel file with the correct format for your questions
+      </p>
       {excelFile && (
         <button
           type="button"
@@ -1507,17 +1569,19 @@ const InstituteExamCreationScreen = () => {
             
             {/* Action Buttons */}
             <div className="flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={closeEditModal}
-                className={`px-6 py-2 rounded-lg font-medium ${
-                  isDarkMode 
-                    ? 'bg-gray-700 hover:bg-gray-600 text-white' 
-                    : 'bg-gray-300 hover:bg-gray-400 text-gray-800'
-                }`}
-              >
-                Cancel
-              </button>
+              {editingQuestionIndex !== null && (
+                <button
+                  type="button"
+                  onClick={closeEditModal}
+                  className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                    isDarkMode 
+                      ? 'bg-gray-700 hover:bg-gray-600 text-white' 
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                  }`}
+                >
+                  Cancel
+                </button>
+              )}
               <button
                 type="button"
                 onClick={addQuestion}
@@ -1815,7 +1879,21 @@ const InstituteExamCreationScreen = () => {
                     {excelFile.name}
                   </span>
                 )}
+                
+                <button
+                  onClick={downloadSampleExcel}
+                  className={`flex items-center px-5 py-2.5 rounded-lg font-medium transition-all duration-200 ${
+                    isDarkMode
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                      : 'bg-blue-100 hover:bg-blue-200 text-blue-700'
+                  }`}
+                >
+                  <FaDownload className="mr-2" /> Download Sample Format
+                </button>
               </div>
+              <p className={`text-xs mt-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                Download a sample Excel file with the correct format for your questions
+              </p>
               {excelFile && (
                 <button
                   type="button"

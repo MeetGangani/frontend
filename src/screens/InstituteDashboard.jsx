@@ -19,6 +19,7 @@ const InstituteDashboard = () => {
     return localStorage.getItem("instituteDashboardTab") || "exams";
   });
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isRefreshingExams, setIsRefreshingExams] = useState(false);
 
   // Animation variants
   const containerVariants = {
@@ -59,6 +60,19 @@ const InstituteDashboard = () => {
     }
   };
 
+  const refreshExams = async () => {
+    try {
+      setIsRefreshingExams(true);
+      await fetchUploads();
+      toast.success('Exams refreshed successfully');
+    } catch (error) {
+      console.error("Error refreshing exams:", error);
+      toast.error("Failed to refresh exams");
+    } finally {
+      setIsRefreshingExams(false);
+    }
+  };
+
   const handleViewResults = async (examId) => {
     try {
       setIsRefreshing(true);
@@ -67,7 +81,28 @@ const InstituteDashboard = () => {
 
       // Find the exam details to display in the modal
       const exam = uploads.find((upload) => upload._id === examId);
-      setSelectedExam(exam);
+      
+      // Get the exam details including passingPercentage if not already included
+      if (exam && !exam.passingPercentage) {
+        try {
+          const examDetailsResponse = await axiosInstance.get(`/api/upload/${examId}`);
+          if (examDetailsResponse.data) {
+            // Merge the detailed exam data with the basic exam data
+            setSelectedExam({
+              ...exam,
+              passingPercentage: examDetailsResponse.data.passingPercentage || 60
+            });
+          } else {
+            setSelectedExam(exam);
+          }
+        } catch (error) {
+          console.error('Error fetching exam details:', error);
+          setSelectedExam(exam);
+        }
+      } else {
+        setSelectedExam(exam);
+      }
+      
       setShowResultsModal(true);
     } catch (error) {
       console.error('Error fetching results:', error);
@@ -100,7 +135,10 @@ const InstituteDashboard = () => {
     }
 
     // Create CSV headers
-    const headers = ['Student Name', 'Score (%)', 'Correct Answers', 'Total Questions', 'Submission Date'];
+    const headers = ['Student Name', 'Score (%)', 'Correct Answers', 'Total Questions', 'Time Taken', 'Submission Date'];
+    
+    // Get the passing percentage from the selected exam (default to 60 if not available)
+    const passingPercentage = selectedExam?.passingPercentage || 60;
     
     // Convert results to CSV format with properly formatted date
     const csvData = examResults.map(result => {
@@ -115,31 +153,63 @@ const InstituteDashboard = () => {
             hour12: true
           })
         : 'N/A';
+      
+      // Format time taken
+      const timeTaken = result.timeTaken !== undefined && result.timeTaken !== null
+        ? `${Math.floor(result.timeTaken / 60)}m ${result.timeTaken % 60}s`
+        : 'N/A';
 
-      return [
-        result.student?.name || 'Deleted User',
-        result.score?.toFixed(2) || '0.00',
-        result.correctAnswers || '0',
-        result.totalQuestions || '0',
-        submissionDate
-      ];
+      // Check if student failed (score below passing percentage)
+      const hasFailed = result.score < passingPercentage;
+      
+      return {
+        data: [
+          result.student?.name || 'Deleted User',
+          result.score?.toFixed(2) || '0.00',
+          result.correctAnswers || '0',
+          result.totalQuestions || '0',
+          timeTaken,
+          submissionDate
+        ],
+        hasFailed
+      };
     });
 
-    // Add headers to the beginning
-    csvData.unshift(headers);
-
-    // Convert to CSV string with proper escaping for commas and quotes
-    const csvString = csvData.map(row => 
-      row.map(cell => {
-        if (cell && cell.toString().includes(',') || cell.toString().includes('"') || cell.toString().includes('\n')) {
-          return `"${cell.toString().replace(/"/g, '""')}"`;
-        }
-        return cell;
-      }).join(',')
-    ).join('\n');
-
+    // For Excel, we'll use a different approach - create an HTML table that Excel can interpret
+    let htmlTable = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
+    htmlTable += '<head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Exam Results</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>';
+    htmlTable += '<body><table>';
+    
+    // Add header row
+    htmlTable += '<tr>';
+    headers.forEach(header => {
+      htmlTable += `<th style="background-color:#E0E0E0; font-weight:bold;">${header}</th>`;
+    });
+    htmlTable += '</tr>';
+    
+    // Add data rows
+    csvData.forEach(row => {
+      if (row.hasFailed) {
+        // Red background for failed students
+        htmlTable += '<tr>';
+        row.data.forEach(cell => {
+          htmlTable += `<td style="background-color:#FFCCCC;">${cell}</td>`;
+        });
+        htmlTable += '</tr>';
+      } else {
+        // Normal background for passed students
+        htmlTable += '<tr>';
+        row.data.forEach(cell => {
+          htmlTable += `<td>${cell}</td>`;
+        });
+        htmlTable += '</tr>';
+      }
+    });
+    
+    htmlTable += '</table></body></html>';
+    
     // Create blob and download
-    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([htmlTable], { type: 'application/vnd.ms-excel' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     
@@ -151,7 +221,7 @@ const InstituteDashboard = () => {
     }).replace(/\//g, '-');
     
     link.setAttribute('href', url);
-    link.setAttribute('download', `${selectedExam.examName}_results_${currentDate}.csv`);
+    link.setAttribute('download', `${selectedExam.examName}_results_${currentDate}.xls`);
     link.style.visibility = 'hidden';
     
     document.body.appendChild(link);
@@ -235,19 +305,21 @@ const InstituteDashboard = () => {
               Welcome back! Manage your exams and view student performance
             </p>
           </div>
-              <button
-            onClick={() => navigate('/institute/exam/create')}
-            className={`px-6 py-3 rounded-lg font-medium inline-flex items-center gap-2 transform transition-all duration-200 hover:scale-105 ${
-              isDarkMode
-                ? 'bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-500/20'
-                : 'bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-500/20'
-            }`}
-          >
-            <FaPlus className="w-4 h-4" />
-            Create New Exam
-              </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/institute/exam/create')}
+              className={`px-6 py-3 rounded-lg font-medium inline-flex items-center gap-2 transform transition-all duration-200 hover:scale-105 ${
+                isDarkMode
+                  ? 'bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-500/20'
+                  : 'bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-500/20'
+              }`}
+            >
+              <FaPlus className="w-4 h-4" />
+              Create New Exam
+            </button>
+          </div>
         </div>
-        </div>
+      </div>
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -330,155 +402,204 @@ const InstituteDashboard = () => {
 
       {/* Exams Section */}
       <div className={`rounded-xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
-            <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                <th className={`px-6 py-5 text-left text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Exam Name
-                </th>
-                <th className={`px-6 py-5 text-left text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Description
-                </th>
-                <th className={`px-6 py-5 text-left text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Status
-                </th>
-                <th className={`px-6 py-5 text-left text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Created
-                </th>
-                <th className={`px-6 py-5 text-left text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Questions
-                </th>
-                <th className={`px-6 py-5 text-left text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Results
-                </th>
-                <th className={`px-6 py-5 text-left text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Actions
-                </th>
-                <th className={`px-6 py-5 text-left text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Mode
-                </th>
-                <th className={`px-6 py-5 text-left text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Toggle
-                      </th>
-                  </tr>
-                </thead>
-            <tbody>
-              {uploads.map((upload, index) => (
-                <tr 
-                  key={upload._id} 
-                  className={`${
-                    isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'
-                  } ${
-                    index !== uploads.length - 1 ? `border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}` : ''
-                  }`}
-                >
-                  <td className={`px-6 py-4 text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                        {upload.examName}
-                      </td>
-                  <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                        {upload.description}
-                      </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      upload.status === 'approved'
-                              ? isDarkMode
-                          ? 'bg-green-400/10 text-green-400' 
-                          : 'bg-green-100 text-green-700'
-                              : isDarkMode
-                          ? 'bg-yellow-400/10 text-yellow-400'
-                          : 'bg-yellow-100 text-yellow-700'
-                    }`}>
-                          {upload.status}
-                        </span>
-                      </td>
-                  <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                    {new Date(upload.createdAt).toLocaleDateString('en-GB')}
-                      </td>
-                  <td className={`px-6 py-4 text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                        {upload.totalQuestions}
-                      </td>
-                  <td className="px-6 py-4">
-                        {upload.status === "approved" ? (
+        <div className="flex justify-between items-center px-6 py-4 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}">
+          <h2 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            Your Exams
+          </h2>
+          <button
+            onClick={refreshExams}
+            disabled={isRefreshingExams}
+            className={`p-2 rounded-lg font-medium inline-flex items-center justify-center transition-all duration-200 ${
+              isDarkMode
+                ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+            }`}
+            title="Refresh Exams"
+          >
+            <FaSync className={isRefreshingExams ? 'animate-spin' : ''} />
+            <span className="ml-2 text-sm">Refresh</span>
+          </button>
+        </div>
+        <div className="overflow-x-auto">
+          {(loading || isRefreshingExams) ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <FaSync className="animate-spin text-violet-500 text-2xl mb-4" />
+              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                {isRefreshingExams ? 'Refreshing exams...' : 'Loading exams...'}
+              </p>
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <p className={`text-sm text-red-500`}>{error}</p>
+              <button 
+                onClick={refreshExams}
+                className={`mt-4 px-4 py-2 rounded-lg text-sm ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
+              >
+                Try Again
+              </button>
+            </div>
+          ) : uploads.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                No exams found. Create your first exam to get started.
+              </p>
+              <button 
+                onClick={() => navigate('/institute/exam/create')}
+                className={`mt-4 px-4 py-2 rounded-lg text-sm bg-violet-600 hover:bg-violet-700 text-white`}
+              >
+                Create Exam
+              </button>
+            </div>
+          ) : (
+            <table className="w-full">
+              <thead>
+                <tr className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <th className={`px-6 py-5 text-left text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Exam Name
+                  </th>
+                  <th className={`px-6 py-5 text-left text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Description
+                  </th>
+                  <th className={`px-6 py-5 text-left text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Status
+                  </th>
+                  <th className={`px-6 py-5 text-left text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Created
+                  </th>
+                  <th className={`px-6 py-5 text-left text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Questions
+                  </th>
+                  <th className={`px-6 py-5 text-left text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Results
+                  </th>
+                  <th className={`px-6 py-5 text-left text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Actions
+                  </th>
+                  <th className={`px-6 py-5 text-left text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Mode
+                  </th>
+                  <th className={`px-6 py-5 text-left text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Toggle
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {uploads.map((upload, index) => (
+                  <tr 
+                    key={upload._id} 
+                    className={`${
+                      isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'
+                    } ${
+                      index !== uploads.length - 1 ? `border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}` : ''
+                    }`}
+                  >
+                    <td className={`px-6 py-4 text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                          {upload.examName}
+                        </td>
+                    <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                          {upload.description}
+                        </td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        upload.status === 'approved'
+                                ? isDarkMode
+                            ? 'bg-green-400/10 text-green-400' 
+                            : 'bg-green-100 text-green-700'
+                                : isDarkMode
+                            ? 'bg-yellow-400/10 text-yellow-400'
+                            : 'bg-yellow-100 text-yellow-700'
+                      }`}>
+                            {upload.status}
+                          </span>
+                        </td>
+                    <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      {new Date(upload.createdAt).toLocaleDateString('en-GB')}
+                        </td>
+                    <td className={`px-6 py-4 text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                          {upload.totalQuestions}
+                        </td>
+                    <td className="px-6 py-4">
+                          {upload.status === "approved" ? (
+                            <button
+                              onClick={() => handleViewResults(upload._id)}
+                              className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                                isDarkMode
+                                  ? 'text-violet-400 hover:bg-violet-400/10'
+                                  : 'text-violet-600 hover:bg-violet-50'
+                              }`}
+                            >
+                              View Results
+                            </button>
+                          ) : (
+                            <span className={`text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                              Pending Approval
+                            </span>
+                          )}
+                        </td>
+                    <td className="px-6 py-4">
+                      {upload.status === "approved" ? (
+                        !upload.resultsReleased ? (
                           <button
-                            onClick={() => handleViewResults(upload._id)}
+                            onClick={() => handleReleaseResults(upload._id)}
                             className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                               isDarkMode
-                                ? 'text-violet-400 hover:bg-violet-400/10'
-                                : 'text-violet-600 hover:bg-violet-50'
+                                ? 'text-green-400 hover:bg-green-400/10'
+                                : 'text-green-600 hover:bg-green-50'
                             }`}
                           >
-                            View Results
+                            Release Results
                           </button>
                         ) : (
-                          <span className={`text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                            Pending Approval
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            isDarkMode ? 'bg-green-400/10 text-green-400' : 'bg-green-100 text-green-700'
+                          }`}>
+                            Results Released
                           </span>
-                        )}
-                      </td>
-                  <td className="px-6 py-4">
-                    {upload.status === "approved" ? (
-                      !upload.resultsReleased ? (
-                        <button
-                          onClick={() => handleReleaseResults(upload._id)}
-                          className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
-                            isDarkMode
+                        )
+                      ) : (
+                        <span className={`text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                          Pending Approval
+                        </span>
+                      )}
+                        </td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              upload.examMode
+                                ? isDarkMode
+                            ? 'bg-green-400/10 text-green-400' 
+                            : 'bg-green-100 text-green-700'
+                                : isDarkMode
+                            ? 'bg-red-400/10 text-red-400'
+                            : 'bg-red-100 text-red-700'
+                      }`}>
+                        {upload.examMode ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                    <td className="px-6 py-4">
+                          <button
+                            onClick={() => handleToggleExamMode(upload._id)}
+                            disabled={upload.status !== "approved"}
+                        className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                          upload.examMode
+                                  ? isDarkMode
+                              ? 'text-red-400 hover:bg-red-400/10'
+                              : 'text-red-600 hover:bg-red-50'
+                                  : isDarkMode
                               ? 'text-green-400 hover:bg-green-400/10'
                               : 'text-green-600 hover:bg-green-50'
-                          }`}
-                        >
-                          Release Results
-                        </button>
-                      ) : (
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          isDarkMode ? 'bg-green-400/10 text-green-400' : 'bg-green-100 text-green-700'
-                        }`}>
-                          Results Released
-                        </span>
-                      )
-                    ) : (
-                      <span className={`text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                        Pending Approval
-                      </span>
-                    )}
-                      </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            upload.examMode
-                              ? isDarkMode
-                          ? 'bg-green-400/10 text-green-400' 
-                          : 'bg-green-100 text-green-700'
-                              : isDarkMode
-                          ? 'bg-red-400/10 text-red-400'
-                          : 'bg-red-100 text-red-700'
-                    }`}>
-                      {upload.examMode ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                  <td className="px-6 py-4">
-                        <button
-                          onClick={() => handleToggleExamMode(upload._id)}
-                          disabled={upload.status !== "approved"}
-                      className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
-                        upload.examMode
-                                ? isDarkMode
-                            ? 'text-red-400 hover:bg-red-400/10'
-                            : 'text-red-600 hover:bg-red-50'
-                                : isDarkMode
-                            ? 'text-green-400 hover:bg-green-400/10'
-                            : 'text-green-600 hover:bg-green-50'
-                      } disabled:opacity-50 disabled:cursor-not-allowed`}
-                    >
-                      {upload.examMode ? 'Deactivate' : 'Activate'}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                          >
+                            {upload.examMode ? 'Deactivate' : 'Activate'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+          )}
         </div>
-            </div>
-          </motion.div>
+      </div>
+    </motion.div>
   );
 
   const renderResultsModal = () => {
@@ -534,64 +655,127 @@ const InstituteDashboard = () => {
 
                   <div className={`mt-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                     {examResults.length > 0 ? (
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className={isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}>
-                            <tr>
-                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Student
-                              </th>
-                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Score
-                              </th>
-                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Correct/Total
-                              </th>
-                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Time Taken
-                              </th>
-                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Submitted At
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                            {examResults.map((result) => (
-                              <tr key={result._id}>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className={`text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
-                                    {result.student?.name || 'Anonymous'}
+                      <div>
+                        {/* Results Summary */}
+                        <div className={`p-4 rounded-lg mb-4 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                          <h4 className={`text-sm font-medium mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                            Results Summary
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {(() => {
+                              const passingPercentage = selectedExam?.passingPercentage || 60;
+                              const totalStudents = examResults.length;
+                              const passedStudents = examResults.filter(r => r.score >= passingPercentage).length;
+                              const failedStudents = totalStudents - passedStudents;
+                              const passRate = totalStudents > 0 ? (passedStudents / totalStudents * 100).toFixed(1) : 0;
+                              
+                              return (
+                                <>
+                                  <div>
+                                    <div className="text-sm text-gray-500">Total Students</div>
+                                    <div className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                      {totalStudents}
+                                    </div>
                                   </div>
-                                  <div className="text-sm text-gray-500">
-                                    {result.student?.email || 'N/A'}
+                                  <div>
+                                    <div className="text-sm text-gray-500">Passed</div>
+                                    <div className={`text-xl font-semibold text-green-500`}>
+                                      {passedStudents} ({passRate}%)
+                                    </div>
                                   </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                                    result.score >= 70
-                                      ? 'bg-green-100 text-green-800'
-                                      : result.score >= 50
-                                        ? 'bg-yellow-100 text-yellow-800'
-                                        : 'bg-red-100 text-red-800'
-                                  }`}>
-                                    {result.score?.toFixed(1)}%
-                                  </span>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                  {result.correctAnswers}/{result.totalQuestions}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                  {result.timeTaken !== undefined && result.timeTaken !== null
-                                    ? `${Math.floor(result.timeTaken / 60)}m ${result.timeTaken % 60}s`
-                                    : 'N/A'}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                  {new Date(result.submittedAt).toLocaleString()}
-                                </td>
+                                  <div>
+                                    <div className="text-sm text-gray-500">Failed</div>
+                                    <div className={`text-xl font-semibold text-red-500`}>
+                                      {failedStudents} ({(100 - passRate).toFixed(1)}%)
+                                    </div>
+                                  </div>
+                                </>
+                              );
+                            })()}
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-4 mb-3">
+                          <div className="text-sm">
+                            <span className="font-medium">Passing Score: </span>
+                            <span>{selectedExam?.passingPercentage || 60}%</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className={`w-4 h-4 rounded ${isDarkMode ? 'bg-red-900/30' : 'bg-red-100'}`}></div>
+                            <span className="text-sm">Failed</span>
+                          </div>
+                        </div>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className={isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}>
+                              <tr>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Student
+                                </th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Score
+                                </th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Correct/Total
+                                </th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Time Taken
+                                </th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Submitted At
+                                </th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                            </thead>
+                            <tbody className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                              {examResults.map((result) => {
+                                // Get the passing percentage (default to 60 if not available)
+                                const passingPercentage = selectedExam?.passingPercentage || 60;
+                                // Check if student failed
+                                const hasFailed = result.score < passingPercentage;
+                                
+                                return (
+                                  <tr 
+                                    key={result._id}
+                                    className={`${hasFailed ? 
+                                      (isDarkMode ? 'bg-red-900/30' : 'bg-red-100') : ''
+                                    }`}
+                                  >
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                      <div className={`text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
+                                        {result.student?.name || 'Anonymous'}
+                                      </div>
+                                      <div className="text-sm text-gray-500">
+                                        {result.student?.email || 'N/A'}
+                                      </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                        result.score >= 70
+                                          ? 'bg-green-100 text-green-800'
+                                          : result.score >= passingPercentage
+                                            ? 'bg-yellow-100 text-yellow-800'
+                                            : 'bg-red-100 text-red-800'
+                                      }`}>
+                                        {result.score?.toFixed(1)}%
+                                      </span>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                      {result.correctAnswers}/{result.totalQuestions}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                      {result.timeTaken !== undefined && result.timeTaken !== null
+                                        ? `${Math.floor(result.timeTaken / 60)}m ${result.timeTaken % 60}s`
+                                        : 'N/A'}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                      {new Date(result.submittedAt).toLocaleString()}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
                     ) : (
                       <div className="text-center py-8">
