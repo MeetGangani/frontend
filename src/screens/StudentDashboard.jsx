@@ -500,16 +500,17 @@ const StudentDashboard = () => {
         // Check if the answer is an array (multiple choice) or single value
         if (isMultipleChoice && Array.isArray(answer)) {
           // For multiple choice questions, store the array of answers
-          // Make sure all values in the array are numbers
-          acc[key] = answer.map(ans => Number(ans));
+          // Make sure all values in the array are numbers and convert from 0-based to 1-based indexing
+          acc[key] = answer.map(ans => Number(ans) + 1);
         } else if (answer !== null && answer !== undefined) {
           // For single choice questions, store the single answer
-          acc[key] = Number(answer);
+          // Convert from 0-based to 1-based indexing
+          acc[key] = Number(answer) + 1;
         }
         return acc;    
       }, {});
 
-      console.log('All attempted answers:', attemptedAnswers);
+      console.log('All attempted answers (converted to 1-based indexing):', attemptedAnswers);
 
       const submissionData = {
         examId: currentExam._id,

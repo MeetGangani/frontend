@@ -1,19 +1,17 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useTheme } from '../context/ThemeContext';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FaArrowLeft, FaPlus, FaTrash, FaImage, FaCheck, FaTimes, FaEdit, FaFileExcel, FaUpload, FaGripVertical, FaSync, FaBars } from 'react-icons/fa';
-import axios from 'axios';
 import { showToast } from '../utils/toast';
+import { FaPlus, FaEdit, FaTrash, FaImage, FaFileExcel, FaUpload, FaArrowLeft, FaArrowRight, FaCheck, FaExclamationTriangle, FaTimes, FaBars } from 'react-icons/fa';
+import { motion, AnimatePresence } from 'framer-motion';
+import axios from 'axios';
 import config from '../config/config';
-import axiosInstance from '../utils/axiosConfig';
-import { toast } from 'react-hot-toast';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import axiosInstance from '../utils/axiosConfig';
 
 const InstituteExamCreationScreen = () => { 
   const { isDarkMode } = useTheme();
-  const { userInfo } = useSelector((state) => state.auth);
   const navigate = useNavigate();
   
   // Step tracking
@@ -844,6 +842,13 @@ const InstituteExamCreationScreen = () => {
           // Determine if it's single or multiple choice
           const isMultipleChoice = q.questionType === 'multiple';
           
+          console.log('Processing Excel question:', {
+            questionText: q.questionText,
+            questionType: q.questionType,
+            isMultipleChoice,
+            correctAnswer: q.correctAnswer
+          });
+          
           // Format options to match required structure
           const formattedOptions = Array.isArray(q.options) ? q.options.map(opt => {
             if (typeof opt === 'string') {
@@ -862,15 +867,44 @@ const InstituteExamCreationScreen = () => {
           let correctOptions = [];
           
           if (isMultipleChoice) {
-            correctOptions = Array.isArray(q.correctAnswer) 
-              ? q.correctAnswer.map(ans => parseInt(ans) - 1)
-              : q.correctAnswer 
-                ? [parseInt(q.correctAnswer) - 1] 
-                : [];
+            // For multiple choice, handle both array and string formats
+            if (Array.isArray(q.correctAnswer)) {
+              correctOptions = q.correctAnswer.map(ans => {
+                // Convert to zero-based index (Excel data is 1-based)
+                const index = parseInt(ans) - 1;
+                return isNaN(index) ? 0 : index;
+              });
+            } else if (typeof q.correctAnswer === 'string') {
+              // Handle comma-separated string format
+              correctOptions = q.correctAnswer.split(',').map(ans => {
+                const index = parseInt(ans.trim()) - 1;
+                return isNaN(index) ? 0 : index;
+              });
+            } else if (typeof q.correctAnswer === 'number') {
+              // Handle single number for multiple choice
+              correctOptions = [q.correctAnswer - 1];
+            }
+            
+            // Ensure correctOptions is valid
+            correctOptions = correctOptions.filter(index => 
+              index >= 0 && index < formattedOptions.length
+            );
+            
+            console.log('Multiple choice correct options:', correctOptions);
           } else {
-            correctOption = q.correctAnswer 
-              ? parseInt(q.correctAnswer) - 1 
-              : 0;
+            // For single choice
+            if (typeof q.correctAnswer === 'number') {
+              correctOption = q.correctAnswer - 1;
+            } else if (typeof q.correctAnswer === 'string') {
+              correctOption = parseInt(q.correctAnswer) - 1;
+            }
+            
+            // Ensure correctOption is valid
+            correctOption = isNaN(correctOption) || correctOption < 0 || correctOption >= formattedOptions.length 
+              ? 0 
+              : correctOption;
+              
+            console.log('Single choice correct option:', correctOption);
           }
           
           return {
@@ -1351,50 +1385,109 @@ const InstituteExamCreationScreen = () => {
                 Options {currentQuestion.questionType === 'multiple' && '(Select all correct answers)'}
               </label>
               {currentQuestion.options.map((option, index) => (
-                <div key={index} className="flex items-start gap-4">
-                  <button
-                    type="button"
-                    onClick={() => handleCorrectOptionChange(index)}
-                    className={`mt-2 p-2 rounded-lg transition-colors ${
-                      currentQuestion.questionType === 'single'
-                        ? currentQuestion.correctOption === index
-                          ? 'bg-green-500 text-white'
-                          : isDarkMode
-                            ? 'bg-gray-700 text-gray-300'
-                            : 'bg-gray-100 text-gray-700'
-                        : currentQuestion.correctOptions.includes(index)
-                          ? 'bg-green-500 text-white'
-                          : isDarkMode
-                            ? 'bg-gray-700 text-gray-300'
-                            : 'bg-gray-100 text-gray-700'
-                    }`}
-                  >
-                    {currentQuestion.questionType === 'single' ? (
-                      <span className="block w-4 h-4 rounded-full border-2 border-current flex items-center justify-center">
-                        {currentQuestion.correctOption === index && (
-                          <span className="block w-2 h-2 rounded-full bg-current" />
-                        )}
-                      </span>
-                    ) : (
-                      <span className="block w-4 h-4 rounded border-2 border-current flex items-center justify-center">
-                        {currentQuestion.correctOptions.includes(index) && (
-                          <span className="block w-2 h-2 bg-current" />
-                        )}
-                      </span>
-                    )}
-                  </button>
-                  <div className="flex-1">
+                <div key={index} className="flex flex-col gap-2">
+                  <div className="flex items-start gap-4">
+                    <button
+                      type="button"
+                      onClick={() => handleCorrectOptionChange(index)}
+                      className={`mt-2 p-2 rounded-lg transition-colors ${
+                        currentQuestion.questionType === 'single'
+                          ? currentQuestion.correctOption === index
+                            ? 'bg-green-500 text-white'
+                            : isDarkMode
+                              ? 'bg-gray-700 text-gray-300'
+                              : 'bg-gray-100 text-gray-700'
+                          : currentQuestion.correctOptions.includes(index)
+                            ? 'bg-green-500 text-white'
+                            : isDarkMode
+                              ? 'bg-gray-700 text-gray-300'
+                              : 'bg-gray-100 text-gray-700'
+                      }`}
+                    >
+                      {currentQuestion.questionType === 'single' ? (
+                        <span className="block w-4 h-4 rounded-full border-2 border-current flex items-center justify-center">
+                          {currentQuestion.correctOption === index && (
+                            <span className="block w-2 h-2 rounded-full bg-current" />
+                          )}
+                        </span>
+                      ) : (
+                        <span className="block w-4 h-4 rounded border-2 border-current flex items-center justify-center">
+                          {currentQuestion.correctOptions.includes(index) && (
+                            <span className="block w-2 h-2 bg-current" />
+                          )}
+                        </span>
+                      )}
+                    </button>
+                    <div className="flex-1">
+                      <input
+                        type="text"
+                        value={option.text}
+                        onChange={(e) => handleOptionTextChange(index, e.target.value)}
+                        placeholder={`Option ${index + 1}`}
+                        className={`w-full px-4 py-2 rounded-lg ${
+                          isDarkMode
+                            ? 'bg-gray-800 text-white border-gray-700 focus:border-violet-500'
+                            : 'bg-white text-gray-900 border-gray-300 focus:border-violet-500'
+                        } border focus:ring-2 focus:ring-violet-200 transition-colors`}
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Option Image Upload */}
+                  <div className="flex items-center gap-4 ml-10">
                     <input
-                      type="text"
-                      value={option.text}
-                      onChange={(e) => handleOptionTextChange(index, e.target.value)}
-                      placeholder={`Option ${index + 1}`}
-                      className={`w-full px-4 py-2 rounded-lg ${
-                        isDarkMode
-                          ? 'bg-gray-800 text-white border-gray-700 focus:border-violet-500'
-                          : 'bg-white text-gray-900 border-gray-300 focus:border-violet-500'
-                      } border focus:ring-2 focus:ring-violet-200 transition-colors`}
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleOptionImageUpload(e, index)}
+                      ref={(el) => (optionImageRefs.current[index] = el)}
+                      className="hidden"
+                      id={`option-image-upload-${index}`}
                     />
+                    <label
+                      htmlFor={`option-image-upload-${index}`}
+                      className={`flex items-center px-3 py-1 rounded-lg cursor-pointer transition-all duration-200 ${
+                        isDarkMode 
+                          ? 'bg-gray-700 hover:bg-gray-600 text-gray-300 border border-gray-600' 
+                          : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200'
+                      } ${isUploading && currentUploadingOptionIndex === index ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      {isUploading && currentUploadingOptionIndex === index ? (
+                        <>
+                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <FaImage className="mr-2" size={14} />
+                          {option.image ? 'Change Image' : 'Add Image'}
+                        </>
+                      )}
+                    </label>
+                    
+                    {option.image && (
+                      <div className="flex items-center gap-2">
+                        <div className="h-10 w-10 rounded overflow-hidden border border-gray-300">
+                          <img 
+                            src={option.imagePreview || option.image} 
+                            alt={`Option ${index + 1}`} 
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeOptionImage(index)}
+                          className={`p-1 rounded-full ${
+                            isDarkMode ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50' : 'bg-red-100 text-red-500 hover:bg-red-200'
+                          }`}
+                          title="Remove image"
+                        >
+                          <FaTrash size={12} />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -1934,50 +2027,109 @@ const InstituteExamCreationScreen = () => {
                     Options {currentQuestion.questionType === 'multiple' && '(Select all correct answers)'}
                   </label>
                   {currentQuestion.options.map((option, index) => (
-                    <div key={index} className="flex items-start gap-4">
-                      <button
-                        type="button"
-                        onClick={() => handleCorrectOptionChange(index)}
-                        className={`mt-2 p-2 rounded-lg transition-colors ${
-                          currentQuestion.questionType === 'single'
-                            ? currentQuestion.correctOption === index
-                              ? 'bg-green-500 text-white'
-                              : isDarkMode
-                                ? 'bg-gray-700 text-gray-300'
-                                : 'bg-gray-100 text-gray-700'
-                            : currentQuestion.correctOptions.includes(index)
-                              ? 'bg-green-500 text-white'
-                              : isDarkMode
-                                ? 'bg-gray-700 text-gray-300'
-                                : 'bg-gray-100 text-gray-700'
-                        }`}
-                      >
-                        {currentQuestion.questionType === 'single' ? (
-                          <span className="block w-4 h-4 rounded-full border-2 border-current flex items-center justify-center">
-                            {currentQuestion.correctOption === index && (
-                              <span className="block w-2 h-2 rounded-full bg-current" />
-                            )}
-                          </span>
-                        ) : (
-                          <span className="block w-4 h-4 rounded border-2 border-current flex items-center justify-center">
-                            {currentQuestion.correctOptions.includes(index) && (
-                              <span className="block w-2 h-2 bg-current" />
-                            )}
-                          </span>
-                        )}
-                      </button>
-                      <div className="flex-1">
+                    <div key={index} className="flex flex-col gap-2">
+                      <div className="flex items-start gap-4">
+                        <button
+                          type="button"
+                          onClick={() => handleCorrectOptionChange(index)}
+                          className={`mt-2 p-2 rounded-lg transition-colors ${
+                            currentQuestion.questionType === 'single'
+                              ? currentQuestion.correctOption === index
+                                ? 'bg-green-500 text-white'
+                                : isDarkMode
+                                  ? 'bg-gray-700 text-gray-300'
+                                  : 'bg-gray-100 text-gray-700'
+                              : currentQuestion.correctOptions.includes(index)
+                                ? 'bg-green-500 text-white'
+                                : isDarkMode
+                                  ? 'bg-gray-700 text-gray-300'
+                                  : 'bg-gray-100 text-gray-700'
+                          }`}
+                        >
+                          {currentQuestion.questionType === 'single' ? (
+                            <span className="block w-4 h-4 rounded-full border-2 border-current flex items-center justify-center">
+                              {currentQuestion.correctOption === index && (
+                                <span className="block w-2 h-2 rounded-full bg-current" />
+                              )}
+                            </span>
+                          ) : (
+                            <span className="block w-4 h-4 rounded border-2 border-current flex items-center justify-center">
+                              {currentQuestion.correctOptions.includes(index) && (
+                                <span className="block w-2 h-2 bg-current" />
+                              )}
+                            </span>
+                          )}
+                        </button>
+                        <div className="flex-1">
+                          <input
+                            type="text"
+                            value={option.text}
+                            onChange={(e) => handleOptionTextChange(index, e.target.value)}
+                            placeholder={`Option ${index + 1}`}
+                            className={`w-full px-4 py-2 rounded-lg ${
+                              isDarkMode
+                                ? 'bg-gray-800 text-white border-gray-700 focus:border-violet-500'
+                                : 'bg-white text-gray-900 border-gray-300 focus:border-violet-500'
+                            } border focus:ring-2 focus:ring-violet-200 transition-colors`}
+                          />
+                        </div>
+                      </div>
+                      
+                      {/* Option Image Upload */}
+                      <div className="flex items-center gap-4 ml-10">
                         <input
-                          type="text"
-                          value={option.text}
-                          onChange={(e) => handleOptionTextChange(index, e.target.value)}
-                          placeholder={`Option ${index + 1}`}
-                          className={`w-full px-4 py-2 rounded-lg ${
-                            isDarkMode
-                              ? 'bg-gray-800 text-white border-gray-700 focus:border-violet-500'
-                              : 'bg-white text-gray-900 border-gray-300 focus:border-violet-500'
-                          } border focus:ring-2 focus:ring-violet-200 transition-colors`}
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleOptionImageUpload(e, index)}
+                          ref={(el) => (optionImageRefs.current[index] = el)}
+                          className="hidden"
+                          id={`option-image-upload-${index}`}
                         />
+                        <label
+                          htmlFor={`option-image-upload-${index}`}
+                          className={`flex items-center px-3 py-1 rounded-lg cursor-pointer transition-all duration-200 ${
+                            isDarkMode 
+                              ? 'bg-gray-700 hover:bg-gray-600 text-gray-300 border border-gray-600' 
+                              : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200'
+                          } ${isUploading && currentUploadingOptionIndex === index ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          {isUploading && currentUploadingOptionIndex === index ? (
+                            <>
+                              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <FaImage className="mr-2" size={14} />
+                              {option.image ? 'Change Image' : 'Add Image'}
+                            </>
+                          )}
+                        </label>
+                        
+                        {option.image && (
+                          <div className="flex items-center gap-2">
+                            <div className="h-10 w-10 rounded overflow-hidden border border-gray-300">
+                              <img 
+                                src={option.imagePreview || option.image} 
+                                alt={`Option ${index + 1}`} 
+                                className="h-full w-full object-cover"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeOptionImage(index)}
+                              className={`p-1 rounded-full ${
+                                isDarkMode ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50' : 'bg-red-100 text-red-500 hover:bg-red-200'
+                              }`}
+                              title="Remove image"
+                            >
+                              <FaTrash size={12} />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
