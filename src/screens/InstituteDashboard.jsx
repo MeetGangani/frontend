@@ -581,7 +581,9 @@ const InstituteDashboard = () => {
                                   {result.correctAnswers}/{result.totalQuestions}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                  {Math.floor(result.timeTaken / 60)}m {result.timeTaken % 60}s
+                                  {result.timeTaken !== undefined && result.timeTaken !== null
+                                    ? `${Math.floor(result.timeTaken / 60)}m ${result.timeTaken % 60}s`
+                                    : 'N/A'}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                                   {new Date(result.submittedAt).toLocaleString()}
