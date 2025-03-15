@@ -7,6 +7,7 @@ import axios from 'axios';
 import { useTheme } from '../context/ThemeContext';
 import { motion } from 'framer-motion';
 import { FaTrash, FaSearch, FaSync } from 'react-icons/fa';
+import config from '../config/config';
 
 const AdminDashboard = () => {
   const { isDarkMode } = useTheme();
@@ -717,6 +718,48 @@ const AdminDashboard = () => {
             </div>
           </div>
         )}
+
+        {/* Add a new section for fixing exam encryption keys */}
+        <div className="mt-8">
+          <h2 className={`text-xl font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+            Maintenance Tools
+          </h2>
+          <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow`}>
+            <h3 className={`text-lg font-medium mb-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+              Fix Exam Encryption Keys
+            </h3>
+            <p className={`mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              This tool fixes exams with missing or mismatched encryption keys.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <button
+                onClick={async () => {
+                  try {
+                    setLoading(true);
+                    const response = await axios.get(
+                      `${config.API_BASE_URL}/api/exams/fix-encryption-keys`,
+                      { withCredentials: true }
+                    );
+                    showToast.success(response.data.message);
+                  } catch (error) {
+                    console.error('Error fixing keys:', error);
+                    showToast.error('Failed to fix encryption keys');
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                className={`px-4 py-2 rounded ${
+                  isDarkMode
+                    ? 'bg-blue-600 hover:bg-blue-700'
+                    : 'bg-blue-500 hover:bg-blue-600'
+                } text-white`}
+                disabled={loading}
+              >
+                {loading ? 'Processing...' : 'Fix All Encryption Keys'}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

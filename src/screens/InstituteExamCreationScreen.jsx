@@ -665,7 +665,11 @@ const InstituteExamCreationScreen = () => {
     return questions.map(q => ({
       question: q.questionText,
       options: q.options.map(opt => opt.text),
-      correctAnswer: q.correctOption + 1  // Convert to 1-based index
+      questionType: q.questionType,
+      allowMultiple: q.questionType === 'multiple',
+      correctAnswer: q.questionType === 'single' 
+        ? q.correctOption + 1  // Convert to 1-based index for single choice
+        : q.correctOptions.map(opt => opt + 1) // Convert to 1-based index for multiple choice
     }));
   };
 
@@ -694,12 +698,14 @@ const InstituteExamCreationScreen = () => {
           questionText: q.questionText,
           questionImage: q.questionImage,
           questionType: q.questionType,
+          allowMultiple: q.questionType === 'multiple',
           options: q.options.map(opt => ({
-            text: opt.text,
-            image: opt.image
+            text: typeof opt === 'string' ? opt : (opt.text || ''),
+            image: typeof opt === 'string' ? null : (opt.image || null)
           })),
-          correctOption: q.questionType === 'single' ? q.correctOption : undefined,
-          correctOptions: q.questionType === 'multiple' ? q.correctOptions : undefined
+          correctAnswer: q.questionType === 'multiple'
+            ? q.correctOptions.map(index => index + 1)  // Convert to 1-based index for multiple choice
+            : q.correctOption + 1  // Convert to 1-based index for single choice
         }))
       };
 
@@ -714,7 +720,7 @@ const InstituteExamCreationScreen = () => {
       }
     } catch (error) {
       console.error('Error submitting exam:', error);
-      showToast.error(error.message || 'Failed to create exam. Please try again.');
+      showToast.error(error.response?.data?.error || 'Failed to create exam. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -838,15 +844,43 @@ const InstituteExamCreationScreen = () => {
           // Determine if it's single or multiple choice
           const isMultipleChoice = q.questionType === 'multiple';
           
+          // Format options to match required structure
+          const formattedOptions = Array.isArray(q.options) ? q.options.map(opt => {
+            if (typeof opt === 'string') {
+              return { text: opt, image: null };
+            }
+            return opt;
+          }) : [];
+
+          // Ensure we have at least 2 options
+          while (formattedOptions.length < 2) {
+            formattedOptions.push({ text: '', image: null });
+          }
+          
+          // Handle correct answers
+          let correctOption = 0;
+          let correctOptions = [];
+          
+          if (isMultipleChoice) {
+            correctOptions = Array.isArray(q.correctAnswer) 
+              ? q.correctAnswer.map(ans => parseInt(ans) - 1)
+              : q.correctAnswer 
+                ? [parseInt(q.correctAnswer) - 1] 
+                : [];
+          } else {
+            correctOption = q.correctAnswer 
+              ? parseInt(q.correctAnswer) - 1 
+              : 0;
+          }
+          
           return {
-            questionText: q.questionText,
-            questionType: q.questionType, // 'single' or 'multiple'
+            questionText: q.questionText || '',
+            questionType: isMultipleChoice ? 'multiple' : 'single',
             questionImage: null,
             questionImagePreview: null,
-            options: q.options,
-            // For single-choice, set correctOption; for multiple-choice, set correctOptions
-            correctOption: !isMultipleChoice ? q.correctOption : 0,
-            correctOptions: isMultipleChoice ? q.correctOptions : []
+            options: formattedOptions,
+            correctOption: isMultipleChoice ? 0 : correctOption,
+            correctOptions: isMultipleChoice ? correctOptions : []
           };
         });
         
@@ -1267,164 +1301,103 @@ const InstituteExamCreationScreen = () => {
             
             {/* Question Type Selection */}
             <div className="mb-6">
-              <label className="block text-sm font-medium mb-2">
+              <label className={`block text-sm font-medium mb-2 ${
+                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+              }`}>
                 Question Type
               </label>
-              <div className="flex space-x-4">
+              <div className="flex gap-4">
                 <button
                   type="button"
                   onClick={() => handleQuestionTypeChange('single')}
-                  className={`px-4 py-2 rounded-lg ${
+                  className={`px-4 py-2 rounded-lg flex items-center ${
                     currentQuestion.questionType === 'single'
-                      ? isDarkMode 
-                        ? 'bg-violet-700 text-white' 
-                        : 'bg-violet-600 text-white'
-                      : isDarkMode 
-                        ? 'bg-gray-700 text-gray-300' 
-                        : 'bg-gray-200 text-gray-700'
+                      ? 'bg-violet-600 text-white'
+                      : isDarkMode
+                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
+                  <span className="mr-2">○</span>
                   Single Choice
                 </button>
                 <button
                   type="button"
                   onClick={() => handleQuestionTypeChange('multiple')}
-                  className={`px-4 py-2 rounded-lg ${
+                  className={`px-4 py-2 rounded-lg flex items-center ${
                     currentQuestion.questionType === 'multiple'
-                      ? isDarkMode 
-                        ? 'bg-violet-700 text-white' 
-                        : 'bg-violet-600 text-white'
-                      : isDarkMode 
-                        ? 'bg-gray-700 text-gray-300' 
-                        : 'bg-gray-200 text-gray-700'
+                      ? 'bg-violet-600 text-white'
+                      : isDarkMode
+                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
+                  <span className="mr-2">☐</span>
                   Multiple Choice
                 </button>
               </div>
+              {currentQuestion.questionType === 'multiple' && (
+                <p className={`mt-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Students will be able to select multiple answers for this question
+                </p>
+              )}
             </div>
             
             {/* Options */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-4">
-                Options*
+            <div className="space-y-4">
+              <label className={`block text-sm font-medium ${
+                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+              }`}>
+                Options {currentQuestion.questionType === 'multiple' && '(Select all correct answers)'}
               </label>
-              
-              <div className="space-y-4">
-                {currentQuestion.options.map((option, index) => (
-                  <div 
-                    key={index}
-                    className={`p-4 rounded-lg ${
-                      isDarkMode ? 'bg-gray-800' : 'bg-gray-50'
+              {currentQuestion.options.map((option, index) => (
+                <div key={index} className="flex items-start gap-4">
+                  <button
+                    type="button"
+                    onClick={() => handleCorrectOptionChange(index)}
+                    className={`mt-2 p-2 rounded-lg transition-colors ${
+                      currentQuestion.questionType === 'single'
+                        ? currentQuestion.correctOption === index
+                          ? 'bg-green-500 text-white'
+                          : isDarkMode
+                            ? 'bg-gray-700 text-gray-300'
+                            : 'bg-gray-100 text-gray-700'
+                        : currentQuestion.correctOptions.includes(index)
+                          ? 'bg-green-500 text-white'
+                          : isDarkMode
+                            ? 'bg-gray-700 text-gray-300'
+                            : 'bg-gray-100 text-gray-700'
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center">
-                        <span className="font-medium mr-2">
-                          Option {String.fromCharCode(65 + index)}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleCorrectOptionChange(index)}
-                          className={`ml-2 p-1 rounded-full ${
-                            currentQuestion.questionType === 'single'
-                              ? currentQuestion.correctOption === index
-                                ? isDarkMode 
-                                  ? 'bg-green-900 text-green-300' 
-                                  : 'bg-green-500 text-white'
-                                : isDarkMode 
-                                  ? 'bg-gray-700 text-gray-400' 
-                                  : 'bg-gray-200 text-gray-500'
-                              : currentQuestion.correctOptions.includes(index)
-                                ? isDarkMode 
-                                  ? 'bg-green-900 text-green-300' 
-                                  : 'bg-green-500 text-white'
-                                : isDarkMode 
-                                  ? 'bg-gray-700 text-gray-400' 
-                                  : 'bg-gray-200 text-gray-500'
-                          }`}
-                          title={
-                            currentQuestion.questionType === 'single'
-                              ? currentQuestion.correctOption === index ? "Correct answer" : "Mark as correct"
-                              : currentQuestion.correctOptions.includes(index) ? "Correct answer" : "Mark as correct"
-                          }
-                        >
-                          <FaCheck className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                    
+                    {currentQuestion.questionType === 'single' ? (
+                      <span className="block w-4 h-4 rounded-full border-2 border-current flex items-center justify-center">
+                        {currentQuestion.correctOption === index && (
+                          <span className="block w-2 h-2 rounded-full bg-current" />
+                        )}
+                      </span>
+                    ) : (
+                      <span className="block w-4 h-4 rounded border-2 border-current flex items-center justify-center">
+                        {currentQuestion.correctOptions.includes(index) && (
+                          <span className="block w-2 h-2 bg-current" />
+                        )}
+                      </span>
+                    )}
+                  </button>
+                  <div className="flex-1">
                     <input
                       type="text"
                       value={option.text}
                       onChange={(e) => handleOptionTextChange(index, e.target.value)}
-                      className={`w-full px-4 py-2 rounded-lg border ${
-                        isDarkMode 
-                          ? 'bg-gray-700 border-gray-600 text-white focus:border-violet-500' 
-                          : 'bg-white border-gray-300 text-gray-900 focus:border-violet-500'
-                      } focus:ring-2 focus:ring-violet-500/20 focus:outline-none mb-3`}
-                      placeholder={`Enter option ${String.fromCharCode(65 + index)} text`}
+                      placeholder={`Option ${index + 1}`}
+                      className={`w-full px-4 py-2 rounded-lg ${
+                        isDarkMode
+                          ? 'bg-gray-800 text-white border-gray-700 focus:border-violet-500'
+                          : 'bg-white text-gray-900 border-gray-300 focus:border-violet-500'
+                      } border focus:ring-2 focus:ring-violet-200 transition-colors`}
                     />
-                    
-                    <div className="flex items-center">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleOptionImageUpload(e, index)}
-                        ref={(el) => optionImageRefs.current[index] = el}
-                        className="hidden"
-                        id={`option-image-upload-modal-${index}`}
-                      />
-                      <label
-                        htmlFor={`option-image-upload-modal-${index}`}
-                        className={`flex items-center px-3 py-1.5 rounded-lg cursor-pointer transition-all duration-200 ${
-                          isDarkMode 
-                            ? 'bg-gray-700 hover:bg-gray-600 text-gray-300 border border-gray-600' 
-                            : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200'
-                        } text-sm ${isUploading && currentUploadingOptionIndex === index ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      >
-                        {isUploading && currentUploadingOptionIndex === index ? (
-                          <>
-                            <svg className="animate-spin -ml-1 mr-1.5 h-4 w-4 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Uploading...
-                          </>
-                        ) : (
-                          <>
-                            <FaImage className="mr-1.5" />
-                            {option.image ? 'Change Image' : 'Add Image'}
-                          </>
-                        )}
-                      </label>
-                      
-                      {option.imagePreview && (
-                        <div className="ml-4 flex items-center">
-                          <img 
-                            src={option.imagePreview} 
-                            alt={`Option ${String.fromCharCode(65 + index)} Preview`} 
-                            className="h-12 object-contain rounded-lg border border-gray-200 dark:border-gray-700"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeOptionImage(index)}
-                            className={`ml-2 p-1.5 rounded-full transition-colors duration-200 ${
-                              isDarkMode 
-                                ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400' 
-                                : 'bg-red-50 hover:bg-red-100 text-red-600'
-                            }`}
-                            title="Remove image"
-                            disabled={isUploading}
-                          >
-                            <FaTimes />
-                          </button>
-                        </div>
-                      )}
-                    </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
             
             {/* Action Buttons */}
@@ -1911,177 +1884,107 @@ const InstituteExamCreationScreen = () => {
                 
                 {/* Question Type Selection */}
                 <div className="mb-6">
-                  <label className="block text-sm font-medium mb-2">
+                  <label className={`block text-sm font-medium mb-2 ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
                     Question Type
                   </label>
-                  <div className="flex space-x-4">
+                  <div className="flex gap-4">
                     <button
                       type="button"
                       onClick={() => handleQuestionTypeChange('single')}
-                      className={`px-5 py-2.5 rounded-lg font-medium transition-all duration-200 ${
+                      className={`px-4 py-2 rounded-lg flex items-center ${
                         currentQuestion.questionType === 'single'
-                          ? isDarkMode 
-                            ? 'bg-violet-600 text-white ring-2 ring-violet-500/50' 
-                            : 'bg-violet-600 text-white ring-2 ring-violet-500/50'
-                          : isDarkMode 
-                            ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                          ? 'bg-violet-600 text-white'
+                          : isDarkMode
+                            ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
+                      <span className="mr-2">○</span>
                       Single Choice
                     </button>
                     <button
                       type="button"
                       onClick={() => handleQuestionTypeChange('multiple')}
-                      className={`px-5 py-2.5 rounded-lg font-medium transition-all duration-200 ${
+                      className={`px-4 py-2 rounded-lg flex items-center ${
                         currentQuestion.questionType === 'multiple'
-                          ? isDarkMode 
-                            ? 'bg-violet-600 text-white ring-2 ring-violet-500/50' 
-                            : 'bg-violet-600 text-white ring-2 ring-violet-500/50'
-                          : isDarkMode 
-                            ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                          ? 'bg-violet-600 text-white'
+                          : isDarkMode
+                            ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
+                      <span className="mr-2">☐</span>
                       Multiple Choice
                     </button>
                   </div>
-                  <p className={`mt-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    {currentQuestion.questionType === 'single' 
-                      ? 'Students can select only one correct answer.' 
-                      : 'Students can select multiple correct answers.'}
-                  </p>
+                  {currentQuestion.questionType === 'multiple' && (
+                    <p className={`mt-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Students will be able to select multiple answers for this question
+                    </p>
+                  )}
                 </div>
                 
                 {/* Options */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium mb-4">
-                    Options*
+                <div className="space-y-4">
+                  <label className={`block text-sm font-medium ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Options {currentQuestion.questionType === 'multiple' && '(Select all correct answers)'}
                   </label>
-                  
-                  <div className="space-y-4">
-                    {currentQuestion.options.map((option, index) => (
-                      <div 
-                        key={index}
-                        className={`p-5 rounded-lg border ${
-                          isDarkMode 
-                            ? 'bg-gray-900/50 border-gray-700' 
-                            : 'bg-gray-50 border-gray-200'
+                  {currentQuestion.options.map((option, index) => (
+                    <div key={index} className="flex items-start gap-4">
+                      <button
+                        type="button"
+                        onClick={() => handleCorrectOptionChange(index)}
+                        className={`mt-2 p-2 rounded-lg transition-colors ${
+                          currentQuestion.questionType === 'single'
+                            ? currentQuestion.correctOption === index
+                              ? 'bg-green-500 text-white'
+                              : isDarkMode
+                                ? 'bg-gray-700 text-gray-300'
+                                : 'bg-gray-100 text-gray-700'
+                            : currentQuestion.correctOptions.includes(index)
+                              ? 'bg-green-500 text-white'
+                              : isDarkMode
+                                ? 'bg-gray-700 text-gray-300'
+                                : 'bg-gray-100 text-gray-700'
                         }`}
                       >
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center">
-                            <span className={`text-lg font-medium ${
-                              isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                            }`}>
-                              Option {String.fromCharCode(65 + index)}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleCorrectOptionChange(index)}
-                              className={`ml-3 p-1.5 rounded-full transition-all duration-200 ${
-                                currentQuestion.questionType === 'single'
-                                  ? currentQuestion.correctOption === index
-                                    ? isDarkMode 
-                                      ? 'bg-green-500/20 text-green-400 ring-2 ring-green-500/50' 
-                                      : 'bg-green-100 text-green-700 ring-2 ring-green-500/50'
-                                    : isDarkMode 
-                                      ? 'bg-gray-800 text-gray-400 hover:bg-gray-700' 
-                                      : 'bg-white text-gray-400 hover:bg-gray-100 border border-gray-200'
-                                  : currentQuestion.correctOptions.includes(index)
-                                    ? isDarkMode 
-                                      ? 'bg-green-500/20 text-green-400 ring-2 ring-green-500/50' 
-                                      : 'bg-green-100 text-green-700 ring-2 ring-green-500/50'
-                                    : isDarkMode 
-                                      ? 'bg-gray-800 text-gray-400 hover:bg-gray-700' 
-                                      : 'bg-white text-gray-400 hover:bg-gray-100 border border-gray-200'
-                              }`}
-                              title={
-                                currentQuestion.questionType === 'single'
-                                  ? currentQuestion.correctOption === index ? "Correct answer" : "Mark as correct"
-                                  : currentQuestion.correctOptions.includes(index) ? "Correct answer" : "Mark as correct"
-                              }
-                            >
-                              <FaCheck className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                        
+                        {currentQuestion.questionType === 'single' ? (
+                          <span className="block w-4 h-4 rounded-full border-2 border-current flex items-center justify-center">
+                            {currentQuestion.correctOption === index && (
+                              <span className="block w-2 h-2 rounded-full bg-current" />
+                            )}
+                          </span>
+                        ) : (
+                          <span className="block w-4 h-4 rounded border-2 border-current flex items-center justify-center">
+                            {currentQuestion.correctOptions.includes(index) && (
+                              <span className="block w-2 h-2 bg-current" />
+                            )}
+                          </span>
+                        )}
+                      </button>
+                      <div className="flex-1">
                         <input
                           type="text"
                           value={option.text}
                           onChange={(e) => handleOptionTextChange(index, e.target.value)}
-                          className={`w-full px-4 py-3 rounded-lg border text-base transition-colors duration-200 ${
-                            isDarkMode 
-                              ? 'bg-gray-800 border-gray-700 text-white focus:border-violet-500' 
-                              : 'bg-white border-gray-300 text-gray-900 focus:border-violet-500'
-                          } focus:ring-2 focus:ring-violet-500/20 focus:outline-none mb-3`}
-                          placeholder={`Enter option ${String.fromCharCode(65 + index)} text`}
+                          placeholder={`Option ${index + 1}`}
+                          className={`w-full px-4 py-2 rounded-lg ${
+                            isDarkMode
+                              ? 'bg-gray-800 text-white border-gray-700 focus:border-violet-500'
+                              : 'bg-white text-gray-900 border-gray-300 focus:border-violet-500'
+                          } border focus:ring-2 focus:ring-violet-200 transition-colors`}
                         />
-                        
-                        <div className="flex items-center">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => handleOptionImageUpload(e, index)}
-                            ref={(el) => optionImageRefs.current[index] = el}
-                            className="hidden"
-                            id={`option-image-upload-${index}`}
-                          />
-                          <label
-                            htmlFor={`option-image-upload-${index}`}
-                            className={`flex items-center px-3 py-1.5 rounded-lg cursor-pointer transition-all duration-200 ${
-                              isDarkMode 
-                                ? 'bg-gray-700 hover:bg-gray-600 text-gray-300 border border-gray-600' 
-                                : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200'
-                            } text-sm ${isUploading && currentUploadingOptionIndex === index ? 'opacity-50 cursor-not-allowed' : ''}`}
-                          >
-                            {isUploading && currentUploadingOptionIndex === index ? (
-                              <>
-                                <svg className="animate-spin -ml-1 mr-1.5 h-4 w-4 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Uploading...
-                              </>
-                            ) : (
-                              <>
-                                <FaImage className="mr-1.5" />
-                                {option.image ? 'Change Image' : 'Add Image'}
-                              </>
-                            )}
-                          </label>
-                          
-                          {option.imagePreview && (
-                            <div className="ml-4 flex items-center">
-                              <img 
-                                src={option.imagePreview} 
-                                alt={`Option ${String.fromCharCode(65 + index)} Preview`} 
-                                className="h-12 object-contain rounded-lg border border-gray-200 dark:border-gray-700"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => removeOptionImage(index)}
-                                className={`ml-2 p-1.5 rounded-full transition-colors duration-200 ${
-                                  isDarkMode 
-                                    ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400' 
-                                    : 'bg-red-50 hover:bg-red-100 text-red-600'
-                                }`}
-                                title="Remove image"
-                                disabled={isUploading}
-                              >
-                                <FaTimes />
-                              </button>
-                            </div>
-                          )}
-                        </div>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
                 
                 {/* Action Buttons */}
-                <div className="flex justify-end space-x-4">
+                <div className="flex justify-end space-x-3">
                   {editingQuestionIndex !== null && (
                     <button
                       type="button"

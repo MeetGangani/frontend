@@ -5,6 +5,13 @@ const config = {
     : 'http://localhost:3000',
   TOKEN_KEY: 'userToken',
   USER_INFO: 'userInfo',
+  _config: {
+    // Add any additional configuration needed by providers
+    provider: {
+      enabled: true,
+      options: {}
+    }
+  }
 };
 
 export default config; 

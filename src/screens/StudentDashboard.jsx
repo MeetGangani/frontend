@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { useTheme } from '../context/ThemeContext';
 import config from '../config/config.js';
@@ -18,6 +18,8 @@ const StudentDashboard = () => {
   const [examSubmitting, setExamSubmitting] = useState(false);
   const [ipfsHash, setIpfsHash] = useState('');
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [keyboardShortcutsEnabled, setKeyboardShortcutsEnabled] = useState(true);
+  const optionsRef = useRef([]);
 
   // Initialize activeTab after isExamMode is declared
   const [activeTab, setActiveTab] = useState(() => {
@@ -327,71 +329,94 @@ const StudentDashboard = () => {
       }
 
       // First, check if exam mode is enabled
-      const examModeResponse = await axios.get(
-        `${config.API_BASE_URL}/api/exams/check-mode/${ipfsHash.trim()}`,
-        { withCredentials: true }
-      );
+      try {
+        const examModeResponse = await axios.get(
+          `${config.API_BASE_URL}/api/exams/check-mode/${ipfsHash.trim()}`,
+          { withCredentials: true }
+        );
 
-      if (!examModeResponse.data.examMode) {
-        setError('This exam has not been started by the institute yet. Please wait for the institute to enable exam mode.');
-        showToast.error('Exam has not been started yet');
+        if (!examModeResponse.data.examMode) {
+          setError('This exam has not been started by the institute yet. Please wait for the institute to enable exam mode.');
+          showToast.error('Exam has not been started yet');
+          setLoading(false);
+          return;
+        }
+      } catch (modeError) {
+        console.error('Error checking exam mode:', modeError);
+        if (modeError.response && modeError.response.status === 404) {
+          setError('Exam not found. Please check the IPFS hash.');
+          showToast.error('Exam not found. Please check the IPFS hash.');
+        } else {
+          setError('Failed to check exam mode. Please try again.');
+          showToast.error('Failed to check exam mode');
+        }
         setLoading(false);
         return;
       }
 
       await enterFullscreen();
 
-      const response = await axios.post(
-        `${config.API_BASE_URL}/api/exams/start`,
-        { ipfsHash: ipfsHash.trim() },
-        {
-          withCredentials: true,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
+      try {
+        const response = await axios.post(
+          `${config.API_BASE_URL}/api/exams/start`,
+          { ipfsHash: ipfsHash.trim() },
+          {
+            withCredentials: true,
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            }
           }
-        }
-      );
+        );
 
-      // Check if the response is valid
-      if (response.status === 200) {
-        const examData = response.data;
-        setCurrentExam(examData);
-        setTimeLeft(examData.timeLimit * 60);
-        setAnswers({});
-        setCurrentQuestionIndex(0);
-        setActiveTab('exam');
-        setIsExamMode(true);
+        // Check if the response is valid
+        if (response.status === 200) {
+          const examData = response.data;
+          setCurrentExam(examData);
+          setTimeLeft(examData.timeLimit * 60);
+          setAnswers({});
+          setCurrentQuestionIndex(0);
+          setActiveTab('exam');
+          setIsExamMode(true);
+          
+          // Save exam state
+          const examState = {
+            examData: examData,
+            timeRemaining: examData.timeLimit * 60,
+            currentAnswers: {},
+            questionIndex: 0
+          };
+          localStorage.setItem('examState', JSON.stringify(examState));
+          notifyExamStateChange(true);
+        }
+      } catch (startError) {
+        await exitFullscreen();
+        console.error('Start exam error:', startError);
         
-        // Save exam state
-        const examState = {
-          examData: examData,
-          timeRemaining: examData.timeLimit * 60,
-          currentAnswers: {},
-          questionIndex: 0
-        };
-        localStorage.setItem('examState', JSON.stringify(examState));
-        notifyExamStateChange(true);
+        if (startError.response) {
+          if (startError.response.status === 404) {
+            setError('Exam not found. Please check the IPFS hash.');
+            showToast.error('Exam not found. Please check the IPFS hash.');
+          } else if (startError.response.status === 500) {
+            setError('Server error: ' + (startError.response.data?.message || 'Failed to prepare exam. This may be due to encryption issues.'));
+            showToast.error('Server error. Please contact your administrator.');
+          } else if (startError.response.data?.message) {
+            setError(startError.response.data.message);
+            showToast.error(startError.response.data.message);
+          } else {
+            setError('An unexpected error occurred. Please try again.');
+            showToast.error('An unexpected error occurred. Please try again.');
+          }
+        } else {
+          setError('Network error. Please check your connection and try again.');
+          showToast.error('Network error');
+        }
       }
     } catch (error) {
       await exitFullscreen();
       console.error('Start exam error:', error);
-      
-      if (error.response) {
-        if (error.response.status === 404) {
-          setError('Exam not found. Please check the IPFS hash.');
-          showToast.error('Exam not found. Please check the IPFS hash.');
-        } else if (error.response.data?.message) {
-          setError(error.response.data.message);
-          showToast.error(error.response.data.message);
-        } else {
-          setError('An unexpected error occurred. Please try again.');
-          showToast.error('An unexpected error occurred. Please try again.');
-        }
-      } else {
-        setError('Invalid Exam Code');
-        showToast.error('Invalid Exam Code');
-      }
+      setError('Failed to start exam. Please try again later.');
+      showToast.error('Failed to start exam');
     } finally {
       setLoading(false);
     }
@@ -410,17 +435,47 @@ const StudentDashboard = () => {
   };
 
   const handleAnswerSelect = (questionIndex, answerIndex) => {
-    try {
-      const updatedAnswers = {
-        ...answers,
-        [questionIndex]: answerIndex
-      };
-      setAnswers(updatedAnswers);
-      saveExamState(updatedAnswers);
-    } catch (error) {
-      console.error('Error saving answer:', error);
-      showToast.error('Failed to save answer');
+    // Debug log for multiple choice questions
+    if (questionIndex === 4) { // Assuming question 5 is index 4
+      console.log('Selecting answer for question 5:', {
+        questionIndex,
+        answerIndex,
+        isMultipleChoice: currentExam.questions[questionIndex].allowMultiple,
+        currentAnswers: answers[questionIndex]
+      });
     }
+
+    setAnswers(prevAnswers => {
+      const newAnswers = { ...prevAnswers };
+      const question = currentExam.questions[questionIndex];
+      
+      if (question.allowMultiple) {
+        // For multiple choice questions
+        const currentAnswers = Array.isArray(newAnswers[questionIndex]) 
+          ? newAnswers[questionIndex] 
+          : [];
+          
+        if (currentAnswers.includes(answerIndex)) {
+          // Remove if already selected
+          newAnswers[questionIndex] = currentAnswers.filter(idx => idx !== answerIndex);
+        } else {
+          // Add new selection
+          newAnswers[questionIndex] = [...currentAnswers, answerIndex];
+        }
+
+        // Debug log for multiple choice questions
+        if (questionIndex === 4) {
+          console.log('Updated answers for question 5:', newAnswers[questionIndex]);
+        }
+      } else {
+        // For single choice questions
+        newAnswers[questionIndex] = answerIndex;
+      }
+      
+      // Save to localStorage
+      localStorage.setItem('examAnswers', JSON.stringify(newAnswers));
+      return newAnswers;
+    });
   };
 
   const handleSubmitExam = async (submitType = 'manual') => {
@@ -431,12 +486,31 @@ const StudentDashboard = () => {
 
       // Capture attempted answers
       const attemptedAnswers = Object.keys(answers).reduce((acc, key) => {
-        if (answers[key] !== null && answers[key] !== undefined) {
-          acc[key] = Number(answers[key]);
+        const answer = answers[key];
+        const question = currentExam.questions[key];
+        const isMultipleChoice = question.allowMultiple;
+        
+        // Debug log for question 5
+        if (Number(key) === 4) {
+          console.log('Submitting answer for question 5:', {
+            answer,
+            isMultipleChoice,
+            allowMultiple: question.allowMultiple
+          });
+        }
+        
+        // Check if the answer is an array (multiple choice) or single value
+        if (isMultipleChoice && Array.isArray(answer)) {
+          // For multiple choice questions, store the array of answers
+          acc[key] = answer;
+        } else if (answer !== null && answer !== undefined) {
+          // For single choice questions, store the single answer
+          acc[key] = Number(answer);
         }
         return acc;    
       }, {});
 
+      console.log('All attempted answers:', attemptedAnswers);
 
       const submissionData = {
         examId: currentExam._id,
@@ -479,18 +553,17 @@ const StudentDashboard = () => {
 
         // Clear all local storage data related to the exam
         localStorage.removeItem('studentDashboardTab');
-        localStorage.removeItem('pendingSubmission'); // If you have this key
+        localStorage.removeItem('pendingSubmission');
 
         // Switch to results tab after submission
         setIsExamMode(false);
         setCurrentExam(null);
         setAnswers({});
         setTimeLeft(null);
-        setActiveTab('results'); // Switch to results tab
+        setActiveTab('results');
       }
     } catch (error) {
       console.error('Error submitting exam:', error);
-      // Log the error response for debugging
       if (error.response) {
         console.error('Response data:', error.response.data);
         console.error('Response status:', error.response.status);
@@ -558,7 +631,18 @@ const StudentDashboard = () => {
     if (!currentExam) return false;
     
     const totalQuestions = currentExam.questions.length;
-    const answeredQuestions = Object.keys(answers).length;
+    const answeredQuestions = Object.keys(answers).filter(questionIndex => {
+      const answer = answers[questionIndex];
+      const question = currentExam.questions[questionIndex];
+      
+      if (question.allowMultiple) {
+        // For multiple choice questions, check if at least one option is selected
+        return Array.isArray(answer) && answer.length > 0;
+      } else {
+        // For single choice questions, check if an answer is selected
+        return answer !== null && answer !== undefined;
+      }
+    }).length;
     
     return answeredQuestions === totalQuestions;
   };
@@ -568,10 +652,58 @@ const StudentDashboard = () => {
     if (!currentExam) return 0;
     
     const totalQuestions = currentExam.questions.length;
-    const answeredQuestions = Object.keys(answers).length;
+    const answeredQuestions = Object.keys(answers).filter(questionIndex => {
+      const answer = answers[questionIndex];
+      const question = currentExam.questions[questionIndex];
+      
+      if (question.allowMultiple) {
+        // For multiple choice questions, check if at least one option is selected
+        return Array.isArray(answer) && answer.length > 0;
+      } else {
+        // For single choice questions, check if an answer is selected
+        return answer !== null && answer !== undefined;
+      }
+    }).length;
     
     return totalQuestions - answeredQuestions;
   };
+
+  // Add keyboard navigation for exam
+  useEffect(() => {
+    if (!currentExam || !keyboardShortcutsEnabled) return;
+
+    const handleKeyDown = (e) => {
+      // Prevent handling if user is typing in an input field
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      switch (e.key) {
+        case 'ArrowLeft':
+          // Previous question
+          if (currentQuestionIndex > 0) {
+            setCurrentQuestionIndex(prev => prev - 1);
+          }
+          break;
+        case 'ArrowRight':
+          // Next question
+          if (currentQuestionIndex < currentExam.questions.length - 1) {
+            setCurrentQuestionIndex(prev => prev + 1);
+          }
+          break;
+        case '1': case '2': case '3': case '4':
+          // Select option by number (1-4)
+          const optionIndex = parseInt(e.key) - 1;
+          if (optionIndex >= 0 && optionIndex < currentExam.questions[currentQuestionIndex].options.length) {
+            handleAnswerSelect(currentQuestionIndex, optionIndex);
+          }
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentExam, currentQuestionIndex, keyboardShortcutsEnabled]);
 
   // Update the exam rendering with submit button validation
   const renderExam = () => {
@@ -604,6 +736,20 @@ const StudentDashboard = () => {
                 ? `${remainingQuestions} question${remainingQuestions > 1 ? 's' : ''} remaining`
                 : 'All questions answered!'
               }
+            </div>
+            <div className="flex items-center mt-2">
+              <label className="inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={keyboardShortcutsEnabled}
+                  onChange={() => setKeyboardShortcutsEnabled(!keyboardShortcutsEnabled)}
+                  className="sr-only peer"
+                />
+                <div className={`relative w-11 h-6 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'} peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all ${keyboardShortcutsEnabled ? 'peer-checked:bg-violet-600' : ''}`}></div>
+                <span className={`ms-3 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Keyboard shortcuts {keyboardShortcutsEnabled ? 'enabled' : 'disabled'}
+                </span>
+              </label>
             </div>
           </div>
 
@@ -639,13 +785,30 @@ const StudentDashboard = () => {
                 optionText = parts[0];
                 imageUrl = parts[1];
               }
+
+              const isMultipleChoice = currentExam.questions[currentQuestionIndex].allowMultiple;
+              
+              // Debug log for multiple choice questions
+              if (currentQuestionIndex === 4) { // Assuming question 5 is index 4
+                console.log('Question 5 details:', {
+                  isMultipleChoice,
+                  allowMultiple: currentExam.questions[currentQuestionIndex].allowMultiple,
+                  questionText: currentExam.questions[currentQuestionIndex].text.substring(0, 30)
+                });
+              }
+              
+              const currentAnswers = answers[currentQuestionIndex] || [];
+              const isSelected = isMultipleChoice 
+                ? Array.isArray(currentAnswers) && currentAnswers.includes(index)
+                : answers[currentQuestionIndex] === index;
               
               return (
                 <button
                   key={index}
+                  ref={el => optionsRef.current[index] = el}
                   onClick={() => handleAnswerSelect(currentQuestionIndex, index)}
                   className={`w-full p-4 text-left rounded-lg transition-colors ${
-                    answers[currentQuestionIndex] === index
+                    isSelected
                       ? isDarkMode
                         ? 'bg-violet-600 text-white'
                         : 'bg-violet-100 text-violet-900'
@@ -654,17 +817,41 @@ const StudentDashboard = () => {
                         : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
                   }`}
                 >
-                  <div>
-                    {optionText}
-                    {imageUrl && (
-                      <div className="mt-2">
-                        <img 
-                          src={imageUrl} 
-                          alt={`Option ${index + 1}`} 
-                          className="max-h-32 rounded-lg"
+                  <div className="flex items-start">
+                    <span className={`inline-flex items-center justify-center w-6 h-6 mr-3 rounded ${
+                      isSelected
+                        ? isDarkMode
+                          ? 'bg-violet-600 border-white'
+                          : 'bg-violet-100 border-violet-600'
+                        : isDarkMode
+                          ? 'bg-gray-800 border-gray-600'
+                          : 'bg-gray-50 border-gray-300'
+                    } ${isMultipleChoice ? 'border' : ''}`}>
+                      {isMultipleChoice ? (
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {}} // Handle change through button click
+                          className="w-4 h-4 text-violet-600 rounded border-gray-300 focus:ring-violet-500"
                         />
-                      </div>
-                    )}
+                      ) : (
+                        <span className={`w-full h-full flex items-center justify-center ${
+                          isSelected ? 'text-white' : ''
+                        }`}>{index + 1}</span>
+                      )}
+                    </span>
+                    <div className="flex-grow">
+                      {optionText}
+                      {imageUrl && (
+                        <div className="mt-2">
+                          <img 
+                            src={imageUrl} 
+                            alt={`Option ${index + 1}`} 
+                            className="max-h-32 rounded-lg"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </button>
               );
@@ -676,13 +863,13 @@ const StudentDashboard = () => {
             <button
               onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
               disabled={currentQuestionIndex === 0}
-              className={`w-full sm:w-auto px-4 py-2 rounded ${
+              className={`w-full sm:w-auto px-4 py-2 rounded flex items-center justify-center ${
                 currentQuestionIndex === 0
                   ? 'bg-gray-300 cursor-not-allowed'
                   : 'bg-violet-600 hover:bg-violet-700 text-white'
               }`}
             >
-              Previous
+              <span className="mr-1">←</span> Previous
             </button>
 
             {currentQuestionIndex === currentExam.questions.length - 1 ? (
@@ -716,12 +903,35 @@ const StudentDashboard = () => {
                 onClick={() => setCurrentQuestionIndex(prev => 
                   Math.min(currentExam.questions.length - 1, prev + 1)
                 )}
-                className="w-full sm:w-auto px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded"
+                className="w-full sm:w-auto px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded flex items-center justify-center"
               >
-                Next
+                Next <span className="ml-1">→</span>
               </button>
             )}
           </div>
+
+          {/* Keyboard Shortcuts Help */}
+          {keyboardShortcutsEnabled && (
+            <div className={`mt-6 p-4 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+              <h4 className={`text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                Keyboard Shortcuts
+              </h4>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="flex items-center">
+                  <span className={`inline-block px-2 py-1 mr-2 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>←</span>
+                  <span>Previous question</span>
+                </div>
+                <div className="flex items-center">
+                  <span className={`inline-block px-2 py-1 mr-2 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>→</span>
+                  <span>Next question</span>
+                </div>
+                <div className="flex items-center">
+                  <span className={`inline-block px-2 py-1 mr-2 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>1-4</span>
+                  <span>Select answer option</span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Question Navigation Grid */}
           <div className="mt-8">
@@ -748,28 +958,11 @@ const StudentDashboard = () => {
                   }`}
                 >
                   {index + 1}
-                  {answers[index] !== undefined && (
-                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full"></span>
-                  )}
                 </button>
               ))}
             </div>
           </div>
-
-          {/* Progress Summary */}
-          <div className={`mt-4 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-            Answered: {Object.keys(answers).length} / {currentExam.questions.length}
-          </div>
         </div>
-
-        {/* Warning Banner */}
-        {isExamMode && (
-          <div className="fixed bottom-0 left-0 right-0 bg-red-600 text-white py-2 md:py-3 px-4 text-center z-50">
-            <p className="text-xs md:text-sm font-medium">
-              Warning: Leaving this page will automatically submit your exam
-            </p>
-          </div>
-        )}
       </div>
     );
   };
