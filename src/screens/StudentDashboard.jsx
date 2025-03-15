@@ -435,15 +435,13 @@ const StudentDashboard = () => {
   };
 
   const handleAnswerSelect = (questionIndex, answerIndex) => {
-    // Debug log for multiple choice questions
-    if (questionIndex === 4) { // Assuming question 5 is index 4
-      console.log('Selecting answer for question 5:', {
-        questionIndex,
-        answerIndex,
-        isMultipleChoice: currentExam.questions[questionIndex].allowMultiple,
-        currentAnswers: answers[questionIndex]
-      });
-    }
+    // Debug log for answer selection
+    console.log('Selecting answer:', {
+      questionIndex,
+      answerIndex,
+      isMultipleChoice: currentExam.questions[questionIndex].allowMultiple,
+      currentAnswers: answers[questionIndex]
+    });
 
     setAnswers(prevAnswers => {
       const newAnswers = { ...prevAnswers };
@@ -460,13 +458,14 @@ const StudentDashboard = () => {
           newAnswers[questionIndex] = currentAnswers.filter(idx => idx !== answerIndex);
         } else {
           // Add new selection
-          newAnswers[questionIndex] = [...currentAnswers, answerIndex];
+          newAnswers[questionIndex] = [...currentAnswers, answerIndex].sort((a, b) => a - b);
         }
 
-        // Debug log for multiple choice questions
-        if (questionIndex === 4) {
-          console.log('Updated answers for question 5:', newAnswers[questionIndex]);
-        }
+        // Debug log for updated answers
+        console.log('Updated multiple choice answers:', {
+          questionIndex,
+          newAnswers: newAnswers[questionIndex]
+        });
       } else {
         // For single choice questions
         newAnswers[questionIndex] = answerIndex;
@@ -490,19 +489,19 @@ const StudentDashboard = () => {
         const question = currentExam.questions[key];
         const isMultipleChoice = question.allowMultiple;
         
-        // Debug log for question 5
-        if (Number(key) === 4) {
-          console.log('Submitting answer for question 5:', {
-            answer,
-            isMultipleChoice,
-            allowMultiple: question.allowMultiple
-          });
-        }
+        // Debug log for submission
+        console.log('Processing answer for question:', {
+          questionIndex: key,
+          answer,
+          isMultipleChoice,
+          allowMultiple: question.allowMultiple
+        });
         
         // Check if the answer is an array (multiple choice) or single value
         if (isMultipleChoice && Array.isArray(answer)) {
           // For multiple choice questions, store the array of answers
-          acc[key] = answer;
+          // Make sure all values in the array are numbers
+          acc[key] = answer.map(ans => Number(ans));
         } else if (answer !== null && answer !== undefined) {
           // For single choice questions, store the single answer
           acc[key] = Number(answer);
@@ -520,6 +519,8 @@ const StudentDashboard = () => {
         attemptedCount: Object.keys(attemptedAnswers).length,
         timeRemaining: timeLeft 
       };
+
+      console.log('Submitting exam data:', submissionData);
 
       // Show a different toast message for auto submission
       if (submitType === 'time_expired') {
@@ -554,6 +555,7 @@ const StudentDashboard = () => {
         // Clear all local storage data related to the exam
         localStorage.removeItem('studentDashboardTab');
         localStorage.removeItem('pendingSubmission');
+        localStorage.removeItem('examAnswers');
 
         // Switch to results tab after submission
         setIsExamMode(false);
@@ -1135,6 +1137,42 @@ const StudentDashboard = () => {
       window.removeEventListener('examSubmitted', handleExamSubmitted);
     };
   }, []); // Empty dependency array to run only on mount
+
+  // Load saved answers from localStorage when exam starts
+  useEffect(() => {
+    if (currentExam) {
+      const savedAnswers = localStorage.getItem('examAnswers');
+      if (savedAnswers) {
+        try {
+          const parsedAnswers = JSON.parse(savedAnswers);
+          
+          // Ensure multiple-choice answers are arrays
+          const formattedAnswers = {};
+          
+          Object.entries(parsedAnswers).forEach(([questionIndex, answer]) => {
+            const questionIdx = Number(questionIndex);
+            if (questionIdx < currentExam.questions.length) {
+              const question = currentExam.questions[questionIdx];
+              
+              if (question.allowMultiple) {
+                // Ensure multiple-choice answers are arrays
+                formattedAnswers[questionIndex] = Array.isArray(answer) ? answer : [answer];
+              } else {
+                // Single-choice answers remain as numbers
+                formattedAnswers[questionIndex] = answer;
+              }
+            }
+          });
+          
+          console.log('Loaded saved answers from localStorage:', formattedAnswers);
+          setAnswers(formattedAnswers);
+        } catch (error) {
+          console.error('Error parsing saved answers:', error);
+          localStorage.removeItem('examAnswers');
+        }
+      }
+    }
+  }, [currentExam]);
 
   return (
     <div className={`${isDarkMode ? 'bg-[#0A0F1C]' : 'bg-gray-50'} min-h-screen pt-16 md:pt-24`}>
