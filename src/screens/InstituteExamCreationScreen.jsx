@@ -578,6 +578,15 @@ const InstituteExamCreationScreen = () => {
     }
   };
   
+  // Delete all questions
+  const deleteAllQuestions = () => {
+    if (window.confirm('Are you sure you want to delete all questions? This action cannot be undone.')) {
+      setQuestions([]);
+      setQuestionsRemaining(examMetadata.numberOfQuestions);
+      showToast.success('All questions deleted');
+    }
+  };
+  
   // Upload images to server and get URLs
   const uploadImages = async () => {
     setIsUploading(true);
@@ -821,13 +830,21 @@ const InstituteExamCreationScreen = () => {
     try {
       const formData = new FormData();
       formData.append('file', excelFile);
-      
-      const response = await axiosInstance.post('/api/proxy/excel', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
+
+      // Use your backend proxy endpoint instead of calling the Excel processor directly
+      const response = await axiosInstance.post(
+        "/api/proxy/excel",
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          timeout: 30000 // 30 seconds timeout
         }
-      });
-      
+      );
+
+      console.log("Excel processor response:", response.data);
+
       if (response.data && response.data.questions) {
         // Check if we got any errors back
         if (response.data.errors && response.data.errors.length > 0) {
@@ -836,99 +853,85 @@ const InstituteExamCreationScreen = () => {
             showToast.error(error);
           });
         }
-        
-        // Map the questions to our format
-        const mappedQuestions = response.data.questions.map(q => {
-          // Determine if it's single or multiple choice
+
+        // Transform the questions from Excel format to our app format
+        const transformedQuestions = response.data.questions.map((q, idx) => {
+          // Log the raw question for debugging
+          console.log(`Processing question ${idx + 1}:`, q);
+          
+          // Ensure we have the question text
+          const questionText = q.questionText || '';
+          
+          // Determine if it's single or multiple choice based on the questionType from backend
           const isMultipleChoice = q.questionType === 'multiple';
           
-          console.log('Processing Excel question:', {
-            questionText: q.questionText,
-            questionType: q.questionType,
-            isMultipleChoice,
-            correctAnswer: q.correctAnswer,
-            correctOptions: q.correctOptions
-          });
-          
-          // Format options to match required structure
+          // Format options - ensure we have 4 options with proper structure
           const formattedOptions = Array.isArray(q.options) ? q.options.map(opt => {
             if (typeof opt === 'string') {
-              return { text: opt, image: null };
+              return { text: opt, image: null, imagePreview: null };
             }
-            return opt;
+            return { 
+              text: opt.text || '', 
+              image: opt.image || null, 
+              imagePreview: opt.imagePreview || null 
+            };
           }) : [];
 
-          // Ensure we have at least 2 options
-          while (formattedOptions.length < 2) {
-            formattedOptions.push({ text: '', image: null });
+          // Ensure we have at least 4 options
+          while (formattedOptions.length < 4) {
+            formattedOptions.push({ text: '', image: null, imagePreview: null });
           }
-          
-          // Handle correct answers
-          let correctOption = 0;
-          let correctOptions = [];
           
           if (isMultipleChoice) {
-            // For multiple choice, check if correctOptions exists first (from backend)
-            if (Array.isArray(q.correctOptions)) {
+            // For multiple-choice questions
+            let correctOptions = [];
+            
+            if (Array.isArray(q.correctOptions) && q.correctOptions.length > 0) {
+              // The backend provides 0-based indices in correctOptions
               correctOptions = q.correctOptions;
-              console.log('Using correctOptions directly from backend:', correctOptions);
-            }
-            // Otherwise, handle correctAnswer in various formats
-            else if (Array.isArray(q.correctAnswer)) {
-              correctOptions = q.correctAnswer.map(ans => {
-                // Convert to zero-based index (Excel data is 1-based)
-                const index = parseInt(ans) - 1;
-                return isNaN(index) ? 0 : index;
-              });
-            } else if (typeof q.correctAnswer === 'string') {
-              // Handle comma-separated string format
-              correctOptions = q.correctAnswer.split(',').map(ans => {
-                const index = parseInt(ans.trim()) - 1;
-                return isNaN(index) ? 0 : index;
-              });
-            } else if (typeof q.correctAnswer === 'number') {
-              // Handle single number for multiple choice
-              correctOptions = [q.correctAnswer - 1];
+              console.log(`Question ${idx + 1} (multiple): Using correctOptions:`, correctOptions);
+            } else {
+              console.log(`Question ${idx + 1} (multiple): No valid correctOptions found, using empty array`);
             }
             
-            // Ensure correctOptions is valid
-            correctOptions = correctOptions.filter(index => 
-              index >= 0 && index < formattedOptions.length
-            );
-            
-            console.log('Multiple choice correct options:', correctOptions);
+            return {
+              questionText,
+              questionImage: null,
+              questionImagePreview: null,
+              questionType: 'multiple',
+              options: formattedOptions,
+              correctOption: 0, // Default value for multiple-choice
+              correctOptions: correctOptions // Use the array directly
+            };
           } else {
-            // For single choice
-            if (typeof q.correctAnswer === 'number') {
-              correctOption = q.correctAnswer - 1;
-            } else if (typeof q.correctAnswer === 'string') {
-              correctOption = parseInt(q.correctAnswer) - 1;
+            // For single-choice questions
+            // The backend provides 0-based index in correctOption
+            let correctOption = 0;
+            
+            if (typeof q.correctOption === 'number' && q.correctOption >= 0) {
+              correctOption = q.correctOption;
+              console.log(`Question ${idx + 1} (single): Using correctOption:`, correctOption);
+            } else {
+              console.log(`Question ${idx + 1} (single): No valid correctOption found, using default (0)`);
             }
             
-            // Ensure correctOption is valid
-            correctOption = isNaN(correctOption) || correctOption < 0 || correctOption >= formattedOptions.length 
-              ? 0 
-              : correctOption;
-              
-            console.log('Single choice correct option:', correctOption);
+            return {
+              questionText,
+              questionImage: null,
+              questionImagePreview: null,
+              questionType: 'single',
+              options: formattedOptions,
+              correctOption: correctOption,
+              correctOptions: [] // Empty array for single-choice
+            };
           }
-          
-          return {
-            questionText: q.questionText || '',
-            questionType: isMultipleChoice ? 'multiple' : 'single',
-            questionImage: null,
-            questionImagePreview: null,
-            options: formattedOptions,
-            correctOption: isMultipleChoice ? 0 : correctOption,
-            correctOptions: isMultipleChoice ? correctOptions : []
-          };
         });
-        
+
         // Add the questions to our state
-        setQuestions([...questions, ...mappedQuestions]);
+        setQuestions([...questions, ...transformedQuestions]);
         
         // Calculate remaining questions
-        const newQuestionsCount = questions.length + mappedQuestions.length;
+        const newQuestionsCount = questions.length + transformedQuestions.length;
         if (newQuestionsCount >= examMetadata.numberOfQuestions) {
           setQuestionsRemaining(0);
         } else {
@@ -941,16 +944,19 @@ const InstituteExamCreationScreen = () => {
           fileInputRef.current.value = '';
         }
         
-        showToast.success(`Imported ${mappedQuestions.length} questions from Excel`);
+        showToast.success(`Imported ${transformedQuestions.length} questions from Excel`);
       } else {
         showToast.error('No questions were found in the Excel file');
       }
     } catch (error) {
-      console.error('Error uploading Excel file:', error);
-      let errorMessage = 'Failed to upload Excel file';
+      console.error('Excel upload error:', error);
       
-      if (error.response?.data?.error) {
+      let errorMessage = 'Failed to process Excel file. Please ensure it follows the correct format.';
+      
+      if (error.response && error.response.data && error.response.data.error) {
         errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
       }
       
       showToast.error(errorMessage);
@@ -1851,18 +1857,34 @@ const InstituteExamCreationScreen = () => {
                 <h2 className="text-2xl font-bold">
                   Questions Progress
                 </h2>
-                <div className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                  questionsRemaining === 0
-                    ? isDarkMode 
-                      ? 'bg-green-500/10 text-green-400 ring-1 ring-green-400/30' 
-                      : 'bg-green-50 text-green-700 ring-1 ring-green-600/20'
-                    : isDarkMode 
-                      ? 'bg-blue-500/10 text-blue-400 ring-1 ring-blue-400/30' 
-                      : 'bg-blue-50 text-blue-700 ring-1 ring-blue-600/20'
-                }`}>
-                  {questionsRemaining === 0 
-                    ? 'All questions added!' 
-                    : `${questionsRemaining} question${questionsRemaining !== 1 ? 's' : ''} remaining`}
+                <div className="flex items-center gap-3">
+                  {questions.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={deleteAllQuestions}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium flex items-center ${
+                        isDarkMode 
+                          ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400 ring-1 ring-red-400/30' 
+                          : 'bg-red-50 hover:bg-red-100 text-red-600 ring-1 ring-red-600/20'
+                      }`}
+                    >
+                      <FaTrash size={12} className="mr-1.5" />
+                      Delete All
+                    </button>
+                  )}
+                  <div className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                    questionsRemaining === 0
+                      ? isDarkMode 
+                        ? 'bg-green-500/10 text-green-400 ring-1 ring-green-400/30' 
+                        : 'bg-green-50 text-green-700 ring-1 ring-green-600/20'
+                      : isDarkMode 
+                        ? 'bg-blue-500/10 text-blue-400 ring-1 ring-blue-400/30' 
+                        : 'bg-blue-50 text-blue-700 ring-1 ring-blue-600/20'
+                  }`}>
+                    {questionsRemaining === 0 
+                      ? 'All questions added!' 
+                      : `${questionsRemaining} question${questionsRemaining !== 1 ? 's' : ''} remaining`}
+                  </div>
                 </div>
               </div>
               
