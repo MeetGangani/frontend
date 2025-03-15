@@ -846,7 +846,8 @@ const InstituteExamCreationScreen = () => {
             questionText: q.questionText,
             questionType: q.questionType,
             isMultipleChoice,
-            correctAnswer: q.correctAnswer
+            correctAnswer: q.correctAnswer,
+            correctOptions: q.correctOptions
           });
           
           // Format options to match required structure
@@ -867,8 +868,13 @@ const InstituteExamCreationScreen = () => {
           let correctOptions = [];
           
           if (isMultipleChoice) {
-            // For multiple choice, handle both array and string formats
-            if (Array.isArray(q.correctAnswer)) {
+            // For multiple choice, check if correctOptions exists first (from backend)
+            if (Array.isArray(q.correctOptions)) {
+              correctOptions = q.correctOptions;
+              console.log('Using correctOptions directly from backend:', correctOptions);
+            }
+            // Otherwise, handle correctAnswer in various formats
+            else if (Array.isArray(q.correctAnswer)) {
               correctOptions = q.correctAnswer.map(ans => {
                 // Convert to zero-based index (Excel data is 1-based)
                 const index = parseInt(ans) - 1;
