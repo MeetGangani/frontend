@@ -1075,7 +1075,7 @@ const StudentDashboard = () => {
 
     restoreExamState();
   }, []);
-
+ 
   // Update saveExamState function
   const saveExamState = useCallback(() => {
     if (currentExam && isExamMode) {
